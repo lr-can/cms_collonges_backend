@@ -12,7 +12,7 @@ async function getPeremption(page = 1){
       FROM stock
       INNER JOIN materiels
         ON materiels.idMateriel = stock.idMateriel
-        WHERE datePeremption < '${datePeremptionSixMoisString}' LIMIT ${offset},${config.listPerPage}`
+        WHERE datePeremption < '${datePeremptionSixMoisString}' GROUP BY stock.numLot LIMIT ${offset},${config.listPerPage}`
     );
     const data = helper.emptyOrRows(rows);
     const meta = {page};
@@ -29,8 +29,8 @@ async function getPeremption(page = 1){
     datePeremptionSixMois.setMonth(datePeremptionSixMois.getMonth() + 6);
     let datePeremptionSixMoisString = datePeremptionSixMois.toISOString().slice(0, 19).replace('T', ' ');
     const rows = await db.query(
-      `SELECT idStock
-      FROM stock 
+      `SELECT idStock, idMateriel, nomMateriel
+      FROM stock INNER JOIN materiels ON materiels.idMateriel = stock.idMateriel 
       WHERE datePeremption < '${datePeremptionSixMoisString}' AND idMateriel = '${idMateriel}' LIMIT ${offset},${config.listPerPage}`
     );
     const data = helper.emptyOrRows(rows);
