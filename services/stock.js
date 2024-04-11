@@ -49,14 +49,12 @@ async function getPeremption(page = 1){
     let datePeremptionSixMoisString = datePeremptionSixMois.toISOString().slice(0, 19).replace('T', ' ');
     const rows = await db.query(
       `SELECT
-        (SELECT COUNT(*) FROM stock WHERE datePeremption < '${datePeremptionSixMoisString}' AND idStatut != 3) AS nbProduits,
-        (SELECT COUNT(DISTINCT numLot) FROM stock WHERE datePeremption < '${datePeremptionSixMoisString}' AND idStatut != 3) AS nbLots,
         (SELECT COUNT(*) FROM stock WHERE idStatut != 3) AS nbTotal,
         (SELECT COUNT(*) FROM stock WHERE idStatut = 1) AS nbReserve,
         (SELECT COUNT(*) FROM stock WHERE idStatut = 2) AS nbVSAV,
         (SELECT COUNT(DISTINCT numLot) FROM stock WHERE idStatut != 3) AS nbLotsTotal
       FROM stock
-      WHERE datePeremption < '${datePeremptionSixMoisString}' AND idStatut != 3
+      WHERE 1
       LIMIT 1;`
     );
     const data = helper.emptyOrRows(rows);
