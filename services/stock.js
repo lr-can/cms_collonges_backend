@@ -75,6 +75,23 @@ async function getPeremption(page = 1){
       meta
     }
   }
+  async function create(new_materiel){
+    const result = await db.query(
+      `INSERT INTO stock
+      (idStock, idMateriel, idStatut, idAgent, dateCreation, numLot, datePeremption) 
+      VALUES 
+      (${new_materiel.idStock}, '${new_materiel.idMateriel}', ${new_materiel.idStatut}, '${new_materiel.idAgent}', '${new_materiel.dateCreation}', '${new_materiel.numLot}', '${new_materiel.datePeremption}')`
+    );
+  
+    let message = 'Il y a eu une erreur lors de la création du matériel dans la base de données.';
+  
+    if (result.affectedRows) {
+      message = 'Le matériel a bien été créé.';
+    }
+  
+    return {message};
+  }
+
   
   module.exports = {
     getPeremption,
