@@ -3,7 +3,7 @@ const router5 = express.Router();
 const stock = require('../services/stock');
 
 /* GET info. */
-router5.get('/', async function(req, res, next) {
+router5.post('/', async function(req, res, next) {
   try {
     res.json(await stock.create(req.body));
   } catch (err) {
