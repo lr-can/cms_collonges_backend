@@ -97,5 +97,6 @@ async function getPeremption(page = 1){
     getPeremption,
     getPeremptionids,
     getPeremptionsCount,
-    getMaterielList
+    getMaterielList,
+    create
   }
