@@ -6,7 +6,7 @@ const stock = require('../services/stock');
 router6.get('/:idMateriel', async function(req, res, next) {
   try {
     const idMateriel = req.params.idMateriel;
-    res.json(await stock.todayCreation(req.query.page, idMateriel));
+    res.json(await stock.todayCreated(req.query.page, idMateriel));
   } catch (err) {
     console.error(`Error while getting peremption `, err.message);
     next(err);
