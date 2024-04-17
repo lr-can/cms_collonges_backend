@@ -92,11 +92,28 @@ async function getPeremption(page = 1){
     return {message};
   }
 
+  async function todayCreation(page = 1, idMateriel){
+    const offset = helper.getOffset(page, config.listPerPage);
+    const todayDate = new Date();
+    let dateCreation = todayDate.toISOString().slice(0, 19).replace('T', ' ');
+    const rows = await db.query(
+      `SELECT * FROM stock WHERE idMateriel = '${idMateriel}' AND dateCreation = '${dateCreation}' LIMIT ${offset},${config.listPerPage}`
+    );
+    const data = helper.emptyOrRows(rows);
+    const meta = {page};
+  
+    return {
+      data,
+      meta
+    }
+  }
+
   
   module.exports = {
     getPeremption,
     getPeremptionids,
     getPeremptionsCount,
     getMaterielList,
-    create
+    create,
+    todayCreation
   }

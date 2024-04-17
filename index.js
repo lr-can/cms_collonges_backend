@@ -7,6 +7,7 @@ const peremptionsids = require("./routes/peremptionsids");
 const peremptionscount = require("./routes/peremptioncount");
 const materielstheoriques = require("./routes/materielstheoriques");
 const create = require("./routes/createDB");
+const todayCreation = require("./routes/todayCreation");
 
 app.use(express.json());
 app.use(cors());
@@ -24,6 +25,7 @@ app.use("/peremptionsids", peremptionsids);
 app.use("/peremptionscount", peremptionscount);
 app.use("/materielstheoriques", materielstheoriques);
 app.use("/createDB", create);
+app.use("/todayCreation", todayCreation);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
