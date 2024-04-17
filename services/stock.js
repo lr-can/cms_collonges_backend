@@ -114,6 +114,19 @@ async function getPeremption(page = 1){
     }
   }
 
+  async function remove(id){
+    const result = await db.query(
+      `DELETE FROM stock WHERE idStock = ${id}`
+    );
+    let message = `Error in deleting ID-${id}`;
+
+  if (result.affectedRows) {
+    message = `ID-${id} a bien été supprimé.`;
+  }
+
+  return {message};
+  }
+
   
   module.exports = {
     getPeremption,
@@ -121,5 +134,6 @@ async function getPeremption(page = 1){
     getPeremptionsCount,
     getMaterielList,
     todayCreated,
-    create
+    create,
+    remove
   }
