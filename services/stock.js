@@ -149,7 +149,7 @@ async function getPeremption(page = 1){
       `SELECT COUNT(idStock) AS nombreProduits,datePeremption, numLot
       FROM stock
       WHERE stock.idMateriel = '${idMateriel}' AND stock.idStatut != 3
-      GROUP BY numLot;`
+      GROUP BY numLot ORDER BY stock.datePeremption;`
     )
     const rows4 = await db.query(
       `SELECT
