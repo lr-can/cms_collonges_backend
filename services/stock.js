@@ -150,10 +150,19 @@ async function getPeremption(page = 1){
       WHERE stock.idMateriel = '${idMateriel}' AND stock.idStatut != 3
       GROUP BY numLot;`
     )
+    const rows4 = await db.query(
+      `SELECT
+      COUNT(stock.idStock) AS totalCount,
+      SUM(CASE WHEN stock.idStatut = 1 THEN 1 ELSE 0 END) AS reserveCount,
+      SUM(CASE WHEN stock.idStatut = 2 THEN 1 ELSE 0 END) AS vsavCount
+    FROM stock
+    WHERE stock.idMateriel = '${idMateriel}'`
+    )
     const data = {
       "donneesCompletes":helper.emptyOrRows(rows1),
       "compteParAgent":helper.emptyOrRows(rows2), 
-      "isolationLot":helper.emptyOrRows(rows3)
+      "isolationLot":helper.emptyOrRows(rows3),
+      "compteTotal":helper.emptyOrRows(rows4)
       };
     const meta = {page};
   
