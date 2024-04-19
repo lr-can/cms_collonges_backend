@@ -128,10 +128,33 @@ async function getPeremption(page = 1){
   }
   async function getStock(page = 1, idMateriel){
     const offset = helper.getOffset(page, config.listPerPage);
-    const rows = await db.query(
+    const rows1 = await db.query(
       `SELECT * FROM stock WHERE stock.idMateriel = '${idMateriel}' AND stock.idStatut != 3;`
     );
-    const data = helper.emptyOrRows(rows);
+    const rows2 = await db.query(
+      `SELECT
+      COUNT(stock.idStock) AS totalCount,
+      SUM(CASE WHEN stock.idStatut = 1 THEN 1 ELSE 0 END) AS reserveCount,
+      SUM(CASE WHEN stock.idStatut = 2 THEN 1 ELSE 0 END) AS vsavCount,
+      agents.gradeAbbrAgent,
+      agents.nomAgent
+  FROM stock
+  INNER JOIN agents ON stock.idAgent = agents.idAgent
+  WHERE stock.idMateriel = '${idMateriel}'
+  GROUP BY agents.gradeAgent, agents.nomAgent;
+  `
+    );
+    const rows3 = await db.query(
+      `SELECT COUNT(idStock) AS nombreProduits,datePeremption, numLot
+      FROM stock
+      WHERE stock.idMateriel = '${idMateriel}' AND stock.idStatut != 3
+      GROUP BY numLot;`
+    )
+    const data = {
+      "donneesCompletes":helper.emptyOrRows(rows1),
+      "compteParAgent":helper.emptyOrRows(rows2), 
+      "isolationLot":helper.emptyOrRows(rows3)
+      };
     const meta = {page};
   
     return {
