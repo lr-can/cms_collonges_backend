@@ -9,6 +9,7 @@ const materielstheoriques = require("./routes/materielstheoriques");
 const create = require("./routes/createDB");
 const todayCreation = require("./routes/todayCreation");
 const remove = require("./routes/remove");
+const dataVision = require("./routes/dataVision");
 
 app.use(express.json());
 app.use(cors());
@@ -28,6 +29,7 @@ app.use("/materielstheoriques", materielstheoriques);
 app.use("/createDB", create);
 app.use("/todayCreation", todayCreation);
 app.use("/remove", remove);
+app.use("/dataVision", dataVision);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;

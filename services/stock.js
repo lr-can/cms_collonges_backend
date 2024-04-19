@@ -126,6 +126,19 @@ async function getPeremption(page = 1){
 
   return {message};
   }
+  async function getStock(page = 1, idMateriel){
+    const offset = helper.getOffset(page, config.listPerPage);
+    const rows = await db.query(
+      `SELECT * FROM stock WHERE stock.idMateriel = '${idMateriel}' AND stock.idStatut != 3;`
+    );
+    const data = helper.emptyOrRows(rows);
+    const meta = {page};
+  
+    return {
+      data,
+      meta
+    }
+  }
 
   
   module.exports = {
@@ -135,5 +148,6 @@ async function getPeremption(page = 1){
     getMaterielList,
     todayCreated,
     create,
-    remove
+    remove,
+    getStock
   }
