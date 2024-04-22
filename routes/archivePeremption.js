@@ -2,7 +2,7 @@ const express = require('express');
 const router9 = express.Router();
 const stock = require('../services/stock');
 
-router.put('/', async function(req, res, next) {
+router9.put('/', async function(req, res, next) {
     try {
       res.json(await stock.archivePeremption());
     } catch (err) {
