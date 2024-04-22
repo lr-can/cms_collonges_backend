@@ -203,6 +203,18 @@ async function getPeremption(page = 1){
     }
   }
 
+  async function getRealCount(page = 1){
+    const rows = await db.query(
+      `SELECT stock.idMateriel, COUNT(*) as realCount FROM stock WHERE stock.idStatut != '3' GROUP BY stock.idMateriel;`
+    );
+    const data = helper.emptyOrRows(rows);
+    const meta = {page};
+    return {
+      data,
+      meta
+    }
+  }
+
   
   module.exports = {
     getPeremption,
@@ -214,5 +226,6 @@ async function getPeremption(page = 1){
     remove,
     getStock,
     archivePeremption,
-    getOneMonthPeremption
+    getOneMonthPeremption,
+    getRealCount
   }
