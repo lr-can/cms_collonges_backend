@@ -188,6 +188,21 @@ async function getPeremption(page = 1){
     return {message};
   }
 
+  async function getOneMonthPeremption(page = 1){
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
+    const dateOneMonthLater = date.toISOString().slice(0, 19).replace('T', ' ');
+    const rows = await db.query(
+      `SELECT COUNT(*) AS perimant FROM stock WHERE datePeremption < '${dateOneMonthLater}' AND idStatut != 3`
+    );
+    const data = helper.emptyOrRows(rows);
+    const meta = {page};
+    return {
+      data,
+      meta
+    }
+  }
+
   
   module.exports = {
     getPeremption,
@@ -198,5 +213,6 @@ async function getPeremption(page = 1){
     create,
     remove,
     getStock,
-    archivePeremption
+    archivePeremption,
+    getOneMonthPeremption
   }
