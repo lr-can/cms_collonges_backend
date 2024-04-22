@@ -173,6 +173,21 @@ async function getPeremption(page = 1){
     }
   }
 
+  async function archivePeremption(){
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
+    const dateOneMonthLater = date.toISOString().slice(0, 19).replace('T', ' ');
+    const result = await db.query(
+      `UPDATE stock SET idStatut = 3 WHERE datePeremption < '${dateOneMonthLater}'`
+    );
+    let message = 'Il y a eu une erreur lors de l\'archivage des lots dans la base de données.';
+
+    if (result.affectedRows) {
+      message = 'Les lots ont bien été archivés.';
+    }
+    return {message};
+  }
+
   
   module.exports = {
     getPeremption,
@@ -182,5 +197,6 @@ async function getPeremption(page = 1){
     todayCreated,
     create,
     remove,
-    getStock
+    getStock,
+    archivePeremption
   }

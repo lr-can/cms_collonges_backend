@@ -10,6 +10,7 @@ const create = require("./routes/createDB");
 const todayCreation = require("./routes/todayCreation");
 const remove = require("./routes/remove");
 const dataVision = require("./routes/dataVision");
+const archivePeremption = require("./routes/archivePeremption");
 
 app.use(express.json());
 app.use(cors());
@@ -30,6 +31,7 @@ app.use("/createDB", create);
 app.use("/todayCreation", todayCreation);
 app.use("/remove", remove);
 app.use("/dataVision", dataVision);
+app.use("/archivePeremption", archivePeremption);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
