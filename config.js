@@ -8,6 +8,6 @@ const config = {
         database: process.env.DB_NAME,
         connectTimeout: 60000
     },
-    listPerPage: 200,
+    listPerPage: 20000,
 };
 module.exports = config;
