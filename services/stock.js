@@ -12,7 +12,7 @@ async function getPeremption(page = 1){
       FROM stock
       INNER JOIN materiels
         ON materiels.idMateriel = stock.idMateriel
-        WHERE datePeremption < '${datePeremptionSixMoisString}' AND stock.idStatut != 3 GROUP BY stock.numLot ORDER BY stock.datePeremption LIMIT ${offset},${config.listPerPage}`
+        WHERE datePeremption < '${datePeremptionSixMoisString}' AND stock.idStatut != 3 GROUP BY stock.numLot ORDER BY stock.datePeremption LIMIT ${config.listPerPage}`
     );
     const data = helper.emptyOrRows(rows);
     const meta = {page};
@@ -31,7 +31,7 @@ async function getPeremption(page = 1){
     const rows = await db.query(
       `SELECT stock.idStock, stock.idMateriel, materiels.nomMateriel
       FROM stock INNER JOIN materiels ON materiels.idMateriel = stock.idMateriel 
-      WHERE stock.datePeremption < '${datePeremptionSixMoisString}' AND stock.idMateriel = '${idMateriel}'  AND stock.idStatut != 3 LIMIT ${offset},${config.listPerPage}`
+      WHERE stock.datePeremption < '${datePeremptionSixMoisString}' AND stock.idMateriel = '${idMateriel}'  AND stock.idStatut != 3 LIMIT ${config.listPerPage}`
     );
     const data = helper.emptyOrRows(rows);
     const meta = {page};
@@ -65,7 +65,7 @@ async function getPeremption(page = 1){
   async function getMaterielList(page = 1){
     const offset = helper.getOffset(page, config.listPerPage);
     const rows = await db.query(
-      `SELECT * FROM materiels ORDER BY nomMateriel LIMIT ${offset},${config.listPerPage}`
+      `SELECT * FROM materiels ORDER BY nomMateriel LIMIT ${config.listPerPage}`
     );
     const data = helper.emptyOrRows(rows);
     const meta = {page};
@@ -103,7 +103,7 @@ async function getPeremption(page = 1){
       `SELECT * 
       FROM stock
       WHERE stock.idMateriel = '${idMateriel}'  AND stock.dateCreation > '${dateYesterday}' AND stock.dateCreation < '${todayDate}'
-      LIMIT ${offset},${config.listPerPage}`
+      LIMIT ${config.listPerPage}`
     );
     const data = helper.emptyOrRows(rows);
     const meta = {page};
@@ -206,7 +206,7 @@ async function getPeremption(page = 1){
   async function getRealCount(page = 1){
     const offset = helper.getOffset(page, config.listPerPage);
     const rows = await db.query(
-      `SELECT stock.idMateriel, COUNT(*) as realCount FROM stock WHERE stock.idStatut != '3' GROUP BY stock.idMateriel LIMIT ${offset},${config.listPerPage};`
+      `SELECT stock.idMateriel, COUNT(*) as realCount FROM stock WHERE stock.idStatut != '3' GROUP BY stock.idMateriel LIMIT ${config.listPerPage};`
     );
     const data = helper.emptyOrRows(rows);
     const meta = {page};
