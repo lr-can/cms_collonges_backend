@@ -141,7 +141,7 @@ async function getPeremption(page = 1){
       agents.idAgent
   FROM stock
   INNER JOIN agents ON stock.idAgent = agents.idAgent
-  WHERE stock.idMateriel = '${idMateriel}'
+  WHERE stock.idMateriel = '${idMateriel}' AND stock.idStatut != '3'
   GROUP BY agents.gradeAgent, agents.nomAgent;
   `
     );
@@ -157,7 +157,7 @@ async function getPeremption(page = 1){
       SUM(CASE WHEN stock.idStatut = 1 THEN 1 ELSE 0 END) AS reserveCount,
       SUM(CASE WHEN stock.idStatut = 2 THEN 1 ELSE 0 END) AS vsavCount
     FROM stock
-    WHERE stock.idMateriel = '${idMateriel}'`
+    WHERE stock.idMateriel = '${idMateriel}' AND stock.idStatut != '3'`
     )
     const data = {
       "donneesCompletes":helper.emptyOrRows(rows1),
