@@ -216,6 +216,22 @@ async function getPeremption(page = 1){
     }
   }
 
+  async function getAdressesMails(page = 1){
+    const offset = helper.getOffset(page, config.listPerPage);
+    const rows = await db.query(
+      `SELECT emails.adresseMail, agents.nomAgent
+      FROM emails
+      INNER JOIN agents
+          ON emails.idAgent = agents.idAgent
+      WHERE 1 LIMIT ${config.listPerPage};`
+    );
+    const data = helper.emptyOrRows(rows);
+    const meta = {page};
+    return {
+      data,
+      meta
+    }
+  }
   
   module.exports = {
     getPeremption,
@@ -228,5 +244,6 @@ async function getPeremption(page = 1){
     getStock,
     archivePeremption,
     getOneMonthPeremption,
-    getRealCount
+    getRealCount,
+    getAdressesMails
   }
