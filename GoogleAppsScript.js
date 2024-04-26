@@ -12,10 +12,10 @@ function sendLastRowValue() {
         
         // Send the value through a POST HTTPS request
         var payload = {
-            "systematique": systematique,
-            "autreMateriel": autreMateriel,
-            "kits": kits,
-            "specifique": specifique
+            "systematique": JSON.parse(systematique),
+            "autreMateriel": JSON.parse(autreMateriel),
+            "kits": JSON.parse(kits),
+            "specifique": JSON.parse(specifique)
         };
         
         var options = {
@@ -28,7 +28,7 @@ function sendLastRowValue() {
         
         var response = UrlFetchApp.fetch("https://cms-collonges-api.adaptable.app/retourIntervention", options);
         Logger.log(response.getContentText());
-        
+
         sheet.getRange("V" + lastRow).setValue("TRUE");
     }
 }
