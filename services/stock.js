@@ -240,10 +240,10 @@ async function getPeremption(page = 1){
     
     const materielList = helper.emptyOrRows(getMaterielList);
 
-    let systematique = json.loads(retourData.systematique);
-    let autreMateriel = json.loads(retourData.autreMateriel);
-    let kits = json.loads(retourData.kits);
-    let specifique = json.loads(retourData.specifique);
+    let systematique = JSON.loads(retourData.systematique);
+    let autreMateriel = JSON.loads(retourData.autreMateriel);
+    let kits = JSON.loads(retourData.kits);
+    let specifique = JSON.loads(retourData.specifique);
 
     const defaultTrue = await db.query(
       `UPDATE retourIntervention SET statutRI = 1
