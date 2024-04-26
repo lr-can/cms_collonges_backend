@@ -4,7 +4,7 @@ function sendLastRowValue() {
     var lastRow = sheet.getLastRow().toString();
     var vColumn = sheet.getRange("V" + lastRow).getValue();
     
-    if (vColumn !== "TRUE") {
+    if (vColumn == "") {
         var systematique = sheet.getRange("U" + lastRow).getValue();
         var systematiqueArray = JSON.parse(systematique);
         var autreMateriel = sheet.getRange("K" + lastRow).getValue();
@@ -34,5 +34,7 @@ function sendLastRowValue() {
         Logger.log(response.getContentText());
 
         sheet.getRange("V" + lastRow).setValue("TRUE");
+    } else {
+      Logger.log('déjà traité.')
     }
 }
