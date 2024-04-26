@@ -232,6 +232,68 @@ async function getPeremption(page = 1){
       meta
     }
   }
+
+  async function retourIntervention(retourData){
+    const getMaterielList = await db.query(
+      `SELECT idMateriel, nomRetourInter FROM materiels WHERE nomRetourInter != NULL` 
+    );
+    
+    const materielList = helper.emptyOrRows(getMaterielList);
+
+    let systematique = retourData.systematique;
+    let autreMateriel = retourData.autreMateriel;
+    let kits = retourData.kits;
+    let specifique = retourData.specifique;
+
+    const defaultTrue = await db.query(
+      `UPDATE retourIntervention SET statutRI = 1
+      WHERE idMateriel = 'controleGluco' OR idMateriel = 'gantL' OR idMateriel = 'gantM' 
+      OR idMateriel = 'gantS' OR idMateriel = 'gantXL' OR idMateriel = 'masqueChir'`
+    );
+
+    for (let i = 0; i < systematique.length; i++) {
+      const materiel = materielList.find(item => item.nomMateriel === systematique[i]);
+      if (materiel) {
+        const idMateriel = materiel.idMateriel;
+        const result = await db.query(
+          `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
+        );
+      }
+    }
+    for (let i = 0; i < autreMateriel.length; i++) {
+      const materiel = materielList.find(item => item.nomMateriel === autreMateriel[i]);
+      if (materiel) {
+        const idMateriel = materiel.idMateriel;
+        const result = await db.query(
+          `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
+        );
+      }
+    }
+    for (let i = 0; i < kits.length; i++) {
+      const materiel = materielList.find(item => item.nomMateriel === kits[i]);
+      if (materiel) {
+        const idMateriel = materiel.idMateriel;
+        const result = await db.query(
+          `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
+        );
+      }
+    }
+    for (let i = 0; i < specifique.length; i++) {
+      const materiel = materielList.find(item => item.nomMateriel === specifique[i]);
+      if (materiel) {
+        const idMateriel = materiel.idMateriel;
+        const result = await db.query(
+          `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
+        );
+      }
+    }
+
+
+    let message = 'Fait.';
+
+    return {message};
+  }
+
   
   module.exports = {
     getPeremption,
@@ -245,5 +307,6 @@ async function getPeremption(page = 1){
     archivePeremption,
     getOneMonthPeremption,
     getRealCount,
-    getAdressesMails
+    getAdressesMails,
+    retourIntervention
   }
