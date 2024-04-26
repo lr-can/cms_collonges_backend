@@ -252,7 +252,7 @@ async function getPeremption(page = 1){
     );
 
     for (let i = 0; i < systematique.length; i++) {
-      const materiel = materielList.find(item => item.nomMateriel === systematique[i]);
+      const materiel = materielList.find(item => item.nomRetourInter === systematique[i]);
       if (materiel) {
         const idMateriel = materiel.idMateriel;
         await db.query(
@@ -261,7 +261,7 @@ async function getPeremption(page = 1){
       }
     }
     for (let i = 0; i < autreMateriel.length; i++) {
-      const materiel = materielList.find(item => item.nomMateriel === autreMateriel[i]);
+      const materiel = materielList.find(item => item.nomRetourInter === autreMateriel[i]);
       if (materiel) {
         const idMateriel = materiel.idMateriel;
         await db.query(
@@ -270,7 +270,7 @@ async function getPeremption(page = 1){
       }
     }
     for (let i = 0; i < kits.length; i++) {
-      const materiel = materielList.find(item => item.nomMateriel === kits[i]);
+      const materiel = materielList.find(item => item.nomRetourInter === kits[i]);
       if (materiel) {
         const idMateriel = materiel.idMateriel;
         await db.query(
@@ -279,7 +279,7 @@ async function getPeremption(page = 1){
       }
     }
     for (let i = 0; i < specifique.length; i++) {
-      const materiel = materielList.find(item => item.nomMateriel === specifique[i]);
+      const materiel = materielList.find(item => item.nomRetourInter === specifique[i]);
       if (materiel) {
         const idMateriel = materiel.idMateriel;
         await db.query(
@@ -289,7 +289,7 @@ async function getPeremption(page = 1){
     }
 
 
-    let message = systematique;
+    let message = 'Fait.';
 
     return {message};
   }
