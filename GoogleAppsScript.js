@@ -6,16 +6,20 @@ function sendLastRowValue() {
     
     if (vColumn !== "TRUE") {
         var systematique = sheet.getRange("U" + lastRow).getValue();
+        var systematiqueArray = JSON.parse(systematique);
         var autreMateriel = sheet.getRange("K" + lastRow).getValue();
+        var autreMaterielArray = JSON.parse(autreMateriel);
         var kits = sheet.getRange("L" + lastRow).getValue();
+        var kitsArray = JSON.parse(kits);
         var specifique = sheet.getRange("M" + lastRow).getValue();
+        var specifiqueArray = JSON.parse(specifique);
         
         // Send the value through a POST HTTPS request
         var payload = {
-            "systematique": systematique,
-            "autreMateriel": autreMateriel,
-            "kits": kits,
-            "specifique": specifique
+            "systematique": systematiqueArray,
+            "autreMateriel": autreMaterielArray,
+            "kits": kitsArray,
+            "specifique": specifiqueArray
         };
         
         var options = {

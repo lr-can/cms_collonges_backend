@@ -245,7 +245,7 @@ async function getPeremption(page = 1){
     let kits = retourData.kits;
     let specifique = retourData.specifique;
 
-    const defaultTrue = await db.query(
+   await db.query(
       `UPDATE retourIntervention SET statutRI = 1
       WHERE idMateriel = 'controleGluco' OR idMateriel = 'gantL' OR idMateriel = 'gantM' 
       OR idMateriel = 'gantS' OR idMateriel = 'gantXL' OR idMateriel = 'masqueChir'`
@@ -255,7 +255,7 @@ async function getPeremption(page = 1){
       const materiel = materielList.find(item => item.nomMateriel === systematique[i]);
       if (materiel) {
         const idMateriel = materiel.idMateriel;
-        const result = await db.query(
+        await db.query(
           `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
         );
       }
@@ -264,7 +264,7 @@ async function getPeremption(page = 1){
       const materiel = materielList.find(item => item.nomMateriel === autreMateriel[i]);
       if (materiel) {
         const idMateriel = materiel.idMateriel;
-        const result = await db.query(
+        await db.query(
           `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
         );
       }
@@ -273,7 +273,7 @@ async function getPeremption(page = 1){
       const materiel = materielList.find(item => item.nomMateriel === kits[i]);
       if (materiel) {
         const idMateriel = materiel.idMateriel;
-        const result = await db.query(
+        await db.query(
           `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
         );
       }
@@ -282,7 +282,7 @@ async function getPeremption(page = 1){
       const materiel = materielList.find(item => item.nomMateriel === specifique[i]);
       if (materiel) {
         const idMateriel = materiel.idMateriel;
-        const result = await db.query(
+        await db.query(
           `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
         );
       }
