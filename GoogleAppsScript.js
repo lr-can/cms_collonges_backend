@@ -12,10 +12,10 @@ function sendLastRowValue() {
         
         // Send the value through a POST HTTPS request
         var payload = {
-            "systematique": JSON.parse(systematique),
-            "autreMateriel": JSON.parse(autreMateriel),
-            "kits": JSON.parse(kits),
-            "specifique": JSON.parse(specifique)
+            "systematique": systematique,
+            "autreMateriel": autreMateriel,
+            "kits": kits,
+            "specifique": specifique
         };
         
         var options = {
