@@ -252,39 +252,47 @@ async function getPeremption(page = 1){
     );
 
     for (let i = 0; i < systematique.length; i++) {
-      const materiel = materielList.find(item => item.nomRetourInter === systematique[i]);
+      const materiel = materielList.filter(item => item.nomRetourInter === systematique[i]);
       if (materiel) {
-        const idMateriel = materiel.idMateriel;
-        await db.query(
-          `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
-        );
+        for (let j = 0; j < materiel.length; j++) {
+          const idMateriel = materiel[j].idMateriel;
+          await db.query(
+            `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
+          );
+        }
       }
     }
     for (let i = 0; i < autreMateriel.length; i++) {
-      const materiel = materielList.find(item => item.nomRetourInter === autreMateriel[i]);
+      const materiel = materielList.filter(item => item.nomRetourInter === autreMateriel[i]);
       if (materiel) {
-        const idMateriel = materiel.idMateriel;
-        await db.query(
-          `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
-        );
+        for (let j = 0; j < materiel.length; j++) {
+          const idMateriel = materiel[j].idMateriel;
+          await db.query(
+            `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
+          );
+        }
       }
     }
     for (let i = 0; i < kits.length; i++) {
-      const materiel = materielList.find(item => item.nomRetourInter === kits[i]);
+      const materiel = materielList.filter(item => item.nomRetourInter === kits[i]);
       if (materiel) {
-        const idMateriel = materiel.idMateriel;
-        await db.query(
-          `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
-        );
+        for (let j = 0; j < materiel.length; j++) {
+          const idMateriel = materiel[j].idMateriel;
+          await db.query(
+            `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
+          );
+        }
       }
     }
     for (let i = 0; i < specifique.length; i++) {
-      const materiel = materielList.find(item => item.nomRetourInter === specifique[i]);
+      const materiel = materielList.filter(item => item.nomRetourInter === specifique[i]);
       if (materiel) {
-        const idMateriel = materiel.idMateriel;
-        await db.query(
-          `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
-        );
+        for (let j = 0; j < materiel.length; j++) {
+          const idMateriel = materiel[j].idMateriel;
+          await db.query(
+            `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = '${idMateriel}'`
+          );
+        }
       }
     }
 
