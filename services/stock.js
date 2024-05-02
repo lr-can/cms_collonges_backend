@@ -303,7 +303,7 @@ async function getPeremption(page = 1){
     async function getMaterielsToCheck(page = 1, status){
       if (status == "partial"){
         const rows = await db.query(
-          `SELECT retourIntervention.idMateriel, materiels.nbVSAV, materiels.zone
+          `SELECT retourIntervention.idMateriel, materiels.nomMateriel, materiels.nbVSAV, materiels.zone
           FROM retourIntervention
           INNER JOIN materiels ON retourIntervention.idMateriel = materiels.idMateriel
           WHERE retourIntervention.statutRI = 1 AND materiels.nbVSAV != 0
@@ -317,7 +317,7 @@ async function getPeremption(page = 1){
         }
       } else {
         const rows = await db.query(
-          `SELECT materiels.idMateriel, materiels.nbVSAV, materiels.zone
+          `SELECT materiels.idMateriel, materiels.nomMateriel, materiels.nbVSAV, materiels.zone
           FROM materiels
           WHERE materiels.nbVSAV != 0
           ORDER BY materiels.zone;`
