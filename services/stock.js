@@ -345,6 +345,25 @@ async function getPeremption(page = 1){
       }
     }
 
+    async function archivePharma(archiveData){
+      const idAgent = archiveData.idAgent;
+      const materielsLists = archiveData.materielsList;
+
+      for (let i = 0; i < materielsLists.length; i++) {
+        const idStock = materielsLists[i];
+        await db.query(
+          `UPDATE stock SET idStatut = 3, idAgent = "${idAgent}" WHERE idStock = '${idStock}'`
+        );
+      }
+
+      let message = 'Il y a eu une erreur lors de l\'archivage des éléments dans la base de données.';
+  
+      if (result.affectedRows) {
+        message = 'Les éléments ont bien été archivés.';
+      }
+      return {message};
+    }
+
     
 
 
@@ -364,5 +383,6 @@ async function getPeremption(page = 1){
     getAdressesMails,
     retourIntervention,
     getMaterielsToCheck,
-    getPharmaItems
+    getPharmaItems,
+    archivePharma
   }

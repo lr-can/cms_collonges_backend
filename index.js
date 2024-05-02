@@ -17,6 +17,7 @@ const emailsAdresses = require("./routes/emailsAdresses");
 const retourIntervention = require("./routes/retourInter");
 const getMaterielsToCheck = require("./routes/getMaterielToCheck");
 const getPharmaItems = require("./routes/getPharmaItems");
+const archivePharma = require("./routes/archivePharma");
 
 app.use(express.json());
 app.use(cors());
@@ -44,6 +45,7 @@ app.use("/emailsAdresses", emailsAdresses);
 app.use("/retourIntervention", retourIntervention);
 app.use("/getMaterielsToCheck", getMaterielsToCheck);
 app.use("/getPharmaItems", getPharmaItems);
+app.use("/archivePharma", archivePharma);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
