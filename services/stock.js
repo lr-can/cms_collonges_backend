@@ -358,9 +358,8 @@ async function getPeremption(page = 1){
 
       let message = 'Il y a eu une erreur lors de l\'archivage des éléments dans la base de données.';
   
-      if (result.affectedRows) {
-        message = 'Les éléments ont bien été archivés.';
-      }
+      message = 'Les éléments ont bien été archivés.';
+      
       return {message};
     }
 
