@@ -16,6 +16,7 @@ const getRealCount = require("./routes/realCount");
 const emailsAdresses = require("./routes/emailsAdresses");
 const retourIntervention = require("./routes/retourInter");
 const getMaterielsToCheck = require("./routes/getMaterielToCheck");
+const getPharmaItems = require("./routes/getPharmaItems");
 
 app.use(express.json());
 app.use(cors());
@@ -42,6 +43,7 @@ app.use("/getRealCount", getRealCount);
 app.use("/emailsAdresses", emailsAdresses);
 app.use("/retourIntervention", retourIntervention);
 app.use("/getMaterielsToCheck", getMaterielsToCheck);
+app.use("/getPharmaItems", getPharmaItems);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;

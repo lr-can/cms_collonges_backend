@@ -320,7 +320,7 @@ async function getPeremption(page = 1){
           `SELECT materiels.idMateriel, materiels.nomMateriel, materiels.nbVSAV, materiels.zone
           FROM materiels
           WHERE materiels.nbVSAV != 0
-          ORDER BY materiels.zone;`
+          ORDER BY materiels.zone DESC;`
         )
         const data = helper.emptyOrRows(rows);
         const meta = {page};
@@ -329,7 +329,23 @@ async function getPeremption(page = 1){
           meta
         }
       };
+    };
+
+    async function getPharmaItems(page = 1, idMateriel){
+      const offset = helper.getOffset(page, config.listPerPage);
+      const rows = await db.query(
+        `SELECT * FROM stock WHERE stock.idMateriel = '${idMateriel}' AND stock.idStatut = 2;`
+      );
+      const data = helper.emptyOrRows(rows);
+      const meta = {page};
+    
+      return {
+        data,
+        meta
+      }
     }
+
+    
 
 
   
@@ -347,5 +363,6 @@ async function getPeremption(page = 1){
     getRealCount,
     getAdressesMails,
     retourIntervention,
-    getMaterielsToCheck
+    getMaterielsToCheck,
+    getPharmaItems
   }
