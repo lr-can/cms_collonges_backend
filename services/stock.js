@@ -320,7 +320,7 @@ async function getPeremption(page = 1){
           `SELECT materiels.idMateriel, materiels.nomMateriel, materiels.nbVSAV, materiels.zone
           FROM materiels
           WHERE materiels.nbVSAV != 0
-          ORDER BY materiels.zone DESC;`
+          ORDER BY materiels.zone;`
         )
         const data = helper.emptyOrRows(rows);
         const meta = {page};
