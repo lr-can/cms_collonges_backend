@@ -295,12 +295,42 @@ async function getPeremption(page = 1){
         }
       }
     }
-
-
     let message = 'Fait.';
 
     return {message};
-  }
+  };
+
+    async function getMaterielsToCheck(page = 1, status){
+      if (status == "partial"){
+        const rows = await db.query(
+          `SELECT retourIntervention.idMateriel, materiels.nbVSAV, materiels.zone
+          FROM retourIntervention
+          INNER JOIN materiels ON retourIntervention.idMateriel = materiels.idMateriel
+          WHERE retourIntervention.statutRI = 1 AND materiels.nbVSAV != 0
+          ORDER BY materiels.zone;`
+        );
+        const data = helper.emptyOrRows(rows);
+        const meta = {page};
+        return {
+          data,
+          meta
+        }
+      } else {
+        const rows = await db.query(
+          `SELECT materiels.idMateriel, materiels.nbVSAV, materiels.zone
+          FROM materiels
+          WHERE materiels.nbVSAV != 0
+          ORDER BY materiels.zone;`
+        )
+        const data = helper.emptyOrRows(rows);
+        const meta = {page};
+        return {
+          data,
+          meta
+        }
+      };
+    }
+
 
   
   module.exports = {
@@ -316,5 +346,6 @@ async function getPeremption(page = 1){
     getOneMonthPeremption,
     getRealCount,
     getAdressesMails,
-    retourIntervention
+    retourIntervention,
+    getMaterielsToCheck
   }

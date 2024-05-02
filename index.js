@@ -15,6 +15,7 @@ const getOneMonthPeremption = require("./routes/getOneMonthPeremption");
 const getRealCount = require("./routes/realCount");
 const emailsAdresses = require("./routes/emailsAdresses");
 const retourIntervention = require("./routes/retourInter");
+const getMaterielsToCheck = require("./routes/getMaterielToCheck");
 
 app.use(express.json());
 app.use(cors());
@@ -40,6 +41,7 @@ app.use("/getOneMonthPeremption", getOneMonthPeremption);
 app.use("/getRealCount", getRealCount);
 app.use("/emailsAdresses", emailsAdresses);
 app.use("/retourIntervention", retourIntervention);
+app.use("/getMaterielsToCheck", getMaterielsToCheck);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
