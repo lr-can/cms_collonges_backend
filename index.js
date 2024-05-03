@@ -18,6 +18,8 @@ const retourIntervention = require("./routes/retourInter");
 const getMaterielsToCheck = require("./routes/getMaterielToCheck");
 const getPharmaItems = require("./routes/getPharmaItems");
 const archivePharma = require("./routes/archivePharma");
+const getReserveItems = require("./routes/getReserveItems");
+const dispoReserve = require("./routes/dispoReserve");
 
 app.use(express.json());
 app.use(cors());
@@ -46,6 +48,8 @@ app.use("/retourIntervention", retourIntervention);
 app.use("/getMaterielsToCheck", getMaterielsToCheck);
 app.use("/getPharmaItems", getPharmaItems);
 app.use("/archivePharma", archivePharma);
+app.use("/getReserveItems", getReserveItems);
+app.use("/dispoReserve", dispoReserve);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;

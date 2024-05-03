@@ -363,6 +363,38 @@ async function getPeremption(page = 1){
       return {message};
     }
 
+    async function getReserveItems(page = 1, idMateriel){
+      const offset = helper.getOffset(page, config.listPerPage);
+      const rows = await db.query(
+        `SELECT * FROM stock WHERE stock.idMateriel = '${idMateriel}' AND stock.idStatut = 1;`
+      );
+      const data = helper.emptyOrRows(rows);
+      const meta = {page};
+    
+      return {
+        data,
+        meta
+      }
+    }
+
+    async function dispoReserve(archiveData){
+      const idAgent = archiveData.idAgent;
+      const materielsLists = archiveData.materielsList;
+
+      for (let i = 0; i < materielsLists.length; i++) {
+        const idStock = materielsLists[i];
+        await db.query(
+          `UPDATE stock SET idStatut = 2, idAgent = "${idAgent}" WHERE idStock = '${idStock}'`
+        );
+      }
+
+      let message = 'Il y a eu une erreur lors de la mise à disposition des éléments dans la base de données.';
+  
+      message = 'Les éléments ont bien été mis à dispositions.';
+      
+      return {message};
+    }
+
     
 
 
@@ -383,5 +415,7 @@ async function getPeremption(page = 1){
     retourIntervention,
     getMaterielsToCheck,
     getPharmaItems,
-    archivePharma
+    archivePharma,
+    getReserveItems,
+    dispoReserve
   }
