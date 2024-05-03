@@ -395,6 +395,13 @@ async function getPeremption(page = 1){
       return {message};
     }
 
+    async function reinitialiserRetourInter(){
+      await db.query(
+        `UPDATE retourIntervention SET statutRI = 0`
+      );
+      let message = "fait."
+      return {message};
+    }
     
 
 
