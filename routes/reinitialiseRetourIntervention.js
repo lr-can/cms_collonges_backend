@@ -1,8 +1,8 @@
 const express = require('express');
-const router9 = express.Router();
+const router19 = express.Router();
 const stock = require('../services/stock');
 
-router9.put('/', async function(req, res, next) {
+router19.put('/', async function(req, res, next) {
     try {
       res.json(await stock.reinitialiserRetourInter());
     } catch (err) {
@@ -11,4 +11,4 @@ router9.put('/', async function(req, res, next) {
     }
   });
 
-module.exports = router9;
+module.exports = router19;

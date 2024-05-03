@@ -424,5 +424,6 @@ async function getPeremption(page = 1){
     getPharmaItems,
     archivePharma,
     getReserveItems,
-    dispoReserve
+    dispoReserve,
+    reinitialiserRetourInter
   }
