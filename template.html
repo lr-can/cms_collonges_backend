@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Récapitulatif - CMS Collonges</title>
+    <style>
+        @import url(https://db.onlinewebfonts.com/c/06bac77bab58bc871a4d97b66f9a1af0?family=Marianne);
+        body {
+                font-family: 'Marianne';
+            }
+        table {
+            width: 100%;
+        }
+        h1{
+            text-align: center;
+            font-size: 2rem;
+        }
+        h2{
+            font-size: 1rem;
+        }
+        .table {
+            margin: 0 auto;
+            width: 80%;
+            display: table;
+        }
+        .row {
+            display: table-row;
+        }
+        .row:nth-child(1){
+            background-color: #f2f2f2;
+        }
+        .cell {
+            display: table-cell;
+            border-right: 1px solid #cecdcd;
+            border-bottom: 3px solid white;
+            padding: 10px;
+            text-align: center;
+        }
+        .cell:nth-child(1){
+            text-align: left;
+            width: 25vw;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="heading">
+        <img src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/logoTitle.png?raw=true" alt="Logo CMS Collonges" width="200" height="auto">
+        <h1>Récapitulatif des stocks</h1>
+    </div>
+    <div class="table">
+        <div class="row">
+            <div class="cell" id="Materiel">
+                <h2>
+                    Matériel
+                </h2>
+            </div>
+            <div class="cell">
+                <h2>
+                    Objectif Réserve
+                </h2>
+            </div>
+            <div class="cell">
+                <h2>
+                    Objectif VSAV
+                </h2>
+            </div>  
+            <div class="cell">
+                <h2>
+                    Réel Réserve
+                </h2>
+            </div>
+            <div class="cell">
+                <h2>
+                    Réel VSAV
+                </h2>
+            </div>
+            <div class="cell">
+                <h2>
+                    Objectif Total
+                </h2>
+            </div>  
+            <div class="cell">
+                <h2>
+                    Réel Total
+                </h2>
+            </div>  
+        </div>
+        
+    </div>    
+</body>
+</html>
