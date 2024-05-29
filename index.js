@@ -21,7 +21,8 @@ const archivePharma = require("./routes/archivePharma");
 const getReserveItems = require("./routes/getReserveItems");
 const dispoReserve = require("./routes/dispoReserve");
 const reinitialiserRetourInter = require("./routes/reinitialiseRetourIntervention");
-const getRecap = require("./routes/generatePDF");
+const generatePDF = require("./routes/generatePDF");
+const getRecapPDF = require("./routes/getRecapPDF");
 
 app.use(express.json());
 app.use(cors());
@@ -53,7 +54,8 @@ app.use("/archivePharma", archivePharma);
 app.use("/getReserveItems", getReserveItems);
 app.use("/dispoReserve", dispoReserve);
 app.use("/reinitialiserRetourInter", reinitialiserRetourInter);
-app.use("/getRecap", getRecap);
+app.use("/generatePDF", generatePDF);
+app.use("/getRecap", getRecapPDF);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;

@@ -8,7 +8,13 @@ function emptyOrRows(rows){
     }
     return rows;
 }
+
+async function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 module.exports = {
     getOffset,
-    emptyOrRows
+    emptyOrRows,
+    timeout
 }
