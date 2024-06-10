@@ -11,22 +11,22 @@ async function insertInterventionNotif(data) {
     const rowData = [data.notification];
     const range = 'Feuille 1!K1:K';
 
-    // Append the new row to the spreadsheet
-    sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range,
-        valueInputOption: 'USER_ENTERED',
-        resource: {
-            values: [rowData],
-        },
-    }, (err, response) => {
-        if (err) {
-            console.error('Error appending row:', err);
-            return;
-        }
+    try {
+        // Append the new row to the spreadsheet
+        const response = await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: [rowData],
+            },
+        });
         console.log('Row appended successfully!');
+        return response;
+    } catch (err) {
+        console.error('Error appending row:', err);
+        throw err; // Renvoie l'erreur pour être gérée par l'appelant
     }
-    );
 }
 
 module.exports = { insertInterventionNotif};
