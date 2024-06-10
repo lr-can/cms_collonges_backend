@@ -2,7 +2,6 @@ const { google } = require('googleapis');
 const config = require('../config');
 
 async function insertInterventionNotif(data) {
-    async function insertInterventionNotif(data) {
         const privateKey = config.google.private_key.replace(/\\n/g, '\n');
         const auth = new google.auth.JWT(
             config.google.client_email,
@@ -31,7 +30,6 @@ async function insertInterventionNotif(data) {
         console.error('Error appending row:', err);
         throw err; // Renvoie l'erreur pour être gérée par l'appelant
     }
-}
 }
 
 module.exports = { insertInterventionNotif};
