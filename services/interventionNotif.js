@@ -8,8 +8,8 @@ async function insertInterventionNotif(data) {
     });
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = '1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE'
-    const rowData = ['', '', '', '', '', '', '', '', '', '', data.notification];
-    const range = 'Feuille 1!A1:K';
+    const rowData = [data.notification];
+    const range = 'Feuille 1!K1:K';
 
     // Append the new row to the spreadsheet
     sheets.spreadsheets.values.append({
