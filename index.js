@@ -23,7 +23,7 @@ const dispoReserve = require("./routes/dispoReserve");
 const reinitialiserRetourInter = require("./routes/reinitialiseRetourIntervention");
 const generatePDF = require("./routes/generatePDF");
 const getRecapPDF = require("./routes/getRecapPDF");
-const notif = require("./routes/interventionNotif");
+const notif = require("./routes/insertNotification");
 
 app.use(express.json());
 app.use(cors());
