@@ -402,7 +402,6 @@ async function getPeremption(page = 1){
       let message = "fait."
       return {message};
     }
-    
 
 
   

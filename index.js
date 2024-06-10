@@ -23,6 +23,7 @@ const dispoReserve = require("./routes/dispoReserve");
 const reinitialiserRetourInter = require("./routes/reinitialiseRetourIntervention");
 const generatePDF = require("./routes/generatePDF");
 const getRecapPDF = require("./routes/getRecapPDF");
+const notif = require("./routes/interventionNotif");
 
 app.use(express.json());
 app.use(cors());
@@ -56,6 +57,7 @@ app.use("/dispoReserve", dispoReserve);
 app.use("/reinitialiserRetourInter", reinitialiserRetourInter);
 app.use("/generatePDF", generatePDF);
 app.use("/getRecap", getRecapPDF);
+app.use("/notif", notif);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
