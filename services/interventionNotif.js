@@ -12,7 +12,7 @@ async function insertInterventionNotif(data) {
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = '1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE'
     const rowData = [data.notification];
-    const range = 'Feuille 1!K1:K';
+    const range = 'Feuille 1!A1:K';
 
     try {
         // Append the new row to the spreadsheet
@@ -21,7 +21,7 @@ async function insertInterventionNotif(data) {
             range,
             valueInputOption: 'USER_ENTERED',
             resource: {
-                values: [rowData],
+                values: ['Added with CMS API','','','','','','','','','',rowData],
             },
         });
         console.log('Row appended successfully!');
