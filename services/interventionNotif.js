@@ -32,5 +32,6 @@ async function insertInterventionNotif(data) {
         throw err; // Renvoie l'erreur pour être gérée par l'appelant
     }
 }
+}
 
 module.exports = { insertInterventionNotif};
