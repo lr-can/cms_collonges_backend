@@ -25,7 +25,18 @@ async function insertInterventionNotif(data) {
             },
         });
         console.log('Row appended successfully!');
-        return response;
+        // Run the Google Apps Script
+        const scriptResponse = await sheets.scripts.run({
+            auth,
+            resource: {
+                function: 'lire_colonne_K_et_ecrire_colonne_B',
+                parameters: [],
+            },
+            scriptId: '1wemwCgqIUcq4e5ukXPeCjXbFxx6fmmPRAeWEs5yrUIERMSEEVNDqQFVH',
+        });
+
+        console.log('Google Apps Script executed successfully:', scriptResponse);
+        return {response, scriptResponse};
     } catch (err) {
         console.error('Error appending row:', err);
         throw err; // Renvoie l'erreur pour être gérée par l'appelant
