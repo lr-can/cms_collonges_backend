@@ -29,7 +29,7 @@ async function insertInterventionNotif(data) {
         });
         console.log('Row appended successfully!');
         // Run the Google Apps Script
-        const scriptResponse = await scripts.run({
+        const scriptResponse = await scripts.scripts.run({
             auth,
             resource: {
                 function: config.google.script_function,
