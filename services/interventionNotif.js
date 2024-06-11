@@ -8,11 +8,10 @@ async function insertInterventionNotif(data) {
             config.google.client_email,
             null,
             privateKey,
-            ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/script.projects']
+            ['https://www.googleapis.com/auth/spreadsheets']
         );
 
     const sheets = google.sheets({version: 'v4', auth});
-    const scripts = google.script({version: 'v1', auth});
     const spreadsheetId = config.google.spreadsheetId;
     const rowData = data.notification;
     const range = 'Feuille 1!A1:K';
@@ -28,18 +27,8 @@ async function insertInterventionNotif(data) {
             },
         });
         console.log('Row appended successfully!');
-        // Run the Google Apps Script
-        const scriptResponse = await scripts.scripts.run({
-            auth,
-            resource: {
-                function: config.google.script_function,
-                parameters: [],
-            },
-            scriptId: config.google.script_id,
-        });
-
-        console.log('Google Apps Script executed successfully:', scriptResponse);
-        return {response, scriptResponse};
+        
+        return 'Google Apps Script executed successfully:' + response;
     } catch (err) {
         console.error('Error appending row:', err);
         throw err; // Renvoie l'erreur pour être gérée par l'appelant
