@@ -10,7 +10,7 @@ async function insertInterventionNotif(data) {
             ['https://www.googleapis.com/auth/spreadsheets']
         );
     const sheets = google.sheets({ version: 'v4', auth });
-    const spreadsheetId = '1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE'
+    const spreadsheetId = config.google.spreadsheetId;
     const rowData = data.notification;
     const range = 'Feuille 1!A1:K';
 
@@ -29,10 +29,10 @@ async function insertInterventionNotif(data) {
         const scriptResponse = await sheets.scripts.run({
             auth,
             resource: {
-                function: 'lire_colonne_K_et_ecrire_colonne_B',
+                function: config.google.script_function,
                 parameters: [],
             },
-            scriptId: '1wemwCgqIUcq4e5ukXPeCjXbFxx6fmmPRAeWEs5yrUIERMSEEVNDqQFVH',
+            scriptId: config.google.script_id,
         });
 
         console.log('Google Apps Script executed successfully:', scriptResponse);

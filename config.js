@@ -19,7 +19,10 @@ const config = {
             "token_uri": process.env.GG_token_uri,
             "auth_provider_x509_cert_url": process.env.GG_auth_provider_x509_cert_url,
             "client_x509_cert_url": process.env.GG_client_x509_cert_url,
-            "universe_domain": process.env.GG_universe_domain
+            "universe_domain": process.env.GG_universe_domain,
+            "script_id": process.env.GG_script_id,
+            "script_function": process.env.GG_script_function,
+            "spreadsheetId": process.env.GG_spreadsheetId
     },
     listPerPage: 10000000,
 };
