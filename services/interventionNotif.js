@@ -1,15 +1,18 @@
 const { google } = require('googleapis');
 const config = require('../config');
 
+
 async function insertInterventionNotif(data) {
         const privateKey = config.google.private_key.replace(/\\n/g, '\n');
         const auth = new google.auth.JWT(
             config.google.client_email,
             null,
             privateKey,
-            ['https://www.googleapis.com/auth/spreadsheets']
+            ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/script.projects']
         );
-    const sheets = google.sheets({ version: 'v4', auth });
+
+    const sheets = google.sheets({version: 'v4', auth});
+    const scripts = google.script({version: 'v1', auth});
     const spreadsheetId = config.google.spreadsheetId;
     const rowData = data.notification;
     const range = 'Feuille 1!A1:K';
@@ -26,7 +29,7 @@ async function insertInterventionNotif(data) {
         });
         console.log('Row appended successfully!');
         // Run the Google Apps Script
-        const scriptResponse = await sheets.scripts.run({
+        const scriptResponse = await scripts.run({
             auth,
             resource: {
                 function: config.google.script_function,
