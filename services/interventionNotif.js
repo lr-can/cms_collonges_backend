@@ -13,7 +13,7 @@ async function insertInterventionNotif(data) {
 
     const sheets = google.sheets({version: 'v4', auth});
     const spreadsheetId = config.google.spreadsheetId;
-    const rowData = data[0];
+    const rowData = data.notification;
     const range = 'Feuille 1!A1:K';
 
     try {
@@ -28,7 +28,7 @@ async function insertInterventionNotif(data) {
         });
         console.log('Row appended successfully!');
         
-        return data;
+        return response;
     } catch (err) {
         console.error('Error appending row:', err);
         throw err; // Renvoie l'erreur pour être gérée par l'appelant
