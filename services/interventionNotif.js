@@ -28,7 +28,7 @@ async function insertInterventionNotif(data) {
         });
         console.log('Row appended successfully!');
         
-        return 'Google Apps Script executed successfully:' + response;
+        return response;
     } catch (err) {
         console.error('Error appending row:', err);
         throw err; // Renvoie l'erreur pour être gérée par l'appelant
