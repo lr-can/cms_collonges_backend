@@ -13,7 +13,7 @@ async function insertInterventionNotif(data) {
 
     const sheets = google.sheets({version: 'v4', auth});
     const spreadsheetId = config.google.spreadsheetId;
-    const rowData = data.notification;
+    const rowData = data;
     const range = 'Feuille 1!A1:K';
 
     try {
