@@ -13,7 +13,7 @@ async function insertInterventionNotif(data) {
 
     const sheets = google.sheets({version: 'v4', auth});
     const spreadsheetId = config.google.spreadsheetId;
-    const rowData = data;
+    const rowData = data[0];
     const range = 'Feuille 1!A1:K';
 
     try {
@@ -23,7 +23,7 @@ async function insertInterventionNotif(data) {
             range,
             valueInputOption: 'USER_ENTERED',
             resource: {
-                values: [['Added with CMS API','','','','','','','','','',rowData.toString()]],
+                values: [['Added with CMS API','','','','','','','','','',rowData]],
             },
         });
         console.log('Row appended successfully!');
