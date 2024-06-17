@@ -83,7 +83,7 @@ async function getPeremption(page = 1){
       let peremptionDate = new Date(new_materiel.datePeremption);
       mysqlFormattedPeremptionDate = peremptionDate.toISOString().slice(0, 19).replace('T', ' ');
     } else {
-      mysqlFormattedPeremptionDate = new_materiel.datePeremption;
+      mysqlFormattedPeremptionDate = '9999-12-31 23:59:59';
     }
     const result = await db.query(
       `INSERT INTO stock
