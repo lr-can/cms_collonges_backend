@@ -78,8 +78,13 @@ async function getPeremption(page = 1){
   async function create(new_materiel){
     let currentDate = new Date();
     let mysqlFormattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
-    let peremptionDate = new Date(new_materiel.datePeremption);
-    let mysqlFormattedPeremptionDate = peremptionDate.toISOString().slice(0, 19).replace('T', ' ');
+    let mysqlFormattedPeremptionDate;
+    if (new_materiel.datePeremption.includes('T')) {
+      let peremptionDate = new Date(new_materiel.datePeremption);
+      mysqlFormattedPeremptionDate = peremptionDate.toISOString().slice(0, 19).replace('T', ' ');
+    } else {
+      mysqlFormattedPeremptionDate = new_materiel.datePeremption;
+    }
     const result = await db.query(
       `INSERT INTO stock
       (idStock, idMateriel, idStatut, idAgent, dateCreation, numLot, datePeremption) 
