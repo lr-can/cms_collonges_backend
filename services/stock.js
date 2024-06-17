@@ -156,10 +156,10 @@ async function getPeremption(page = 1){
   GROUP BY agents.gradeAbbrAgent, agents.nomAgent, agents.idAgent;`
     );
     const rows3 = await db.query(
-      `SELECT COUNT(idStock) AS nombreProduits,datePeremption, numLot
+      `SELECT COUNT(idStock) AS nombreProduits, MAX(datePeremption) as datePeremption, numLot
       FROM stock
       WHERE stock.idMateriel = '${idMateriel}' AND stock.idStatut != 3
-      GROUP BY numLot ORDER BY stock.datePeremption;`
+      GROUP BY numLot ORDER BY MAX(stock.datePeremption);`
     )
     const rows4 = await db.query(
       `SELECT
@@ -182,7 +182,6 @@ async function getPeremption(page = 1){
       meta
     }
 }
-
   async function archivePeremption(){
     const date = new Date();
     date.setMonth(date.getMonth() + 1);
