@@ -6,6 +6,7 @@ const config = {
         user: process.env.DB_USER,
         password: process.env.DB_PWD,
         database: process.env.DB_NAME,
+        port: 3307,
         connectTimeout: 60000
     },
     google:{
