@@ -3,25 +3,27 @@ const helper = require('../helper');
 const config = require('../config');
 
 async function getPeremption(page = 1){
-    const offset = helper.getOffset(page, config.listPerPage);
-    const datePeremptionSixMois = new Date();
-    datePeremptionSixMois.setMonth(datePeremptionSixMois.getMonth() + 6);
-    let datePeremptionSixMoisString = datePeremptionSixMois.toISOString().slice(0, 19).replace('T', ' ');
-    const rows = await db.query(
-      `SELECT materiels.nomMateriel, stock.numLot, stock.datePeremption
-      FROM stock
-      INNER JOIN materiels
-        ON materiels.idMateriel = stock.idMateriel
-        WHERE datePeremption < '${datePeremptionSixMoisString}' AND stock.idStatut != 3 GROUP BY stock.numLot ORDER BY stock.datePeremption LIMIT ${config.listPerPage}`
-    );
-    const data = helper.emptyOrRows(rows);
-    const meta = {page};
-  
-    return {
-      data,
-      meta
-    }
+  const offset = helper.getOffset(page, config.listPerPage);
+  const datePeremptionSixMois = new Date();
+  datePeremptionSixMois.setMonth(datePeremptionSixMois.getMonth() + 6);
+  let datePeremptionSixMoisString = datePeremptionSixMois.toISOString().slice(0, 19).replace('T', ' ');
+  const rows = await db.query(
+    `SELECT materiels.nomMateriel, stock.numLot, stock.datePeremption
+    FROM stock
+    INNER JOIN materiels
+      ON materiels.idMateriel = stock.idMateriel
+      WHERE datePeremption < '${datePeremptionSixMoisString}' AND stock.idStatut != 3 
+      GROUP BY materiels.nomMateriel, stock.numLot, stock.datePeremption 
+      ORDER BY stock.datePeremption LIMIT ${config.listPerPage}`
+  );
+  const data = helper.emptyOrRows(rows);
+  const meta = {page};
+
+  return {
+    data,
+    meta
   }
+}
 
   async function getPeremptionids(page = 1, idMateriel){
     const offset = helper.getOffset(page, config.listPerPage);
@@ -151,8 +153,7 @@ async function getPeremption(page = 1){
   FROM stock
   INNER JOIN agents ON stock.idAgent = agents.idAgent
   WHERE stock.idMateriel = '${idMateriel}' AND stock.idStatut != '3'
-  GROUP BY agents.gradeAgent, agents.nomAgent;
-  `
+  GROUP BY agents.gradeAbbrAgent, agents.nomAgent, agents.idAgent;`
     );
     const rows3 = await db.query(
       `SELECT COUNT(idStock) AS nombreProduits,datePeremption, numLot
@@ -180,7 +181,7 @@ async function getPeremption(page = 1){
       data,
       meta
     }
-  }
+}
 
   async function archivePeremption(){
     const date = new Date();
