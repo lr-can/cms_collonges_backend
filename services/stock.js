@@ -244,7 +244,7 @@ async function getPeremption(page = 1){
 
   async function retourIntervention(retourData){
     const getMaterielList = await db.query(
-      `SELECT idMateriel, nomRetourInter FROM materiels WHERE nomRetourInter IS NOT NULL` 
+      `SELECT idMateriel, nomRetourInter FROM retourIntervention WHERE nomRetourInter IS NOT NULL` 
     );
     
     const materielList = helper.emptyOrRows(getMaterielList);
