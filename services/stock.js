@@ -76,11 +76,15 @@ async function getPeremption(page = 1){
     }
   }
   async function create(new_materiel){
+    let currentDate = new Date();
+    let mysqlFormattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
+    let peremptionDate = new Date(new_materiel.datePeremption);
+    let mysqlFormattedPeremptionDate = peremptionDate.toISOString().slice(0, 19).replace('T', ' ');
     const result = await db.query(
       `INSERT INTO stock
       (idStock, idMateriel, idStatut, idAgent, dateCreation, numLot, datePeremption) 
       VALUES 
-      (${new_materiel.idStock}, '${new_materiel.idMateriel}', ${new_materiel.idStatut}, '${new_materiel.idAgent}', '${new_materiel.dateCreation}', '${new_materiel.numLot}', '${new_materiel.datePeremption}')`
+      (${new_materiel.idStock}, '${new_materiel.idMateriel}', ${new_materiel.idStatut}, '${new_materiel.idAgent}', '${mysqlFormattedDate}', '${new_materiel.numLot}', '${mysqlFormattedPeremptionDate}')`
     );
   
     let message = 'Il y a eu une erreur lors de la création du matériel dans la base de données.';
