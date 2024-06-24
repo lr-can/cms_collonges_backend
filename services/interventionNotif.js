@@ -1,6 +1,6 @@
 const { google } = require('googleapis');
 const config = require('../config');
-const fetch = require('node-fetch');
+let fetch
 
 
 async function insertInterventionNotif(data) {
@@ -38,7 +38,9 @@ async function insertInterventionNotif(data) {
 
 async function giveInterventionType(titre) {
     let interTypeDictionnary = {};
-
+    if (!fetch) {
+        fetch = (await import('node-fetch')).default;
+    };
     try {
         const response = await fetch('https://opensheet.elk.sh/19kgbE-Z4kIbM49-rVE0hv9ihMBv_a5hOzP9DAa1CHt8/1');
         const data = await response.json();
