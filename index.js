@@ -24,6 +24,7 @@ const reinitialiserRetourInter = require("./routes/reinitialiseRetourInterventio
 const generatePDF = require("./routes/generatePDF");
 const getRecapPDF = require("./routes/getRecapPDF");
 const notif = require("./routes/insertNotification");
+const interType = require("./routes/interventionType");
 
 app.use(express.json());
 app.use(cors());
@@ -58,6 +59,7 @@ app.use("/reinitialiserRetourInter", reinitialiserRetourInter);
 app.use("/generatePDF", generatePDF);
 app.use("/getRecap", getRecapPDF);
 app.use("/notif", notif);
+app.use("/interventionType", interType);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;

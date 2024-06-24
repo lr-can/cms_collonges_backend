@@ -35,4 +35,46 @@ async function insertInterventionNotif(data) {
     }
 }
 
-module.exports = { insertInterventionNotif};
+async function giveInterventionType(titre) {
+    let interTypeDictionnary = {};
+
+    try {
+        const response = await fetch('https://opensheet.elk.sh/19kgbE-Z4kIbM49-rVE0hv9ihMBv_a5hOzP9DAa1CHt8/1');
+        const data = await response.json();
+
+        data.forEach(row => {
+            const interventionCode = row['codeSinistre']; // Correction ici
+            const libelleMajSinistre = row['libelleMajSinistre'];
+            let value = "";
+
+            if (interventionCode.startsWith('1')) {
+                value = "SSUAP";
+            } else if (interventionCode.startsWith('2')) {
+                if (/^2B\d{2}$/.test(interventionCode)) {
+                    value = "Violences_Urbaines";
+                } else {
+                    value = "Accident";
+                }
+            } else if (interventionCode.startsWith('3')) {
+                if (interventionCode.length === 3) {
+                    value = "Violences_Urbaines_Graves";
+                } else {
+                    value = "Incendie";
+                }
+            } else if (interventionCode.startsWith('4') || interventionCode.startsWith('5')) {
+                value = "PPBE";
+            }
+
+            interTypeDictionnary[libelleMajSinistre] = value;
+        });
+
+        const type = interTypeDictionnary[titre];
+        return { type: type };
+
+    } catch (err) {
+        console.error('Error fetching data:', err);
+        throw err;
+    }
+}
+
+module.exports = { insertInterventionNotif, giveInterventionType};
