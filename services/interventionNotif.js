@@ -53,7 +53,7 @@ async function giveInterventionType(titre) {
             if (interventionCode.startsWith('1')) {
                 value = "SSUAP";
             } else if (interventionCode.startsWith('2')) {
-                if (/^2B\d{2}$/.test(interventionCode)) {
+                if (/^2[AB]\d{2}$/.test(interventionCode)) {
                     value = "Violences_Urbaines";
                 } else {
                     value = "Accident";
