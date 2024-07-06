@@ -179,21 +179,21 @@ async function generatePDFRecap() {
             </div>
             <div class="cell ${cellStyleReserve}">
             ${row.realReserveCount}
-            ${row.expectedReserveCount - row.realReserveCount > 0 ? `( -${Math.abs(row.expectedReserveCount - row.realReserveCount)} )` : ''}
-            ${row.expectedReserveCount - row.realReserveCount < 0 ? `( +${Math.abs(row.expectedReserveCount - row.realReserveCount)} )` : ''}
+            ${row.expectedReserveCount - row.realReserveCount > 0 ? `(-${Math.abs(row.expectedReserveCount - row.realReserveCount)})` : ''}
+            ${row.expectedReserveCount - row.realReserveCount < 0 ? `(+${Math.abs(row.expectedReserveCount - row.realReserveCount)})` : ''}
             </div>
             <div class="cell ${cellStyleVSAV}">
             ${row.realVsavCount}
-            ${row.expectedVsavCount - row.realVsavCount > 0 ? `( -${Math.abs(row.expectedVsavCount - row.realVsavCount)} )` : ''}
-            ${row.expectedVsavCount - row.realVsavCount < 0 ? `( +${Math.abs(row.expectedVsavCount - row.realVsavCount)} )` : ''}
+            ${row.expectedVsavCount - row.realVsavCount > 0 ? `(-${Math.abs(row.expectedVsavCount - row.realVsavCount)})` : ''}
+            ${row.expectedVsavCount - row.realVsavCount < 0 ? `(+${Math.abs(row.expectedVsavCount - row.realVsavCount)})` : ''}
             </div>
             <div class="cell gray">
             ${row.totalExpectedCount}
             </div>
             <div class="cell ${cellStyle}">
             ${row.realTotalCount}
-            ${row.totalExpectedCount - row.realTotalCount > 0 ? `( -${Math.abs(row.totalExpectedCount - row.realTotalCount)} )` : ''}
-            ${row.totalExpectedCount - row.realTotalCount < 0 ? `( +${Math.abs(row.totalExpectedCount - row.realTotalCount)} )` : ''}
+            ${row.totalExpectedCount - row.realTotalCount > 0 ? `(-${Math.abs(row.totalExpectedCount - row.realTotalCount)})` : ''}
+            ${row.totalExpectedCount - row.realTotalCount < 0 ? `(+${Math.abs(row.totalExpectedCount - row.realTotalCount)})` : ''}
             </div>
         </div>
         `;
