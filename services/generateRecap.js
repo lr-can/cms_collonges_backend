@@ -222,8 +222,6 @@ async function generatePDFRecap() {
             }}};
         const pdfContent = htmlHeader + htmlBody + htmlFooter;
         
-        fs.unlinkSync('./recap.pdf');
-        
         return new Promise((resolve, reject) => {
             pdf.create(pdfContent, options).toFile('./recap.pdf', async (err, res) => {
                 if (err) {
