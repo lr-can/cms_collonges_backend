@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
         res.send(page); 
     } catch (err) {
         console.error(err);
-        res.status(500).send('Erreur du serveur');
+        res.status(500).send('Internal Server Error: ' + err.message);
     }
 });
 
