@@ -29,9 +29,8 @@ async function generatePDFRecap() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Récapitulatif - CMS Collonges</title>
         <style>
-            @import url(https://db.onlinewebfonts.com/c/06bac77bab58bc871a4d97b66f9a1af0?family=Marianne);
             body {
-                    font-family: 'Marianne';
+                    font-family: 'Arial', sans-serif;
                 }
             table {
                 width: 100%;
@@ -170,57 +169,61 @@ async function generatePDFRecap() {
         htmlBody += `
         <div class="row">
             <div class="cell ${materielNom}">
-                ${row.nomMateriel}
+            ${row.nomMateriel}
             </div>
             <div class="cell gray">
-                ${row.expectedReserveCount}
+            ${row.expectedReserveCount}
             </div>
             <div class="cell gray">
-                ${row.expectedVsavCount}
+            ${row.expectedVsavCount}
             </div>
             <div class="cell ${cellStyleReserve}">
-                ${row.realReserveCount}
+            ${row.realReserveCount}
+            ${row.expectedReserveCount - row.realReserveCount > 0 ? `( -${Math.abs(row.expectedReserveCount - row.realReserveCount)} )` : ''}
+            ${row.expectedReserveCount - row.realReserveCount < 0 ? `( +${Math.abs(row.expectedReserveCount - row.realReserveCount)} )` : ''}
             </div>
             <div class="cell ${cellStyleVSAV}">
-                ${row.realVsavCount}
+            ${row.realVsavCount}
+            ${row.expectedVsavCount - row.realVsavCount > 0 ? `( -${Math.abs(row.expectedVsavCount - row.realVsavCount)} )` : ''}
+            ${row.expectedVsavCount - row.realVsavCount < 0 ? `( +${Math.abs(row.expectedVsavCount - row.realVsavCount)} )` : ''}
             </div>
             <div class="cell gray">
-                ${row.totalExpectedCount}
+            ${row.totalExpectedCount}
             </div>
             <div class="cell ${cellStyle}">
-                ${row.realTotalCount}
+            ${row.realTotalCount}
+            ${row.totalExpectedCount - row.realTotalCount > 0 ? `( -${Math.abs(row.totalExpectedCount - row.realTotalCount)} )` : ''}
+            ${row.totalExpectedCount - row.realTotalCount < 0 ? `( +${Math.abs(row.totalExpectedCount - row.realTotalCount)} )` : ''}
             </div>
         </div>
         `;
     });
 
-        const options = {
-    "height": "11.25in",
-    "width": "8.5in",
-    "header": {
-        "height": "20mm"
-    },
-    "footer": {
-        "height": "20mm",
-        "contents": {
-            default: '<div style="width:100%;text-align:right">{{page}}</span>/<span>{{pages}}</div>',
-        }
-    },
-    "timeout": 120000 // Augmenter le délai d'attente à 120 secondes
-};
+        const options = { format: 'A4',
+        "header": {
+            "height": "20mm",
+            "contents": {
+                first: '',
+              default: '<div style="text-align:center">Etat de la base de données - CMS Collonges</div>', // fallback value
+            }
+        },
+          "footer": {
+            "height": "20mm",
+            "contents": {
+              default: '<div style="width:100%;text-align:right">{{page}}</span>/<span>{{pages}}</div>', // fallback value
+            }}};
         const pdfContent = htmlHeader + htmlBody + htmlFooter;
 
-        return new Promise((resolve, reject) => {
-            pdf.create(pdfContent, options).toFile('./recap.pdf', async (err, res) => {
+        pdf.create(pdfContent, options).toFile('./recap.pdf', async (err, res) => {
             if (err) {
                 console.error(err);
-                reject(err);
-            } else {
-                console.log('PDF generated successfully');
-                resolve(pdfContent);
+                return;
             }
-            });
+            console.log('PDF generated successfully');
+            
         });
+        await helper.timeout(15000);
+        return pdfContent;
 }
 
 
