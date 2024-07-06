@@ -194,31 +194,33 @@ async function generatePDFRecap() {
         `;
     });
 
-        const options = { format: 'A4',
+    const options = {
+        "height": "11.25in",
+        "width": "8.5in",
         "header": {
+            "height": "20mm"
+        },
+        "footer": {
             "height": "20mm",
             "contents": {
-                first: '',
-              default: '<div style="text-align:center">Etat de la base de données - CMS Collonges</div>', // fallback value
+                default: '<div style="width:100%;text-align:right">{{page}}</span>/<span>{{pages}}</div>',
             }
         },
-          "footer": {
-            "height": "20mm",
-            "contents": {
-              default: '<div style="width:100%;text-align:right">{{page}}</span>/<span>{{pages}}</div>', // fallback value
-            }}};
+        "timeout": 120000 // Augmenter le délai d'attente à 120 secondes
+    };
         const pdfContent = htmlHeader + htmlBody + htmlFooter;
 
-        pdf.create(pdfContent, options).toFile('./recap.pdf', async (err, res) => {
+        return new Promise((resolve, reject) => {
+            pdf.create(pdfContent, options).toFile('./recap.pdf', async (err, res) => {
             if (err) {
                 console.error(err);
-                return;
+                reject(err);
+            } else {
+                console.log('PDF generated successfully');
+                resolve(pdfContent);
             }
-            console.log('PDF generated successfully');
-            
+            });
         });
-        await helper.timeout(10000);
-        return pdfContent;
 }
 
 
