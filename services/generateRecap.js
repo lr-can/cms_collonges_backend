@@ -221,29 +221,16 @@ async function generatePDFRecap() {
               default: `<div style="width:100%;text-align:right; margin-right:30px">{{page}}</span>/<span>{{pages}}<br>${timeStamp}</div>`, // fallback value
             }}};
         const pdfContent = htmlHeader + htmlBody + htmlFooter;
-        const date = new Date();
-        const dateString = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-        const fileName =  `Récap_Stocks_${dateString}.pdf`;
 
         return new Promise((resolve, reject) => {
             pdf.create(pdfContent, options).toBuffer((err, buffer) => {
-                if (err) {
-                    console.error(err);
-                    reject(err);
-                } else {
-                    console.log('PDF generated successfully');
-                    // Utiliser le buffer ici pour sauvegarder le fichier
-                    const nomFichier = fileName;
-                    fs.writeFile(nomFichier, buffer, (err) => {
-                        if (err) {
-                            console.error('Erreur lors de la sauvegarde du fichier:', err);
-                            reject(err); // Rejeter la promesse initiale en cas d'erreur
-                        } else {
-                            console.log('PDF généré et sauvegardé avec succès:', nomFichier);
-                            resolve(buffer); // Résoudre avec le nom du fichier
-                        }
-                    });
-                }
+            if (err) {
+                console.error(err);
+                reject(err);
+            } else {
+                console.log('PDF generated successfully');
+                resolve(buffer);
+            }
             });
         });
 }
