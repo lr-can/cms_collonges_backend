@@ -85,6 +85,14 @@ async function generatePDFRecap() {
                 color: #1f8d49;
                 font-weight: bold;
             }
+                        .heading{
+            display: flex;
+            }
+            .heading > img{
+            width: 30%}
+            .heading > h1{
+            text-align : center;
+            width: 70%}
         </style>
     </head>
     <body>
@@ -198,7 +206,7 @@ async function generatePDFRecap() {
         </div>
         `;
     });
-
+        const timeStamp = new Date().toLocaleString('fr-FR');
         const options = { format: 'A4',
         "header": {
             "height": "20mm",
@@ -210,7 +218,7 @@ async function generatePDFRecap() {
           "footer": {
             "height": "20mm",
             "contents": {
-              default: '<div style="width:100%;text-align:right">{{page}}</span>/<span>{{pages}}</div>', // fallback value
+              default: `<div style="width:100%;text-align:right; margin-right:30px">{{page}}</span>/<span>{{pages}}<br>${timeStamp}</div>`, // fallback value
             }}};
         const pdfContent = htmlHeader + htmlBody + htmlFooter;
 
