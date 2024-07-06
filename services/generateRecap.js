@@ -219,7 +219,8 @@ async function generatePDFRecap() {
             "height": "20mm",
             "contents": {
               default: `<div style="width:100%;text-align:right; margin-right:30px">{{page}}</span>/<span>{{pages}}<br>${timeStamp}</div>`, // fallback value
-            }}};
+            }},
+            "phantomPath": './node_modules/phantomjs-prebuilt/lib/phantom/bin/phantomjs.exe',};
         const pdfContent = htmlHeader + htmlBody + htmlFooter;
 
         return new Promise((resolve, reject) => {
