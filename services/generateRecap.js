@@ -230,7 +230,7 @@ async function generatePDFRecap() {
             console.log('PDF generated successfully');
             
         });
-        await helper.timeout(15000);
+        await helper.timeout(5000);
         return pdfContent;
 }
 
