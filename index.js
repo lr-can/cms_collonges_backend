@@ -24,6 +24,7 @@ const reinitialiserRetourInter = require("./routes/reinitialiseRetourInterventio
 const generatePDF = require("./routes/generatePDF");
 const notif = require("./routes/insertNotification");
 const interType = require("./routes/interventionType");
+const getRecap = require("./routes/getRecapPDF");
 
 app.use(express.json());
 app.use(cors());
@@ -56,7 +57,7 @@ app.use("/getReserveItems", getReserveItems);
 app.use("/dispoReserve", dispoReserve);
 app.use("/reinitialiserRetourInter", reinitialiserRetourInter);
 app.use("/generatePDF", generatePDF);
-app.use("/getRecap", generatePDF);
+app.use("/getRecap", getRecap);
 app.use("/notif", notif);
 app.use("/interventionType", interType);
 
