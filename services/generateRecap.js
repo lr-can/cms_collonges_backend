@@ -194,20 +194,20 @@ async function generatePDFRecap() {
         `;
     });
 
-    const options = {
-        "height": "11.25in",
-        "width": "8.5in",
-        "header": {
-            "height": "20mm"
-        },
-        "footer": {
-            "height": "20mm",
-            "contents": {
-                default: '<div style="width:100%;text-align:right">{{page}}</span>/<span>{{pages}}</div>',
-            }
-        },
-        "timeout": 120000 // Augmenter le délai d'attente à 120 secondes
-    };
+        const options = {
+    "height": "11.25in",
+    "width": "8.5in",
+    "header": {
+        "height": "20mm"
+    },
+    "footer": {
+        "height": "20mm",
+        "contents": {
+            default: '<div style="width:100%;text-align:right">{{page}}</span>/<span>{{pages}}</div>',
+        }
+    },
+    "timeout": 120000 // Augmenter le délai d'attente à 120 secondes
+};
         const pdfContent = htmlHeader + htmlBody + htmlFooter;
 
         return new Promise((resolve, reject) => {
