@@ -22,7 +22,6 @@ const getReserveItems = require("./routes/getReserveItems");
 const dispoReserve = require("./routes/dispoReserve");
 const reinitialiserRetourInter = require("./routes/reinitialiseRetourIntervention");
 const generatePDF = require("./routes/generatePDF");
-const getRecapPDF = require("./routes/getRecapPDF");
 const notif = require("./routes/insertNotification");
 const interType = require("./routes/interventionType");
 
@@ -57,7 +56,7 @@ app.use("/getReserveItems", getReserveItems);
 app.use("/dispoReserve", dispoReserve);
 app.use("/reinitialiserRetourInter", reinitialiserRetourInter);
 app.use("/generatePDF", generatePDF);
-app.use("/getRecap", getRecapPDF);
+app.use("/getRecap", generatePDF);
 app.use("/notif", notif);
 app.use("/interventionType", interType);
 
