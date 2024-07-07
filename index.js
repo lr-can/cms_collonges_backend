@@ -57,7 +57,7 @@ app.use("/getReserveItems", getReserveItems);
 app.use("/dispoReserve", dispoReserve);
 app.use("/reinitialiserRetourInter", reinitialiserRetourInter);
 app.use("/generatePDF", generatePDF);
-app.use("/getRecap", getRecap);
+app.use("/getRecap", generatePDF);
 app.use("/notif", notif);
 app.use("/interventionType", interType);
 
