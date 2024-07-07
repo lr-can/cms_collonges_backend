@@ -1,6 +1,7 @@
 const db = require('./db');
 const helper = require('../helper');
 const config = require('../config');
+const fs = require('fs');
 
 async function getPeremption(page = 1){
   const offset = helper.getOffset(page, config.listPerPage);
@@ -408,6 +409,23 @@ async function getPeremption(page = 1){
       return {message};
     }
 
+      async function exportDataBase(page = 1) {
+        const stockData = await db.query('SELECT * FROM stock');
+        const retourInterventionData = await db.query('SELECT * FROM retourIntervention');
+        const materielsData = await db.query('SELECT * FROM materiels');
+
+        const data = {
+          stock: helper.emptyOrRows(stockData),
+          retourIntervention: helper.emptyOrRows(retourInterventionData),
+          materiels: helper.emptyOrRows(materielsData)
+        };
+        const meta = {page};
+  
+        return {
+          data,
+          meta
+        }
+      };
 
   
   module.exports = {
@@ -429,5 +447,6 @@ async function getPeremption(page = 1){
     archivePharma,
     getReserveItems,
     dispoReserve,
-    reinitialiserRetourInter
+    reinitialiserRetourInter,
+    exportDataBase
   }

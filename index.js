@@ -25,6 +25,7 @@ const generatePDF = require("./routes/generatePDF");
 const notif = require("./routes/insertNotification");
 const interType = require("./routes/interventionType");
 const getRecap = require("./routes/getRecapPDF");
+const exportDataBase = require("./routes/exportDataBase");
 
 app.use(express.json());
 app.use(cors());
@@ -60,6 +61,7 @@ app.use("/generatePDF", generatePDF);
 app.use("/getRecap", generatePDF);
 app.use("/notif", notif);
 app.use("/interventionType", interType);
+app.use("/exportDataBase", exportDataBase);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
