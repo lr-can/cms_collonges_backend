@@ -1,7 +1,7 @@
 const helper = require('../helper');
 const dataBase = require('./db');
 const fs = require('fs');
-const pdf = require('html-pdf');
+const axios = require('axios');
 
 async function generatePDFRecap() {
     const rowsRealCount = await dataBase.query(
@@ -206,33 +206,8 @@ async function generatePDFRecap() {
         </div>
         `;
     });
-        const timeStamp = new Date().toLocaleString('fr-FR');
-        const options = { format: 'A4',
-        "header": {
-            "height": "20mm",
-            "contents": {
-                first: '',
-              default: '<div style="text-align:center">Etat de la base de données - CMS Collonges</div>', // fallback value
-            }
-        },
-          "footer": {
-            "height": "20mm",
-            "contents": {
-              default: `<div style="width:100%;text-align:right; margin-right:30px">{{page}}</span>/<span>{{pages}}<br>${timeStamp}</div>`, // fallback value
-            }}};
         const pdfContent = htmlHeader + htmlBody + htmlFooter;
-        
-        return new Promise((resolve, reject) => {
-            pdf.create(pdfContent, options).toFile('./recap.pdf', async (err, res) => {
-                if (err) {
-                    console.error(err);
-                    reject(err);
-                } else {
-                    console.log('PDF generated successfully');
-                    resolve(pdfContent);
-                }
-            });
-        });
+        return pdfContent;
 }
 
 
