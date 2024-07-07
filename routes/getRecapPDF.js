@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
         res.sendFile(filePath); 
     } catch (err) {
         console.error(err);
-        res.status(500).send('Erreur du serveur');
+        res.status(500).send('Erreur du serveur', err.message);
     }
 });
 
