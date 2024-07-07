@@ -4,8 +4,8 @@ const path = require('path');
 const generatePDFRecap = require('../services/generateRecap');
 
 router.get('/', async (req, res) => {
-    await generatePDFRecap.generatePDFRecap();
     try {
+        await generatePDFRecap.generatePDFRecap();
         const filePath = path.join(__dirname, '../recap.pdf'); 
         res.sendFile(filePath); 
     } catch (err) {
