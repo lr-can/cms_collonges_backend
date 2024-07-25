@@ -26,6 +26,8 @@ const notif = require("./routes/insertNotification");
 const interType = require("./routes/interventionType");
 const getRecap = require("./routes/getRecapPDF");
 const exportDataBase = require("./routes/exportDataBase");
+const getDoctor = require("./routes/getDoctor");
+const getAsupAgents = require("./routes/getAsupAgents");
 
 app.use(express.json());
 app.use(cors());
@@ -62,6 +64,8 @@ app.use("/getRecap", generatePDF);
 app.use("/notif", notif);
 app.use("/interventionType", interType);
 app.use("/exportDataBase", exportDataBase);
+app.use("/getDoctor", getDoctor);
+app.use("/getAsupAgents", getAsupAgents);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
