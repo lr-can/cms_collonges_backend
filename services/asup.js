@@ -1,6 +1,7 @@
 const db = require('./db');
 const helper = require('../helper');
 const config = require('../config');
+const { google } = require('googleapis');
 const fs = require('fs');
 let fetch
 
@@ -22,27 +23,73 @@ async function getAsupAgent(matricule) {
         return { nomAgent, prenomAgent, grade, asup1, asup2 };
     } catch (error) {
         console.error(error);
-        throw new Error('Aucun agent ne correspond à au matricule : ' + matricule + '.');
+        throw new Error('Aucun agent ne correspond au matricule ' + matricule + '.');
     }
 }
 async function getDoctor(RPPS) {
     if (!fetch) {
         fetch = (await import('node-fetch')).default;
     };
+    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+        const auth = new google.auth.JWT(
+            config.google.client_email,
+            null,
+            privateKey,
+            ['https://www.googleapis.com/auth/spreadsheets']
+        );
+
+    const sheets = google.sheets({version: 'v4', auth});
+    const spreadsheetId = config.google.spreadsheetId2;
+    const rppsNumber = RPPS;
+    const range = 'recherche_RPPS!A2';
+
     try {
-        const doctors = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/RPPS');
-        const data = await doctors.json();
+        // Append the new row to the spreadsheet
+        await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: [
+                    [
+                    `=MATCH(${rppsNumber}; RPPS!A:A; 0)`
+                        ]
+                    ],
+            },
+        });
         
-        const doctor = data.find(doctor => doctor.identifiantRPPS === RPPS);
-        if (!doctor) {
-            throw new Error('Médecin non trouvé');
+    } catch (err) {
+        console.error('Error appending row:', err);
+        throw err; // Renvoie l'erreur pour être gérée par l'appelant
+    }
+    try {
+        const response = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/recherche_RPPS');
+        const data = await response.json();
+        
+        const rowNumber = data[0].RowNumber;
+
+        const range = `RPPS!A${rowNumber}:C${rowNumber}`;
+
+        const response2 = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range,
+        });
+
+        console.log(response);
+
+        const values = response2.data.values;
+
+        if (!values || values.length === 0) {
+            throw new Error('No data found in the specified row.');
         }
+
+        const [identifiantRPPS, nomExercice, prenomExercice] = values[0];
+
+        return { identifiantRPPS, nomExercice, prenomExercice };
         
-        const { nomExercice, prenomExercice } = doctor;
-        return { nomExercice, prenomExercice };
     } catch (error) {
         console.error(error);
-        throw new Error('Aucun médecin trouvé pour ce numéro RPPS : ' + RPPS);
+        throw new Error(error);
     }
 }
 

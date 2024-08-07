@@ -23,7 +23,8 @@ const config = {
             "universe_domain": process.env.GG_universe_domain,
             "script_id": process.env.GG_script_id,
             "script_function": process.env.GG_script_function,
-            "spreadsheetId": process.env.GG_spreadsheetId
+            "spreadsheetId": process.env.GG_spreadsheetId,
+            "spreadsheetId2": process.env.GG_spreadsheetId2
     },
     listPerPage: 10000000,
 };
