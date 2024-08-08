@@ -28,6 +28,7 @@ const getRecap = require("./routes/getRecapPDF");
 const exportDataBase = require("./routes/exportDataBase");
 const getDoctor = require("./routes/getDoctor");
 const getAsupAgents = require("./routes/getAsupAgents");
+const getMedicamentsForCare = require("./routes/getMedicamentsForCare");
 
 app.use(express.json());
 app.use(cors());
@@ -66,6 +67,7 @@ app.use("/interventionType", interType);
 app.use("/exportDataBase", exportDataBase);
 app.use("/getDoctor", getDoctor);
 app.use("/getAsupAgents", getAsupAgents);
+app.use("/getMedicamentsForCare", getMedicamentsForCare);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
