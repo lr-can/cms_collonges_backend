@@ -108,8 +108,35 @@ async function getMedicamentsforCare(care, affectationVSAV, page = 1){
       }
 }
 
+async function newInterventionAsup(formData){
+    const currentidUtilisation = await db.query(
+        `SELECT MAX(idUtilisation) FROM utilisationsASUP;`
+    );
+    const idUtilisation = currentidUtilisation + 1;
+    
+    let query1 = `INSERT INTO utilisationsASUP idUtilisation, matriculeAgent, dateActe, medecinPrescripteur, numIntervention, acteSoin, idMedicamentsList, effetsSecondaires, commentaire
+    VALUES (${idUtilisation}, "${data.matricule}", '', "${data.medecinPrescripteur}", "${data.numIntervention}", "${data.acteSoin}", "${data.idMedicamentsList}", "${data.effetsSecondaires}", "${data.commentaire}");`
+
+    let query2 = '';
+    for (const item of formData.idMedicamentsList) {
+        query2 += `UPDATE asupStock
+                                SET idStatutAsup = 2, idUtilisationAsup = ${idUtilisation}
+                                WHERE idStockAsup = ${item};`;
+    }
+    const rows = await db.query(
+        query1 + query2, 
+    );
+    const data = helper.emptyOrRows(rows);
+    const meta = {message: 'Insertion réussie'};
+    return {
+        data,
+        meta
+    }
+}
+
 module.exports = {
     getAsupAgent,
     getDoctor,
-    getMedicamentsforCare
+    getMedicamentsforCare,
+    newInterventionAsup
 };
