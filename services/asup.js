@@ -93,11 +93,11 @@ async function getDoctor(RPPS) {
     }
 }
 
-async function getMedicamentsforCare(care, page = 1){
+async function getMedicamentsforCare(care, affectationVSAV, page = 1){
       const rows = await db.query(
         `SELECT asupStock.idStockAsup, asupStock.idMedicament, asupStock.numLot, asupStock.datePeremption, medicaments.nomMedicament
         FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
-        WHERE medicaments.acteSoin LIKE '${care}' AND asupStock.idStatutAsup = 1 ORDER BY idMedicament;`
+        WHERE medicaments.acteSoin LIKE '${care}' AND asupStock.idStatutAsup = 1 AND affectationVSAV = ${affectationVSAV} ORDER BY idMedicament;`
       );
       const data = helper.emptyOrRows(rows);
       const meta = {page};
