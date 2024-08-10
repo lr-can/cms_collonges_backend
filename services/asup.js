@@ -112,7 +112,10 @@ async function newInterventionAsup(formData){
     const currentidUtilisation = await db.query(
         `SELECT MAX(idUtilisation) FROM utilisationsASUP;`
     );
-    const idUtilisation = currentidUtilisation + 1;
+    if (currentidUtilisation[0]['MAX(idUtilisation)'] == null) {
+        currentidUtilisation[0]['MAX(idUtilisation)'] = 0;
+    };
+    const idUtilisation = parseInt(currentidUtilisation[0]['MAX(idUtilisation)']) + 1;
     
     let query1 = `INSERT INTO utilisationsASUP (idUtilisation, matriculeAgent, dateActe, medecinPrescripteur, numIntervention, acteSoin, idMedicamentsList, effetsSecondaires, commentaire)
         VALUES (${idUtilisation}, "${formData.matricule}", "", "${formData.medecinPrescripteur}", "${formData.numIntervention}", "${formData.acteSoin}", "${formData.idMedicamentsList}", "${formData.effetsSecondaires}", "${formData.commentaire}");`
