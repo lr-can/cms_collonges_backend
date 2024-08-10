@@ -108,27 +108,46 @@ async function getMedicamentsforCare(care, affectationVSAV, page = 1){
       }
 }
 
-async function newInterventionAsup(formData){
+async function newInterventionAsup(formData) {
     const currentidUtilisation = await db.query(
         `SELECT MAX(idUtilisation) FROM utilisationsASUP;`
     );
     if (currentidUtilisation[0]['MAX(idUtilisation)'] == null) {
         currentidUtilisation[0]['MAX(idUtilisation)'] = 0;
-    };
-    const idUtilisation = parseInt(currentidUtilisation[0]['MAX(idUtilisation)']) + 1;
-    
-    let query1 = `INSERT INTO utilisationsASUP (idUtilisation, matriculeAgent, medecinPrescripteur, numIntervention, acteSoin, idMedicamentsList, effetsSecondaires, commentaire)
-        VALUES (${idUtilisation}, "${formData.matricule}", "${formData.medecinPrescripteur}", "${formData.numIntervention}", "${formData.acteSoin}", "${formData.idMedicamentsList}", "${formData.effetsSecondaires}", "${formData.commentaire}");`
-    const rows = await db.query(query1);
-    for (const item of formData.idMedicamentsList.split(',')) {
-        await db.query(`UPDATE asupStock SET idStatutAsup = 2, idUtilisationAsup = ${idUtilisation} WHERE idStockAsup = ${item};`);
     }
+    const idUtilisation = parseInt(currentidUtilisation[0]['MAX(idUtilisation)']) + 1;
+
+    let fields = ['idUtilisation', 'matriculeAgent', 'medecinPrescripteur', 'numIntervention', 'acteSoin'];
+    let values = [idUtilisation, `"${formData.matricule}"`, `"${formData.medecinPrescripteur}"`, `"${formData.numIntervention}"`, `"${formData.acteSoin}"`];
+
+    if (formData.idMedicamentsList) {
+        fields.push('idMedicamentsList');
+        values.push(`"${formData.idMedicamentsList}"`);
+    }
+    if (formData.effetsSecondaires) {
+        fields.push('effetsSecondaires');
+        values.push(`"${formData.effetsSecondaires}"`);
+    }
+    if (formData.commentaire) {
+        fields.push('commentaire');
+        values.push(`"${formData.commentaire}"`);
+    }
+
+    let query1 = `INSERT INTO utilisationsASUP (${fields.join(', ')}) VALUES (${values.join(', ')});`;
+    const rows = await db.query(query1);
+
+    if (formData.idMedicamentsList) {
+        for (const item of formData.idMedicamentsList.split(',')) {
+            await db.query(`UPDATE asupStock SET idStatutAsup = 2, idUtilisationAsup = ${idUtilisation} WHERE idStockAsup = ${item};`);
+        }
+    }
+
     const data = helper.emptyOrRows(rows);
-    const meta = {message: 'Insertion réussie'};
+    const meta = { message: 'Insertion réussie' };
     return {
         data,
         meta
-    }
+    };
 }
 
 module.exports = {
