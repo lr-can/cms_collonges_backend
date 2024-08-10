@@ -108,14 +108,14 @@ async function getMedicamentsforCare(care, affectationVSAV, page = 1){
       }
 }
 
-async function newInterventionAsup(data){
+async function newInterventionAsup(formData){
     const currentidUtilisation = await db.query(
         `SELECT MAX(idUtilisation) FROM utilisationsASUP;`
     );
     const idUtilisation = currentidUtilisation + 1;
     
     let query1 = `INSERT INTO utilisationsASUP idUtilisation, matriculeAgent, dateActe, medecinPrescripteur, numIntervention, acteSoin, idMedicamentsList, effetsSecondaires, commentaire
-    VALUES (${idUtilisation}, "${data.matricule}", '', "${data.medecinPrescripteur}", "${data.numIntervention}", "${data.acteSoin}", "${data.idMedicamentsList}", "${data.effetsSecondaires}", "${data.commentaire}");`
+    VALUES (${idUtilisation}, "${formData.matricule}", '', "${formData.medecinPrescripteur}", "${formData.numIntervention}", "${formData.acteSoin}", "${formData.idMedicamentsList}", "${formData.effetsSecondaires}", "${formData.commentaire}");`
 
     let query2 = '';
     for (const item of formData.idMedicamentsList) {
