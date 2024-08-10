@@ -122,9 +122,7 @@ async function newInterventionAsup(formData){
 
     let query2 = '';
     for (const item of formData.idMedicamentsList.split(',')) {
-        query2 += `UPDATE asupStock
-                                SET idStatutAsup = 2, idUtilisationAsup = ${idUtilisation}
-                                WHERE idStockAsup = ${item};`;
+        query2 += `UPDATE asupStock SET idStatutAsup = 2, idUtilisationAsup = ${idUtilisation} WHERE idStockAsup = ${item};`;
     }
     const rows = await db.query(
         query1 + query2, 
