@@ -117,8 +117,8 @@ async function newInterventionAsup(formData){
     };
     const idUtilisation = parseInt(currentidUtilisation[0]['MAX(idUtilisation)']) + 1;
     
-    let query1 = `INSERT INTO utilisationsASUP (idUtilisation, matriculeAgent, dateActe, medecinPrescripteur, numIntervention, acteSoin, idMedicamentsList, effetsSecondaires, commentaire)
-        VALUES (${idUtilisation}, "${formData.matricule}", "", "${formData.medecinPrescripteur}", "${formData.numIntervention}", "${formData.acteSoin}", "${formData.idMedicamentsList}", "${formData.effetsSecondaires}", "${formData.commentaire}");`
+    let query1 = `INSERT INTO utilisationsASUP (idUtilisation, matriculeAgent, medecinPrescripteur, numIntervention, acteSoin, idMedicamentsList, effetsSecondaires, commentaire)
+        VALUES (${idUtilisation}, "${formData.matricule}", "${formData.medecinPrescripteur}", "${formData.numIntervention}", "${formData.acteSoin}", "${formData.idMedicamentsList}", "${formData.effetsSecondaires}", "${formData.commentaire}");`
     const rows = await db.query(query1);
     for (const item of formData.idMedicamentsList.split(',')) {
         await db.query(`UPDATE asupStock SET idStatutAsup = 2, idUtilisationAsup = ${idUtilisation} WHERE idStockAsup = ${item};`);
