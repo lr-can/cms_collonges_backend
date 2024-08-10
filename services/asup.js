@@ -108,7 +108,7 @@ async function getMedicamentsforCare(care, affectationVSAV, page = 1){
       }
 }
 
-async function newInterventionAsup(formData){
+async function newInterventionAsup(data){
     const currentidUtilisation = await db.query(
         `SELECT MAX(idUtilisation) FROM utilisationsASUP;`
     );
