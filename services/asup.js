@@ -119,14 +119,10 @@ async function newInterventionAsup(formData){
     
     let query1 = `INSERT INTO utilisationsASUP (idUtilisation, matriculeAgent, dateActe, medecinPrescripteur, numIntervention, acteSoin, idMedicamentsList, effetsSecondaires, commentaire)
         VALUES (${idUtilisation}, "${formData.matricule}", "", "${formData.medecinPrescripteur}", "${formData.numIntervention}", "${formData.acteSoin}", "${formData.idMedicamentsList}", "${formData.effetsSecondaires}", "${formData.commentaire}");`
-
-    let query2 = '';
+    const rows = await db.query(query1);
     for (const item of formData.idMedicamentsList.split(',')) {
-        query2 += `UPDATE asupStock SET idStatutAsup = 2, idUtilisationAsup = ${idUtilisation} WHERE idStockAsup = ${item};`;
+        await db.query(`UPDATE asupStock SET idStatutAsup = 2, idUtilisationAsup = ${idUtilisation} WHERE idStockAsup = ${item};`);
     }
-    const rows = await db.query(
-        query1 + query2, 
-    );
     const data = helper.emptyOrRows(rows);
     const meta = {message: 'Insertion réussie'};
     return {
