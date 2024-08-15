@@ -19,8 +19,8 @@ async function getAsupAgent(matricule) {
             throw new Error('Agent non trouvé');
         }
         
-        const { nomAgent, prenomAgent, grade, asup1, asup2 } = agent;
-        return { nomAgent, prenomAgent, grade, asup1, asup2 };
+        const { nomAgent, prenomAgent, grade, asup1, asup2, email } = agent;
+        return { nomAgent, prenomAgent, grade, asup1, asup2, email };
     } catch (error) {
         console.error(error);
         throw new Error('Aucun agent ne correspond au matricule ' + matricule + '.');
