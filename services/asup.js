@@ -159,18 +159,19 @@ async function sendEmail(emailData){
     Voici les détails de l'intervention :
 
     ---------------------------------------------
-    Agent: ${emailData.agent}
-    Médecin: ${emailData.medecin}
-    Soin: ${emailData.soin}
-    Médicaments: ${emailData.medicaments}
-    Effets secondaires: ${emailData.effetsSecondaires}
-    Commentaire: ${emailData.commentaire}
+    Agent : ${emailData.agent}
+    Médecin : ${emailData.medecin}
+    Véhicule : ${emailData.vsav}
+    Soin : ${emailData.soin}
+    Médicaments : ${emailData.soin != 'ECG 12 dérivations' || emailData.soin != 'Prise de l\'hémoglobinémie' ? emailData.medicaments : 'Aucun médicament nécessaire'}
+    Effets secondaires : ${emailData.effetsSecondaires ? emailData.effetsSecondaires : 'Aucun effet secondaire renseigné'}
+    Commentaire : ${emailData.commentaire ? emailData.commentaire : 'Aucun commentaire renseigné'}
     ---------------------------------------------
 
     Respectueusement,
     Le Bureau Informatique Divers CT
     `;
-    const emailAdress = emailData.email;
+    const emailAdress = emailData.agentMail;
 
     if (!fetch) {
         fetch = (await import('node-fetch')).default;
@@ -185,10 +186,12 @@ async function sendEmail(emailData){
 
     const sheets = google.sheets({version: 'v4', auth});
     const spreadsheetId = config.google.spreadsheetId2;
+
     const lastRow = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range: 'notificationsEmail!A:A',
     }).then(response => response.data.values.length + 1);
+
     const rangeNotificationsEmail = `notificationsEmail!A2:C${lastRow}`;
     const valuesNotificationsEmail = [[emailAdress, email, ""]];
 
