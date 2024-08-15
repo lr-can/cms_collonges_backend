@@ -150,9 +150,67 @@ async function newInterventionAsup(formData) {
     };
 }
 
+async function sendEmail(emailData){
+    const currentDate = new Date().toLocaleDateString('fr-FR');
+    const email = `
+    Bonjour,
+
+    L'intervention ${emailData.intervention} (${currentDate}) a fait l'objet d'un, ou de plusieurs, acte(s) de soin sur prescription.
+    Voici les détails de l'intervention :
+
+    ---------------------------------------------
+    Agent: ${emailData.agent}
+    Médecin: ${emailData.medecin}
+    Soin: ${emailData.soin}
+    Médicaments: ${emailData.medicaments}
+    Effets secondaires: ${emailData.effetsSecondaires}
+    Commentaire: ${emailData.commentaire}
+    ---------------------------------------------
+
+    Respectueusement,
+    Le Bureau Informatique Divers CT
+    `;
+    const emailAdress = emailData.email;
+
+    if (!fetch) {
+        fetch = (await import('node-fetch')).default;
+    };
+    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+        const auth = new google.auth.JWT(
+            config.google.client_email,
+            null,
+            privateKey,
+            ['https://www.googleapis.com/auth/spreadsheets']
+        );
+
+    const sheets = google.sheets({version: 'v4', auth});
+    const spreadsheetId = config.google.spreadsheetId2;
+    const lastRow = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'notificationsEmail!A:A',
+    }).then(response => response.data.values.length + 1);
+    const rangeNotificationsEmail = `notificationsEmail!A2:C${lastRow}`;
+    const valuesNotificationsEmail = [[emailAdress, email, ""]];
+
+    try {
+        await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range: rangeNotificationsEmail,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: valuesNotificationsEmail,
+            },
+        });
+    } catch (err) {
+        console.error('Error appending row:', err);
+        throw err;
+    }
+}
+
 module.exports = {
     getAsupAgent,
     getDoctor,
     getMedicamentsforCare,
-    newInterventionAsup
+    newInterventionAsup,
+    sendEmail
 };

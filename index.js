@@ -30,6 +30,7 @@ const getDoctor = require("./routes/getDoctor");
 const getAsupAgents = require("./routes/getAsupAgents");
 const getMedicamentsForCare = require("./routes/getMedicamentsForCare");
 const newUtilisationAsup = require("./routes/newUtilisationAsup");
+const sendEmailAsup = require("./routes/sendEmailAsup");
 
 app.use(express.json());
 app.use(cors());
@@ -70,6 +71,7 @@ app.use("/getDoctor", getDoctor);
 app.use("/getAsupAgents", getAsupAgents);
 app.use("/getMedicamentsForCare", getMedicamentsForCare);
 app.use("/newUtilisationAsup", newUtilisationAsup);
+app.use("/sendEmailAsup", sendEmailAsup);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
