@@ -163,7 +163,7 @@ async function sendEmail(emailData){
     Médecin : ${emailData.medecin}
     Véhicule : ${emailData.vsav}
     Soin : ${emailData.soin}
-    Médicaments : ${emailData.soin != 'ECG 12 dérivations' || emailData.soin != 'Prise de l\'hémoglobinémie' ? emailData.medicaments : 'Aucun médicament nécessaire'}
+    Médicaments : ${emailData.medicaments ? emailData.medicaments : 'Aucun médicament renseigné'}
     Effets secondaires : ${emailData.effetsSecondaires ? emailData.effetsSecondaires : 'Aucun effet secondaire renseigné'}
     Commentaire : ${emailData.commentaire ? emailData.commentaire : 'Aucun commentaire renseigné'}
     ---------------------------------------------
