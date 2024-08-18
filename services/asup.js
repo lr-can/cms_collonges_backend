@@ -300,7 +300,7 @@ async function autoStatusReplacementPeremption(){
     peremptionDate.setMonth(peremptionDate.getMonth() + 1);
     peremptionDate.setDate(1);
 
-    let request = `UPDATE asupStock SET idStatutAsup = 3 WHERE datePeremption < '${peremptionDate.toISOString().slice(0, 10)}' AND idStatutAsup != 4;`;
+    let request = `UPDATE asupStock SET idStatutAsup = 3 WHERE datePeremption < '${peremptionDate.toISOString().slice(0, 10)}' AND idStatutAsup = 1;`;
 
     await db.query(
         request
