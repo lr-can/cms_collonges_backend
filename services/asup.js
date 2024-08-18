@@ -316,6 +316,56 @@ async function autoStatusReplacementPeremption(){
 
 }
 
+async function getRemplacementCount(){
+    const totalCount = await db.query(
+        `SELECT COUNT(*) FROM asupStock WHERE idStatutAsup = 3;`
+    );
+    const vsav1 = await db.query(
+        `SELECT 
+    m.nomMedicament, 
+    COALESCE(SUM(CASE WHEN a.idStatutAsup = 3 THEN 1 ELSE 0 END), 0) as toReplace,
+    m.prefixApp 
+FROM 
+    medicaments m 
+LEFT JOIN 
+    asupStock a 
+ON 
+    a.idMedicament = m.idMedicament 
+AND 
+    a.affectationVSAV = 1 
+GROUP BY 
+    m.idMedicament, m.nomMedicament;
+`
+    );
+    const vsav2 = await db.query(
+        `SELECT 
+    m.nomMedicament, 
+    COALESCE(SUM(CASE WHEN a.idStatutAsup = 3 THEN 1 ELSE 0 END), 0) as toReplace,
+    m.prefixApp 
+FROM 
+    medicaments m 
+LEFT JOIN 
+    asupStock a 
+ON 
+    a.idMedicament = m.idMedicament 
+AND 
+    a.affectationVSAV = 2 
+GROUP BY 
+    m.idMedicament, m.nomMedicament;
+`
+    );
+
+    const data = {
+        "vsav1": helper.emptyOrRows(vsav1),
+        "vsav2": helper.emptyOrRows(vsav2)
+    };
+    const meta = { total : totalCount };
+    return {
+        data,
+        meta
+    };
+}
+
 module.exports = {
     getAsupAgent,
     getDoctor,
@@ -324,5 +374,6 @@ module.exports = {
     sendEmail,
     addDemandePeremption,
     getDemandesPeremption,
-    autoStatusReplacementPeremption
+    autoStatusReplacementPeremption,
+    getRemplacementCount
 };

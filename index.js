@@ -34,6 +34,7 @@ const sendEmailAsup = require("./routes/sendEmailAsup");
 const addDemandePeremptionAsup = require("./routes/addDemandePeremptionAsup");
 const getLastDemandePeremptionAsup = require("./routes/getLastDemandePeremptionAsup");
 const autoStatus = require("./routes/autoStatusPeremptionAsup");
+const getAsupReplacementCount = require("./routes/getAsupReplacementCount");
 
 app.use(express.json());
 app.use(cors());
@@ -78,6 +79,7 @@ app.use("/sendEmailAsup", sendEmailAsup);
 app.use("/addDemandePeremptionAsup", addDemandePeremptionAsup);
 app.use("/getLastDemandePeremptionAsup", getLastDemandePeremptionAsup);
 app.use("/autoStatusAsup", autoStatus);
+app.use("/getAsupReplacementCount", getAsupReplacementCount);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
