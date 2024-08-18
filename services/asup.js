@@ -97,7 +97,7 @@ async function getMedicamentsforCare(care, affectationVSAV, page = 1){
       const rows = await db.query(
         `SELECT asupStock.idStockAsup, asupStock.idMedicament, asupStock.numLot, asupStock.datePeremption, medicaments.nomMedicament
         FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
-        WHERE medicaments.acteSoin LIKE '${care}' AND asupStock.idStatutAsup = 1 AND affectationVSAV = ${affectationVSAV} ORDER BY idMedicament;`
+        WHERE medicaments.acteSoin LIKE '${care}' AND asupStock.idStatutAsup = 1 OR asupStock.idStatutAsup = 3 AND affectationVSAV = ${affectationVSAV} ORDER BY idMedicament;`
       );
       const data = helper.emptyOrRows(rows);
       const meta = {page};
@@ -297,8 +297,14 @@ async function getDemandesPeremption(){
 
 async function autoStatusReplacementPeremption(){
     let peremptionDate = new Date();
-    peremptionDate.setMonth(peremptionDate.getMonth() + 1);
     peremptionDate.setDate(1);
+    
+    if (peremptionDate.getMonth() === 10 || peremptionDate.getMonth() === 11) {
+        peremptionDate.setMonth(peremptionDate.getMonth() - 10);
+        peremptionDate.setFullYear(peremptionDate.getFullYear() + 1);
+    } else {
+        peremptionDate.setMonth(peremptionDate.getMonth() + 2);
+    }
 
     let request = `UPDATE asupStock SET idStatutAsup = 3 WHERE datePeremption < '${peremptionDate.toISOString().slice(0, 10)}' AND idStatutAsup = 1;`;
 
