@@ -31,6 +31,8 @@ const getAsupAgents = require("./routes/getAsupAgents");
 const getMedicamentsForCare = require("./routes/getMedicamentsForCare");
 const newUtilisationAsup = require("./routes/newUtilisationAsup");
 const sendEmailAsup = require("./routes/sendEmailAsup");
+const addDemandePeremptionAsup = require("./routes/addDemandePeremptionAsup");
+const getLastDemandePeremptionAsup = require("./routes/getLastDemandePeremptionAsup");
 
 app.use(express.json());
 app.use(cors());
@@ -72,6 +74,8 @@ app.use("/getAsupAgents", getAsupAgents);
 app.use("/getMedicamentsForCare", getMedicamentsForCare);
 app.use("/newUtilisationAsup", newUtilisationAsup);
 app.use("/sendEmailAsup", sendEmailAsup);
+app.use("/addDemandePeremptionAsup", addDemandePeremptionAsup);
+app.use("/getLastDemandePeremptionAsup", getLastDemandePeremptionAsup);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;

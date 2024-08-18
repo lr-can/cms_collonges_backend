@@ -210,10 +210,97 @@ async function sendEmail(emailData){
     }
 }
 
+async function addDemandePeremption(data){
+    if (!fetch) {
+        fetch = (await import('node-fetch')).default;
+    };
+    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+        const auth = new google.auth.JWT(
+            config.google.client_email,
+            null,
+            privateKey,
+            ['https://www.googleapis.com/auth/spreadsheets']
+        );
+
+    const sheets = google.sheets({version: 'v4', auth});
+    const spreadsheetId = config.google.spreadsheetId2;
+
+    const lastRow = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'demandePeremption!A:A',
+    }).then(response => response.data.values.length + 1);
+
+    const rangeNotificationsEmail = `demandePeremption!A2:C${lastRow}`;
+    const valuesDemandePeremption = [[data.mois, data.url, data.correspondantAsup]];
+
+    try {
+        await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range: rangeNotificationsEmail,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: valuesDemandePeremption,
+            },
+        });
+    } catch (err) {
+        console.error('Error appending row:', err);
+        throw err;
+    }
+}
+
+async function getDemandesPeremption(){
+    if (!fetch) {
+        fetch = (await import('node-fetch')).default;
+    };
+    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+        const auth = new google.auth.JWT(
+            config.google.client_email,
+            null,
+            privateKey,
+            ['https://www.googleapis.com/auth/spreadsheets']
+        );
+
+    const sheets = google.sheets({version: 'v4', auth});
+    const spreadsheetId = config.google.spreadsheetId2;
+
+    const lastRow = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'demandePeremption!A:A',
+    }).then(response => response.data.values.length + 1);
+
+    const rangeNotificationsEmail = `demandePeremption!A2:C${lastRow}`;
+
+    try {
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: rangeNotificationsEmail,
+        });
+
+        const values = response.data.values;
+        const returnData = {
+            mois: values[0][0],
+            url: values[0][1],
+            correspondantAsup: values[0][2]
+        }
+
+        if (!values || values.length === 0) {
+            throw new Error('No data found in the specified row.');
+        }
+
+        return returnData;
+        
+    } catch (error) {
+        console.error(error);
+        throw new Error(error);
+    }
+}
+
 module.exports = {
     getAsupAgent,
     getDoctor,
     getMedicamentsforCare,
     newInterventionAsup,
-    sendEmail
+    sendEmail,
+    addDemandePeremption,
+    getDemandesPeremption
 };
