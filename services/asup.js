@@ -295,6 +295,21 @@ async function getDemandesPeremption(){
     }
 }
 
+async function autoStatusReplacementPeremption(){
+    let peremptionDate = new Date();
+    peremptionDate.setMonth(peremptionDate.getMonth() + 1);
+    peremptionDate.setDate(1);
+
+    let request = `UPDATE asupStock SET idStatutAsup = 3 WHERE datePeremption < '${peremptionDate.toISOString().slice(0, 10)}' AND idStatutAsup != 4;`;
+
+    await db.query(
+        request
+    );
+
+    return { message: request + 'Envoyée' };
+
+}
+
 module.exports = {
     getAsupAgent,
     getDoctor,
@@ -302,5 +317,6 @@ module.exports = {
     newInterventionAsup,
     sendEmail,
     addDemandePeremption,
-    getDemandesPeremption
+    getDemandesPeremption,
+    autoStatusReplacementPeremption
 };

@@ -33,6 +33,7 @@ const newUtilisationAsup = require("./routes/newUtilisationAsup");
 const sendEmailAsup = require("./routes/sendEmailAsup");
 const addDemandePeremptionAsup = require("./routes/addDemandePeremptionAsup");
 const getLastDemandePeremptionAsup = require("./routes/getLastDemandePeremptionAsup");
+const autoStatus = require("./routes/autoStatusPeremptionAsup");
 
 app.use(express.json());
 app.use(cors());
@@ -76,6 +77,7 @@ app.use("/newUtilisationAsup", newUtilisationAsup);
 app.use("/sendEmailAsup", sendEmailAsup);
 app.use("/addDemandePeremptionAsup", addDemandePeremptionAsup);
 app.use("/getLastDemandePeremptionAsup", getLastDemandePeremptionAsup);
+app.use("/autoStatusAsup", autoStatus);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;
