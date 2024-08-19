@@ -366,6 +366,27 @@ GROUP BY
     };
 }
 
+async function getPeremptionsCountAsup(page = 1){
+    const offset = helper.getOffset(page, config.listPerPage);
+    const rows = await db.query(
+      `SELECT
+        (SELECT COUNT(*) FROM asupStock WHERE idStatutAsup != 4) AS nbTotal,
+        (SELECT COUNT(*) FROM asupStock WHERE idStatutAsup = 1) AS nbReserve,
+        (SELECT COUNT(*) FROM asupStock WHERE idStatutAsup = 3 OR idStatutAsup = 2) AS nbVSAV,
+        (SELECT COUNT(*) FROM utilisationsASUP WHERE 1) AS nbLotsTotal
+      FROM stock
+      WHERE 1
+      LIMIT 1;`
+    );
+    const data = helper.emptyOrRows(rows);
+    const meta = {page};
+  
+    return {
+      data,
+      meta
+    }
+  }
+
 module.exports = {
     getAsupAgent,
     getDoctor,
@@ -375,5 +396,6 @@ module.exports = {
     addDemandePeremption,
     getDemandesPeremption,
     autoStatusReplacementPeremption,
-    getRemplacementCount
+    getRemplacementCount,
+    getPeremptionsCountAsup
 };
