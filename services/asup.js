@@ -386,6 +386,29 @@ async function getPeremptionsCountAsup(page = 1){
       meta
     }
   }
+  async function getPeremptionsAsup(page = 1){
+    const offset = helper.getOffset(page, config.listPerPage);
+    const datePeremptionSixMois = new Date();
+    datePeremptionSixMois.setMonth(datePeremptionSixMois.getMonth() + 6);
+    let datePeremptionSixMoisString = datePeremptionSixMois.toISOString().slice(0, 19).replace('T', ' ');
+    const rows = await db.query(
+      `SELECT medicaments.nomMedicament as nomMateriel, asupStock.numLot, asupStock.datePeremption
+      FROM asupStock
+      INNER JOIN medicaments
+      ON asupStock.idMedicament = medicaments.idMedicament
+        WHERE datePeremption < '${datePeremptionSixMoisString}' AND asupStock.idStatutAsup != 4 AND asupStock.idStatutAsup != 2
+        GROUP BY medicaments.nomMedicament, asupStock.numLot, asupStock.datePeremption 
+        ORDER BY asupStock.datePeremption LIMIT ${config.listPerPage}`
+    );
+    const data = helper.emptyOrRows(rows);
+    const meta = {page};
+  
+    return {
+      data,
+      meta
+    }
+  }
+
 
 module.exports = {
     getAsupAgent,
@@ -397,5 +420,6 @@ module.exports = {
     getDemandesPeremption,
     autoStatusReplacementPeremption,
     getRemplacementCount,
-    getPeremptionsCountAsup
+    getPeremptionsCountAsup,
+    getPeremptionsAsup
 };
