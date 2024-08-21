@@ -409,6 +409,18 @@ async function getPeremptionsCountAsup(page = 1){
     }
   }
 
+  async function getMedicaments(){
+    const rows = await db.query(
+      `SELECT * FROM medicaments;`
+    );
+    const data = helper.emptyOrRows(rows);
+    const meta = { message: 'Liste des médicaments' };
+    return {
+        data,
+        meta
+    };
+  }
+
 
 module.exports = {
     getAsupAgent,
@@ -421,5 +433,6 @@ module.exports = {
     autoStatusReplacementPeremption,
     getRemplacementCount,
     getPeremptionsCountAsup,
-    getPeremptionsAsup
+    getPeremptionsAsup,
+    getMedicaments
 };
