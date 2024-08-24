@@ -268,7 +268,7 @@ async function getDemandesPeremption(){
         range: 'demandePeremption!A:A',
     }).then(response => response.data.values.length + 1);
 
-    const rangeNotificationsEmail = `demandePeremption!A2:C${lastRow}`;
+    const rangeNotificationsEmail = `demandePeremption!A${lastRow - 1}:C${lastRow}`;
 
     try {
         const response = await sheets.spreadsheets.values.get({
@@ -299,12 +299,7 @@ async function autoStatusReplacementPeremption(){
     let peremptionDate = new Date();
     peremptionDate.setDate(1);
     
-    if (peremptionDate.getMonth() === 10 || peremptionDate.getMonth() === 11) {
-        peremptionDate.setMonth(peremptionDate.getMonth() - 10);
-        peremptionDate.setFullYear(peremptionDate.getFullYear() + 1);
-    } else {
-        peremptionDate.setMonth(peremptionDate.getMonth() + 2);
-    }
+    peremptionDate.setMonth(peremptionDate.getMonth() + 2);
 
     let request = `UPDATE asupStock SET idStatutAsup = 3 WHERE datePeremption < '${peremptionDate.toISOString().slice(0, 10)}' AND idStatutAsup = 1;`;
 
@@ -398,7 +393,7 @@ async function getPeremptionsCountAsup(page = 1){
       ON asupStock.idMedicament = medicaments.idMedicament
         WHERE datePeremption < '${datePeremptionSixMoisString}' AND asupStock.idStatutAsup != 4 AND asupStock.idStatutAsup != 2
         GROUP BY medicaments.nomMedicament, asupStock.numLot, asupStock.datePeremption 
-        ORDER BY asupStock.datePeremption LIMIT ${config.listPerPage}`
+        ORDER BY asupStock.datePeremption`
     );
     const data = helper.emptyOrRows(rows);
     const meta = {page};
