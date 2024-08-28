@@ -419,7 +419,7 @@ async function getPeremptionsCountAsup(page = 1){
 
   async function getToReplace(medicament){
     const rows = await db.query(
-      `SELECT * FROM asupStock WHERE idStatutAsup = 3 OR idStatutAsup = 2 AND idMedicament = ${medicament};`
+      `SELECT * FROM asupStock WHERE idMedicament = ${medicament} AND (idStatutAsup = 3 OR idStatutAsup = 2);`
     );
     const data = helper.emptyOrRows(rows);
     const meta = { message: 'Liste des médicaments à remplacer' };
