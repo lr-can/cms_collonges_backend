@@ -3,6 +3,7 @@ const helper = require('../helper');
 const config = require('../config');
 const { google } = require('googleapis');
 const fs = require('fs');
+const { get } = require('http');
 let fetch
 
 
@@ -416,6 +417,18 @@ async function getPeremptionsCountAsup(page = 1){
     };
   }
 
+  async function getToReplace(medicament){
+    const rows = await db.query(
+      `SELECT * FROM asupStock WHERE idStatutAsup = 3 OR idStatutAsup = 2 AND idMedicament = ${medicament};`
+    );
+    const data = helper.emptyOrRows(rows);
+    const meta = { message: 'Liste des médicaments à remplacer' };
+    return {
+        data,
+        meta
+    };
+  }
+
 
 module.exports = {
     getAsupAgent,
@@ -429,5 +442,6 @@ module.exports = {
     getRemplacementCount,
     getPeremptionsCountAsup,
     getPeremptionsAsup,
-    getMedicaments
+    getMedicaments,
+    getToReplace
 };
