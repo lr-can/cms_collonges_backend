@@ -39,6 +39,9 @@ const getAsupPeremptionCount = require("./routes/getPeremptionsCountAsup");
 const getPeremptionsAsup = require("./routes/getPeremptionsAsup");
 const getMedicaments = require("./routes/getMedicaments");
 const getMedicamentsToReplace = require("./routes/getMedicamentsToReplace");
+const replaceStep1 = require("./routes/replaceStep1");
+const replaceStep2 = require("./routes/replaceStep2");
+const getReplaceStep3 = require("./routes/getReplaceStep3");
 
 app.use(express.json());
 app.use(cors());
@@ -88,6 +91,9 @@ app.use("/getAsupPeremptionCount", getAsupPeremptionCount);
 app.use("/getPeremptionsAsup", getPeremptionsAsup);
 app.use("/getMedicaments", getMedicaments);
 app.use("/getMedicamentsToReplace", getMedicamentsToReplace);
+app.use("/replaceStep1", replaceStep1);
+app.use("/replaceStep2", replaceStep2);
+app.use("/getReplaceStep3", getReplaceStep3);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;

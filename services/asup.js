@@ -98,7 +98,7 @@ async function getMedicamentsforCare(care, affectationVSAV, page = 1){
       const rows = await db.query(
         `SELECT asupStock.idStockAsup, asupStock.idMedicament, asupStock.numLot, asupStock.datePeremption, medicaments.nomMedicament
         FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
-        WHERE medicaments.acteSoin LIKE '${care}' AND asupStock.idStatutAsup = 1 OR asupStock.idStatutAsup = 3 AND affectationVSAV = ${affectationVSAV} ORDER BY idMedicament;`
+        WHERE medicaments.acteSoin LIKE '${care}' AND affectationVSAV = ${affectationVSAV} AND (asupStock.idStatutAsup = 1 OR asupStock.idStatutAsup = 3) ORDER BY idMedicament;`
       );
       const data = helper.emptyOrRows(rows);
       const meta = {page};
@@ -429,6 +429,54 @@ async function getPeremptionsCountAsup(page = 1){
     };
   }
 
+async function replacedStatus(data){
+    let replacements = data.materielsAremplacer;
+    let matriculeRemplaceur = data.matricule;
+    for (const replacement of replacements) {
+            const idStockAsup = replacement.idStockAsup;
+            await db.query(`UPDATE asupStock SET idStatutAsup = 4, matriculeRemplaceur = '${matriculeRemplaceur}' WHERE idStockAsup = ${idStockAsup};`);
+    }
+    return { message: 'Step1-OK' };
+}
+
+async function createNewStock(data){
+    const { vsavNombreDict, newMedicamentInfo, matricule } = data;
+    const { selectedMedicament, datePeremption, numLot } = newMedicamentInfo;
+    const { vsav1, vsav2, remaining } = vsavNombreDict;
+
+    const totalItems = vsav1 + vsav2 + remaining;
+
+    for (let i = 0; i < totalItems; i++) {
+        let affectationVSAV;
+        if (i < vsav1) {
+            affectationVSAV = 1;
+        } else if (i < vsav1 + vsav2) {
+            affectationVSAV = 2;
+        } else {
+            affectationVSAV = null;
+        }
+
+        const query = `INSERT INTO asupStock (idMedicament, idStatutAsup, datePeremption, matriculeCreateur, numLot, affectationVSAV) 
+                       VALUES (${selectedMedicament.value}, 1, '${datePeremption}', '${matricule}', '${numLot}', ${affectationVSAV});`;
+
+        await db.query(query);
+    }
+
+    return { message: 'Step2-OK' };
+}
+  
+async function getMedicamentsWithoutVsav(){
+    const rows = await db.query(
+      `SELECT * FROM asupStock WHERE affectationVSAV IS NULL;`
+    );
+    const data = helper.emptyOrRows(rows);
+    const meta = { message: 'Liste des médicaments' };
+    return {
+        data,
+        meta
+    };
+}
+
 
 module.exports = {
     getAsupAgent,
@@ -443,5 +491,8 @@ module.exports = {
     getPeremptionsCountAsup,
     getPeremptionsAsup,
     getMedicaments,
-    getToReplace
+    getToReplace,
+    replacedStatus,
+    createNewStock,
+    getMedicamentsWithoutVsav
 };
