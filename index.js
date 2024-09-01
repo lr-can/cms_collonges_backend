@@ -42,7 +42,7 @@ const getMedicamentsToReplace = require("./routes/getMedicamentsToReplace");
 const replaceStep1 = require("./routes/replaceStep1");
 const replaceStep2 = require("./routes/replaceStep2");
 const getReplaceStep3 = require("./routes/getReplaceStep3");
-const replaceStep3 = require("./routes/getReplaceStep3");
+const replaceStep3 = require("./routes/replaceStep3");
 
 app.use(express.json());
 app.use(cors());
