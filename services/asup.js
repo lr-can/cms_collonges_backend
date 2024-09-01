@@ -465,9 +465,9 @@ async function createNewStock(data){
     return { message: 'Step2-OK' };
 }
   
-async function getMedicamentsWithoutVsav(){
+async function getMedicamentsWithoutVsav(idMedicament){
     const rows = await db.query(
-      `SELECT * FROM asupStock WHERE affectationVSAV IS NULL;`
+      `SELECT * FROM asupStock WHERE idMedicament = "${idMedicament}" AND affectationVSAV IS NULL;`
     );
     const data = helper.emptyOrRows(rows);
     const meta = { message: 'Liste des médicaments' };
@@ -475,6 +475,19 @@ async function getMedicamentsWithoutVsav(){
         data,
         meta
     };
+}
+
+async function affectVsav(data){
+    const vsav1 = data.vsav1;
+    const vsav2 = data.vsav2;
+
+    for (const item of vsav1) {
+        await db.query(`UPDATE asupStock SET affectationVSAV = 1 WHERE idStockAsup = ${item.idStockAsup};`);
+    }
+    for (const item of vsav2) {
+        await db.query(`UPDATE asupStock SET affectationVSAV = 2 WHERE idStockAsup = ${item.idStockAsup};`);
+    }
+    return { message: 'Step3-OK' };
 }
 
 
@@ -494,5 +507,6 @@ module.exports = {
     getToReplace,
     replacedStatus,
     createNewStock,
-    getMedicamentsWithoutVsav
+    getMedicamentsWithoutVsav,
+    affectVsav
 };
