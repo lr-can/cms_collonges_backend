@@ -490,6 +490,100 @@ async function affectVsav(data){
     return { message: 'Step3-OK' };
 }
 
+async function getVizData(){
+    if (!fetch) {
+        fetch = (await import('node-fetch')).default;
+    };
+
+    const interventions1 = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201');
+    const interventions2 = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%202');
+
+    const interventionsData1 = await interventions1.json();
+    const interventionsData2 = await interventions2.json();
+
+    const interventions = [...interventionsData1, ...interventionsData2];
+
+    const rows1 = await db.query(
+        `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
+        FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
+        WHERE asupStock.idStatutAsup = 1
+        GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin;`
+    );
+    const rows2 = await db.query(
+        `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
+        FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
+        WHERE asupStock.idStatutAsup = 2
+        GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin;`
+    );
+    const rows3 = await db.query(
+        `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
+        FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
+        WHERE asupStock.idStatutAsup = 3
+        GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin;`
+    );
+    const rows4A = await db.query(
+        `SELECT * FROM utilisationsASUP;`
+    );
+
+    const rows4B = helper.emptyOrRows(rows4A);
+
+    const rows4 = await Promise.all(rows4B.map(async (row) => {
+        if (row.idMedicamentsList) {
+            const medicamentIds = row.idMedicamentsList.split(',');
+            const medicaments = await Promise.all(medicamentIds.map(async (id) => {
+                const medicamentData = await db.query(`SELECT medicaments.nomMedicament, asupStock.datePeremption, asupStock.numLot FROM asupStock
+                    INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
+                    WHERE idStockAsup = ${id}`);
+                return medicamentData[0];
+            }));
+            row.idMedicamentsList = medicaments;
+        }
+        const intervention = interventions.find(intervention => {
+            const interventionYear = new Date(intervention.notificationDate).getFullYear();
+            const acteYear = new Date(row.dateActe).getFullYear();
+            return intervention.numeroInter == row.numIntervention && interventionYear === acteYear;
+        });
+        if (intervention) {
+            row.interventionDetails = intervention;
+        } else {
+            row.interventionDetails = {
+            identifiant: "",
+            numeroInter: row.numIntervention,
+            notificationDate: row.dateActe,
+            notificationHeure: "",
+            notificationTitre: "Entrée manuelle",
+            notificationAdresse: "",
+            notificationLon: "4.8448856",
+            notificationLat: "45.8172792",
+            notificationEngins: "",
+            notificationVille: "",
+            notification: ""
+            };
+        }
+        return row;
+    }));
+
+    const rows5 = await db.query(
+        `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
+        FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
+        WHERE asupStock.idStatutAsup = 4
+        GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin;`
+    );
+
+    const data = {
+        rows1: helper.emptyOrRows(rows1),
+        rows2: helper.emptyOrRows(rows2),
+        rows3: helper.emptyOrRows(rows3),
+        rows4: helper.emptyOrRows(rows4),
+        rows5: helper.emptyOrRows(rows5)
+    };
+    const meta = { message: 'Visualization data' };
+    return {
+        data,
+        meta
+    };
+};
+
 
 module.exports = {
     getAsupAgent,
@@ -508,5 +602,6 @@ module.exports = {
     replacedStatus,
     createNewStock,
     getMedicamentsWithoutVsav,
-    affectVsav
+    affectVsav,
+    getVizData
 };
