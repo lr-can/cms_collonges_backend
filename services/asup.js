@@ -503,6 +503,11 @@ async function getVizData(){
 
     const interventions = [...interventionsData1, ...interventionsData2];
 
+    let twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+    twoYearsAgo = twoYearsAgo.toISOString().slice(0, 19).replace('T', ' ');
+
+
     const rows1 = await db.query(
         `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
         FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
@@ -510,19 +515,19 @@ async function getVizData(){
         GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin;`
     );
     const rows2 = await db.query(
-        `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
+        `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin, asupStock.matriculeRemplaceur
         FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
         WHERE asupStock.idStatutAsup = 2
-        GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin;`
+        GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin, asupStock.matriculeRemplaceur;`
     );
     const rows3 = await db.query(
-        `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
+        `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin, asupStock.matriculeRemplaceur
         FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
         WHERE asupStock.idStatutAsup = 3
-        GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin;`
+        GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin, asupStock.matriculeRemplaceur;`
     );
     const rows4A = await db.query(
-        `SELECT * FROM utilisationsASUP;`
+        `SELECT * FROM utilisationsASUP WHERE dateActe > '${twoYearsAgo}';`
     );
 
     const rows4B = helper.emptyOrRows(rows4A);
@@ -564,10 +569,10 @@ async function getVizData(){
     }));
 
     const rows5 = await db.query(
-        `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
+        `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.matriculeRemplaceur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
         FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
-        WHERE asupStock.idStatutAsup = 4
-        GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin;`
+        WHERE asupStock.idStatutAsup = 4 AND asupStock.datePeremption > '${twoYearsAgo}'
+        GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin, asupStock.matriculeRemplaceur;`
     );
 
     const data = {
