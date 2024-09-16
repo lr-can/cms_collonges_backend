@@ -3,7 +3,6 @@ const helper = require('../helper');
 const config = require('../config');
 const { google } = require('googleapis');
 const fs = require('fs');
-const { get } = require('http');
 let fetch
 
 
@@ -564,6 +563,17 @@ async function getVizData(){
             notificationVille: "",
             notification: ""
             };
+        }
+        const doctorCache = {};
+
+        if (row.medecinPrescripteur) {
+            if (doctorCache[row.medecinPrescripteur]) {
+                row.medecinPrescripteur = doctorCache[row.medecinPrescripteur];
+            } else {
+                const doctor = await getDoctor(row.medecinPrescripteur);
+                doctorCache[row.medecinPrescripteur] = doctor;
+                row.medecinPrescripteur = doctor;
+            }
         }
         return row;
     }));
