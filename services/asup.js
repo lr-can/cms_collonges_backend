@@ -502,6 +502,9 @@ async function getVizData(){
 
     const interventions = [...interventionsData1, ...interventionsData2];
 
+    const agents = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsASUP');
+    const agentsData = await agents.json();
+
     let twoYearsAgo = new Date();
     twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
     twoYearsAgo = twoYearsAgo.toISOString().slice(0, 19).replace('T', ' ');
@@ -575,6 +578,16 @@ async function getVizData(){
                 row.medecinPrescripteur = doctor;
             }
         }
+
+        if (row.matriculeAgent) {
+            if (agentsData[row.matriculeAgent]) {
+                row.agent = agentsData[row.matriculeAgent];
+            } else {
+                const agent = await getAsupAgent(row.matriculeAgent);
+                agentsData[row.matriculeAgent] = agent;
+                row.agent = agent;
+            }
+        }    
         return row;
     }));
 
