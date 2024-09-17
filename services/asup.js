@@ -510,19 +510,19 @@ async function getVizData(){
     twoYearsAgo = twoYearsAgo.toISOString().slice(0, 19).replace('T', ' ');
 
 
-    const rows1 = await db.query(
+    const rows1A = await db.query(
         `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
         FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
         WHERE asupStock.idStatutAsup = 1
         GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin;`
     );
-    const rows2 = await db.query(
+    const rows2A = await db.query(
         `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin, asupStock.matriculeRemplaceur
         FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
         WHERE asupStock.idStatutAsup = 2
         GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin, asupStock.matriculeRemplaceur;`
     );
-    const rows3 = await db.query(
+    const rows3A = await db.query(
         `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin, asupStock.matriculeRemplaceur
         FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
         WHERE asupStock.idStatutAsup = 3
@@ -591,12 +591,64 @@ async function getVizData(){
         return row;
     }));
 
-    const rows5 = await db.query(
+    const rows5A = await db.query(
         `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.matriculeRemplaceur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
         FROM asupStock INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
         WHERE asupStock.idStatutAsup = 4 AND asupStock.datePeremption > '${twoYearsAgo}'
         GROUP BY medicaments.nomMedicament, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin, asupStock.matriculeRemplaceur;`
     );
+    const rows1 = await Promise.all(rows1A.map(async (row) => {
+        if (row.matriculeCreateur) {
+            if (agentsData[row.matriculeCreateur]) {
+                row.createur = agentsData[row.matriculeCreateur];
+            } else {
+                const agent = await getAsupAgent(row.matriculeCreateur);
+                agentsData[row.matriculeCreateur] = agent;
+                row.createur = agent;
+            }
+        }
+        return row;
+    }));
+
+    const rows2 = await Promise.all(rows2A.map(async (row) => {
+        if (row.matriculeCreateur) {
+            if (agentsData[row.matriculeCreateur]) {
+                row.createur = agentsData[row.matriculeCreateur];
+            } else {
+                const agent = await getAsupAgent(row.matriculeCreateur);
+                agentsData[row.matriculeCreateur] = agent;
+                row.createur = agent;
+            }
+        }
+        return row;
+    }));
+
+    const rows3 = await Promise.all(rows3A.map(async (row) => {
+        if (row.matriculeCreateur) {
+            if (agentsData[row.matriculeCreateur]) {
+                row.createur = agentsData[row.matriculeCreateur];
+            } else {
+                const agent = await getAsupAgent(row.matriculeCreateur);
+                agentsData[row.matriculeCreateur] = agent;
+                row.createur = agent;
+            }
+        }
+        return row;
+    }));
+
+    const rows5 = await Promise.all(rows5A.map(async (row) => {
+        if (row.matriculeCreateur) {
+            if (agentsData[row.matriculeCreateur]) {
+                row.createur = agentsData[row.matriculeCreateur];
+            } else {
+                const agent = await getAsupAgent(row.matriculeCreateur);
+                agentsData[row.matriculeCreateur] = agent;
+                row.createur = agent;
+            }
+        }
+        return row;
+    }));
+
 
     const data = {
         rows1: helper.emptyOrRows(rows1),
