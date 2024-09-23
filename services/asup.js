@@ -1009,18 +1009,20 @@ async function generatePDF(){
             if (data.rows1 && data.rows1.length > 0) {
                 htmlBody += `<div class="status1-content">
                     <div class="status1-header">
-                        <div class="status1-header-item">Nom Médicament</div>
-                        <div class="status1-header-item">Numéro de Lot</div>
-                        <div class="status1-header-item">Date de Péremption</div>
-                        <div class="status1-header-item">Créateur</div>
+                        <div class="status1-header-item" style="width: 5%">Nbre</div>
+                        <div class="status1-header-item" style="width: 35%">Nom Médicament</div>
+                        <div class="status1-header-item" style="width: 15%">Numéro de Lot</div>
+                        <div class="status1-header-item" style="width: 10%">Date de Péremption</div>
+                        <div class="status1-header-item" style="width: 35%">Créateur</div>
                     </div>`;
                 data.rows1.forEach(row => {
                     htmlBody += `
                         <div class="status1-content-items">
+                            <div class="status1-content-item">${row.count}</div>
                             <div class="status1-content-item">${row.nomMedicament}</div>
                             <div class="status1-content-item">${row.numLot}</div>
                             <div class="status1-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
-                            <div class="status1-content-item">${row.createur.nomAgent} ${row.createur.prenomAgent} (${row.createur.grade})</div>
+                            <div class="status1-content-item  agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.createur.grade}.png?raw=true" width="25px" height="auto"><span> ${row.createur.nomAgent} ${row.createur.prenomAgent}</span>"></div>
                         </div>`;
                 });
                 htmlBody += `</div>`;
@@ -1033,10 +1035,11 @@ async function generatePDF(){
             if (data.rows4 && data.rows4.length > 0) {
                 htmlBody += `<div class="utilisationsASUP-content">
                     <div class="utilisationsASUP-header">
-                        <div class="utilisationsASUP-header-item">Numéro d'Intervention</div>
-                        <div class="utilisationsASUP-header-item">Acte Soin</div>
-                        <div class="utilisationsASUP-header-item">Date</div>
-                        <div class="utilisationsASUP-header-item">Médecin Prescripteur</div>
+                        <div class="utilisationsASUP-header-item" style="width: 15%">Numéro d'Intervention</div>
+                        <div class="utilisationsASUP-header-item" style="width: 15%">Acte Soin</div>
+                        <div class="utilisationsASUP-header-item" style="width: 15%">Date</div>
+                        <div class="utilisationsASUP-header-item" style="width: 40%">Médecin Prescripteur</div>
+                        <div class="utilisationsASUP-header-item" style="width: 5%">Nbre Méd.</div>
                     </div>`;
                 data.rows4.forEach(row => {
                     htmlBody += `
@@ -1044,10 +1047,12 @@ async function generatePDF(){
                             <div class="utilisationsASUP-content-item">${row.numIntervention}</div>
                             <div class="utilisationsASUP-content-item">${row.acteSoin}</div>
                             <div class="utilisationsASUP-content-item">${new Date(row.dateActe).toLocaleDateString()}</div>
-                            <div class="utilisationsASUP-content-item">${row.medecinPrescripteur.nomExercice} ${row.medecinPrescripteur.prenomExercice}</div>
+                            <div class="utilisationsASUP-content-item">${row.medecinPrescripteur.nomExercice} ${row.medecinPrescripteur.prenomExercice} (${row.medecinPrescripteur.identifiantRPPS})</div>
+                            <div class="utilisationsASUP-content-item">${row.idMedicamentsList ? row.idMedicamentsList.length : "0"}</div>
                         </div>`;
                 });
-                htmlBody += `</div>`;
+                htmlBody += `</div>
+                <p class="utilisationsASUP-message">Rendez-vous sur CMS-Collonges pour plus d'informations</p>`;
             } else {
                 htmlBody += `<p class="utilisationsASUP-message">Aucun acte de soin trouvé.</p>`;
             }
@@ -1057,19 +1062,21 @@ async function generatePDF(){
             if (data.rows2 && data.rows2.length > 0) {
                 htmlBody += `<div class="status2-content">
                     <div class="status2-header">
-                        <div class="status2-header-item">Nom Médicament</div>
-                        <div class="status2-header-item">Numéro de Lot</div>
-                        <div class="status2-header-item">Date de Péremption</div>
-                        <div class="status2-header-item">Créateur</div>
-                        <div class="status2-header-item">Remplaçant</div>
+                        <div class="status2-header-item" style="width: 5%">Nbre</div>
+                        <div class="status2-header-item" style="width: 35%">Nom Médicament</div>
+                        <div class="status2-header-item" style="width: 10%">Numéro de Lot</div>
+                        <div class="status2-header-item" style="width: 5%">Date de Péremption</div>
+                        <div class="status2-header-item" style="width: 35%">Créateur</div>
+                        <div class="status2-header-item" style="width: 10%">Remplaçant</div>
                     </div>`;
                 data.rows2.forEach(row => {
                     htmlBody += `
                         <div class="status2-content-items">
+                            <div class="status2-content-item">${row.count}</div>
                             <div class="status2-content-item">${row.nomMedicament}</div>
                             <div class="status2-content-item">${row.numLot}</div>
                             <div class="status2-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
-                            <div class="status2-content-item">${row.createur.nomAgent} ${row.createur.prenomAgent} (${row.createur.grade})</div>
+                            <div class="status2-content-item agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.createur.grade}.png?raw=true" width="25px" height="auto"><span> ${row.createur.nomAgent} ${row.createur.prenomAgent}</span>"></div>
                             <div class="status2-content-item">${row.matriculeRemplaceur}</div>
                         </div>`;
                 });
@@ -1083,11 +1090,12 @@ async function generatePDF(){
             if (data.rows3 && data.rows3.length > 0) {
                 htmlBody += `<div class="status3-content">
                     <div class="status3-header">
-                        <div class="status3-header-item">Nom Médicament</div>
-                        <div class="status3-header-item">Numéro de Lot</div>
-                        <div class="status3-header-item">Date de Péremption</div>
-                        <div class="status3-header-item">Créateur</div>
-                        <div class="status3-header-item">Remplaçant</div>
+                        <div class="status3-header-item" style="width: 5%">Nbre</div>
+                        <div class="status3-header-item" style="width: 35%">Nom Médicament</div>
+                        <div class="status3-header-item" style="width: 10%">Numéro de Lot</div>
+                        <div class="status3-header-item" style="width: 5%">Date de Péremption</div>
+                        <div class="status3-header-item" style="width: 35%">Créateur</div>
+                        <div class="status3-header-item" style="width: 10%">Remplaçant</div>
                     </div>`;
                 data.rows3.forEach(row => {
                     htmlBody += `
@@ -1109,15 +1117,17 @@ async function generatePDF(){
             if (data.rows5 && data.rows5.length > 0) {
                 htmlBody += `<div class="status5-content">
                     <div class="status5-header">
-                        <div class="status5-header-item">Nom Médicament</div>
-                        <div class="status5-header-item">Numéro de Lot</div>
-                        <div class="status5-header-item">Date de Péremption</div>
-                        <div class="status5-header-item">Créateur</div>
-                        <div class="status5-header-item">Remplaçant</div>
+                        <div class="status5-header-item" style="width: 5%">Nbre</div>
+                        <div class="status5-header-item" style="width: 35%">Nom Médicament</div>
+                        <div class="status5-header-item" style="width: 10%">Numéro de Lot</div>
+                        <div class="status5-header-item" style="width: 5%">Date de Péremption</div>
+                        <div class="status5-header-item" style="width: 35%">Créateur</div>
+                        <div class="status5-header-item" style="width: 10%">Remplaçant</div>
                     </div>`;
                 data.rows5.forEach(row => {
                     htmlBody += `
                         <div class="status5-content-items">
+                            <div class="status5-content-item">${row.count}</div>
                             <div class="status5-content-item">${row.nomMedicament}</div>
                             <div class="status5-content-item">${row.numLot}</div>
                             <div class="status5-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
