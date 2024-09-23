@@ -1011,10 +1011,10 @@ async function generatePDF(){
                 htmlBody += `<div class="status1-content">
                     <div class="status1-header">
                         <div class="status1-header-item" style="width: 5%">Nbre</div>
-                        <div class="status1-header-item" style="width: 35%">Nom Médicament</div>
+                        <div class="status1-header-item" style="width: 35%; text-align; left">Nom Médicament</div>
                         <div class="status1-header-item" style="width: 15%">Numéro de Lot</div>
                         <div class="status1-header-item" style="width: 10%">Date de Péremption</div>
-                        <div class="status1-header-item" style="width: 35%">Créateur</div>
+                        <div class="status1-header-item" style="width: 35%; text-align; left">Créateur</div>
                     </div>`;
                 data.rows1.forEach(row => {
                     htmlBody += `
@@ -1039,8 +1039,8 @@ async function generatePDF(){
                         <div class="utilisationsASUP-header-item" style="width: 10%">Numéro d'Intervention</div>
                         <div class="utilisationsASUP-header-item" style="width: 5%">Acte Soin</div>
                         <div class="utilisationsASUP-header-item" style="width: 10%">Date</div>
-                        <div class="utilisationsASUP-header-item" style="width: 30%">Agent ASUP</div>
-                        <div class="utilisationsASUP-header-item" style="width: 40%">Médecin Prescripteur</div>
+                        <div class="utilisationsASUP-header-item" style="width: 30%; text-align; left">Agent ASUP</div>
+                        <div class="utilisationsASUP-header-item" style="width: 40%; text-align; left">Médecin Prescripteur</div>
                         <div class="utilisationsASUP-header-item" style="width: 5%">Nbre Méd.</div>
                     </div>`;
                 data.rows4.forEach(row => {
@@ -1066,10 +1066,10 @@ async function generatePDF(){
                 htmlBody += `<div class="status2-content">
                     <div class="status2-header">
                         <div class="status2-header-item" style="width: 5%">Nbre</div>
-                        <div class="status2-header-item" style="width: 35%">Nom Médicament</div>
+                        <div class="status2-header-item" style="width: 35%; text-align; left">Nom Médicament</div>
                         <div class="status2-header-item" style="width: 10%">Numéro de Lot</div>
                         <div class="status2-header-item" style="width: 5%">Date de Péremption</div>
-                        <div class="status2-header-item" style="width: 35%">Créateur</div>
+                        <div class="status2-header-item" style="width: 35%; text-align; left">Créateur</div>
                         <div class="status2-header-item" style="width: 10%">Remplaçant</div>
                     </div>`;
                 data.rows2.forEach(row => {
@@ -1094,10 +1094,10 @@ async function generatePDF(){
                 htmlBody += `<div class="status3-content">
                     <div class="status3-header">
                         <div class="status3-header-item" style="width: 5%">Nbre</div>
-                        <div class="status3-header-item" style="width: 35%">Nom Médicament</div>
+                        <div class="status3-header-item" style="width: 35%; text-align; left">Nom Médicament</div>
                         <div class="status3-header-item" style="width: 10%">Numéro de Lot</div>
                         <div class="status3-header-item" style="width: 5%">Date de Péremption</div>
-                        <div class="status3-header-item" style="width: 35%">Créateur</div>
+                        <div class="status3-header-item" style="width: 35%: text-align; left">Créateur</div>
                         <div class="status3-header-item" style="width: 10%">Remplaçant</div>
                     </div>`;
                 data.rows3.forEach(row => {
@@ -1122,10 +1122,10 @@ async function generatePDF(){
                 htmlBody += `<div class="status5-content">
                     <div class="status5-header">
                         <div class="status5-header-item" style="width: 5%">Nbre</div>
-                        <div class="status5-header-item" style="width: 35%">Nom Médicament</div>
+                        <div class="status5-header-item" style="width: 35%; text-align; left">Nom Médicament</div>
                         <div class="status5-header-item" style="width: 10%">Numéro de Lot</div>
                         <div class="status5-header-item" style="width: 5%">Date de Péremption</div>
-                        <div class="status5-header-item" style="width: 35%">Créateur</div>
+                        <div class="status5-header-item" style="width: 35%; text-align; left">Créateur</div>
                         <div class="status5-header-item" style="width: 10%">Remplaçant</div>
                     </div>`;
                 data.rows5.forEach(row => {
