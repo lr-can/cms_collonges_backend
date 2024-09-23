@@ -676,6 +676,7 @@ async function generatePDF(){
             html{
                 font-family: Arial, sans-serif;
                 font-size: 12px;
+                  word-wrap: break-word;
                 word-break: break-word;
             }
                             #viz{
@@ -995,7 +996,7 @@ async function generatePDF(){
 
             const moisPrefix = ["août", "avril", "octobre"].includes(currentMonth) ? "d'" : "de";
             htmlBody += `
-                <div style="display: flex; align-items: center;">
+                <div style="display: flex; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; width: 100%">
                     <img src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/logoTitle.png?raw=true" alt="Logo" height="70px" width="auto" style="height: 70px; margin-right: 10px;">
                     <h1>Rapport Mensuel ASUP - CMS Collonges</h1>
                     <h3>Mois ${moisPrefix} ${currentMonth} ${currentYear}</h3>
@@ -1022,7 +1023,7 @@ async function generatePDF(){
                             <div class="status1-content-item">${row.nomMedicament}</div>
                             <div class="status1-content-item">${row.numLot}</div>
                             <div class="status1-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
-                            <div class="status1-content-item  agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.createur.grade}.png?raw=true" width="25px" height="auto"><span> ${row.createur.nomAgent} ${row.createur.prenomAgent}</span>"></div>
+                            <div class="status1-content-item agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.createur.grade}.png?raw=true" width="25px" height="auto"><span> ${row.createur.nomAgent} ${row.createur.prenomAgent}</span></div>
                         </div>`;
                 });
                 htmlBody += `</div>`;
@@ -1035,9 +1036,10 @@ async function generatePDF(){
             if (data.rows4 && data.rows4.length > 0) {
                 htmlBody += `<div class="utilisationsASUP-content">
                     <div class="utilisationsASUP-header">
-                        <div class="utilisationsASUP-header-item" style="width: 15%">Numéro d'Intervention</div>
-                        <div class="utilisationsASUP-header-item" style="width: 15%">Acte Soin</div>
-                        <div class="utilisationsASUP-header-item" style="width: 15%">Date</div>
+                        <div class="utilisationsASUP-header-item" style="width: 10%">Numéro d'Intervention</div>
+                        <div class="utilisationsASUP-header-item" style="width: 5%">Acte Soin</div>
+                        <div class="utilisationsASUP-header-item" style="width: 10%">Date</div>
+                        <div class="utilisationsASUP-header-item" style="width: 30%">Agent ASUP</div>
                         <div class="utilisationsASUP-header-item" style="width: 40%">Médecin Prescripteur</div>
                         <div class="utilisationsASUP-header-item" style="width: 5%">Nbre Méd.</div>
                     </div>`;
@@ -1047,6 +1049,7 @@ async function generatePDF(){
                             <div class="utilisationsASUP-content-item">${row.numIntervention}</div>
                             <div class="utilisationsASUP-content-item">${row.acteSoin}</div>
                             <div class="utilisationsASUP-content-item">${new Date(row.dateActe).toLocaleDateString()}</div>
+                            <div class="utilisationsASUP-content-item agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.agent.grade}.png?raw=true" width="25px" height="auto"><span> ${row.agent.nomAgent} ${row.agent.prenomAgent}</span></div>
                             <div class="utilisationsASUP-content-item">${row.medecinPrescripteur.nomExercice} ${row.medecinPrescripteur.prenomExercice} (${row.medecinPrescripteur.identifiantRPPS})</div>
                             <div class="utilisationsASUP-content-item">${row.idMedicamentsList ? row.idMedicamentsList.length : "0"}</div>
                         </div>`;
@@ -1076,7 +1079,7 @@ async function generatePDF(){
                             <div class="status2-content-item">${row.nomMedicament}</div>
                             <div class="status2-content-item">${row.numLot}</div>
                             <div class="status2-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
-                            <div class="status2-content-item agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.createur.grade}.png?raw=true" width="25px" height="auto"><span> ${row.createur.nomAgent} ${row.createur.prenomAgent}</span>"></div>
+                            <div class="status2-content-item agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.createur.grade}.png?raw=true" width="25px" height="auto"><span> ${row.createur.nomAgent} ${row.createur.prenomAgent}</span></div>
                             <div class="status2-content-item">${row.matriculeRemplaceur}</div>
                         </div>`;
                 });
@@ -1131,7 +1134,7 @@ async function generatePDF(){
                             <div class="status5-content-item">${row.nomMedicament}</div>
                             <div class="status5-content-item">${row.numLot}</div>
                             <div class="status5-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
-                            <div class="status5-content-item">${row.createur.nomAgent} ${row.createur.prenomAgent} (${row.createur.grade})</div>
+                            <div class="status5-content-item agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.createur.grade}.png?raw=true" width="25px" height="auto"><span> ${row.createur.nomAgent} ${row.createur.prenomAgent}</span></div>
                             <div class="status5-content-item">${row.matriculeRemplaceur}</div>
                         </div>`;
                 });
