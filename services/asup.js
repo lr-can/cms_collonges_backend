@@ -974,6 +974,22 @@ async function generatePDF(){
 
                     // Corps du HTML avec insertion dynamique des données
             let htmlBody = `<body>`;
+            const currentDate = new Date();
+            const monthNames = [
+                "janvier", "février", "mars", "avril", "mai", "juin",
+                "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+            ];
+            const currentMonth = monthNames[currentDate.getMonth()];
+            const currentYear = currentDate.getFullYear();
+
+            const moisPrefix = ["août", "avril", "octobre"].includes(currentMonth) ? "d'" : "de";
+            htmlBody += `
+                <div style="display: flex; align-items: center;">
+                    <img src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/logoTitle.png?raw=true" alt="Logo" height="70px" width="auto" style="height: 70px; margin-right: 10px;">
+                    <h1>Rapport Mensuel ASUP - CMS Collonges</h1>
+                </div>
+                <h3>Mois ${moisPrefix} ${currentMonth} ${currentYear}</h3>
+            `;
 
             // Section des médicaments
             htmlBody += `<h2>Liste des Médicaments Disponibles</h2>`;
@@ -1002,25 +1018,25 @@ async function generatePDF(){
             // Section des actes de soin
             htmlBody += `<h2>Actes de Soin</h2>`;
             if (data.rows4 && data.rows4.length > 0) {
-                htmlBody += `<div class="utilisationASUP-content">
-                    <div class="utilisationASUP-header">
-                        <div class="utilisationASUP-header-item">Numéro d'Intervention</div>
-                        <div class="utilisationASUP-header-item">Acte Soin</div>
-                        <div class="utilisationASUP-header-item">Date</div>
-                        <div class="utilisationASUP-header-item">Médecin Prescripteur</div>
+                htmlBody += `<div class="utilisationsASUP-content">
+                    <div class="utilisationsASUP-header">
+                        <div class="utilisationsASUP-header-item">Numéro d'Intervention</div>
+                        <div class="utilisationsASUP-header-item">Acte Soin</div>
+                        <div class="utilisationsASUP-header-item">Date</div>
+                        <div class="utilisationsASUP-header-item">Médecin Prescripteur</div>
                     </div>`;
                 data.rows4.forEach(row => {
                     htmlBody += `
-                        <div class="utilisationASUP-content-items">
-                            <div class="utilisationASUP-content-item">${row.numIntervention}</div>
-                            <div class="utilisationASUP-content-item">${row.acteSoin}</div>
-                            <div class="utilisationASUP-content-item">${new Date(row.dateActe).toLocaleDateString()}</div>
-                            <div class="utilisationASUP-content-item">${row.medecinPrescripteur.nomExercice} ${row.medecinPrescripteur.prenomExercice}</div>
+                        <div class="utilisationsASUP-content-items">
+                            <div class="utilisationsASUP-content-item">${row.numIntervention}</div>
+                            <div class="utilisationsASUP-content-item">${row.acteSoin}</div>
+                            <div class="utilisationsASUP-content-item">${new Date(row.dateActe).toLocaleDateString()}</div>
+                            <div class="utilisationsASUP-content-item">${row.medecinPrescripteur.nomExercice} ${row.medecinPrescripteur.prenomExercice}</div>
                         </div>`;
                 });
                 htmlBody += `</div>`;
             } else {
-                htmlBody += `<p class="utilisationASUP-message">Aucun acte de soin trouvé.</p>`;
+                htmlBody += `<p class="utilisationsASUP-message">Aucun acte de soin trouvé.</p>`;
             }
 
             // Section des médicaments à remplacer
@@ -1105,12 +1121,18 @@ async function generatePDF(){
         // Combinaison de l'en-tête et du corps pour générer le PDF
         const finalHTML = htmlHeader + htmlBody;
         return new Promise((resolve, reject) => {
-            pdf.create(finalHTML).toBuffer((err, buffer) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(buffer);
-            }
+            const options = {
+                format: 'A4',
+                orientation: 'landscape',
+                border: '2.5cm'
+            };
+
+            pdf.create(finalHTML, options).toBuffer((err, buffer) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(buffer);
+                }
             });
         });
     }
