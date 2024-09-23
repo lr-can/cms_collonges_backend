@@ -861,6 +861,7 @@ async function generatePDF(){
                     font-weight: bold;
                     padding: 0.5rem;
                     border-bottom: 1px solid #d64d00;
+                    color: #d64d00;
                     text-align: center;
                     vertical-align: middle;
                 }
@@ -869,6 +870,7 @@ async function generatePDF(){
                     font-weight: bold;
                     padding: 0.5rem;
                     border-bottom: 1px solid #0078f3;
+                    color: #0078f3;
                     text-align: center;
                     vertical-align: middle;
                 }
@@ -877,6 +879,7 @@ async function generatePDF(){
                     font-weight: bold;
                     padding: 0.5rem;
                     border-bottom: 1px solid #009081;
+                    color: #009081;
                     text-align: center;
                     vertical-align: middle;
                 }
@@ -884,7 +887,8 @@ async function generatePDF(){
                     display: table-cell;
                     font-weight: bold;
                     padding: 0.5rem;
-                    border-bottom: 1px solid #009081;
+                    border-bottom: 1px solid #666666;
+                    color: #666666;
                     text-align: center;
                     vertical-align: middle;
             }
@@ -932,7 +936,7 @@ async function generatePDF(){
                 }
                 .status5-content-item{
                     display: table-cell;
-                    border-bottom: 1px solid #009081;
+                    border-bottom: 1px solid #666666;
                     text-align: center;
                     vertical-align: middle;
                     padding: 0.5rem;
@@ -949,6 +953,7 @@ async function generatePDF(){
                     font-weight: bold;
                     padding: 0.5rem;
                     border-bottom: 1px solid #C08C65;
+                    color: #C08C65;
                     text-align: center;
                     vertical-align: middle;
                 }
@@ -966,7 +971,7 @@ async function generatePDF(){
                     background-color: #dffdf7;
                 }
                 .status5-content-items:nth-child(odd){
-                    background-color: #dffdf7;
+                    background-color: #ededed;
                 }
                 .status1-content-items:nth-child(odd){
                     background-color: #fbf5f2;
