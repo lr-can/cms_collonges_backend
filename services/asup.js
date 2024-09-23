@@ -675,9 +675,11 @@ async function generatePDF(){
         <style>
             html{
                 font-family: Arial, sans-serif;
+                font-size: 12px;
+                word-break: break-word;
             }
                             #viz{
-                    overflow-x: auto;
+                    width: 100%;
                 }
                 .illustrationImg{
                     border-radius: 10px;
@@ -796,7 +798,13 @@ async function generatePDF(){
                     margin-bottom: 1rem;
                     color: #C08C65;
                 }
-
+                h2 {
+                    font-size: 16px;
+                    font-weight: bold;}
+                h1 {
+                    font-size: 18px;
+                    font-weight: bold;
+}   
                 .status3-content {
                     display: table;
                     width: 100%;
@@ -962,7 +970,7 @@ async function generatePDF(){
                 .status1-content-items:nth-child(odd){
                     background-color: #fbf5f2;
                 }
-                .status3-message, .status2-message, .utilisationsASUP-message, .status1-message, .message{
+                .status3-message, .status2-message, .utilisationsASUP-message, .status1-message, .status5-message, .message{
                     font-style: italic;
                     text-align: center;
                     margin-top: 1rem;
@@ -990,12 +998,14 @@ async function generatePDF(){
                 <div style="display: flex; align-items: center;">
                     <img src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/logoTitle.png?raw=true" alt="Logo" height="70px" width="auto" style="height: 70px; margin-right: 10px;">
                     <h1>Rapport Mensuel ASUP - CMS Collonges</h1>
+                    <h3>Mois ${moisPrefix} ${currentMonth} ${currentYear}</h3>
                 </div>
-                <h3>Mois ${moisPrefix} ${currentMonth} ${currentYear}</h3>
             `;
 
             // Section des médicaments
-            htmlBody += `<h2>Liste des Médicaments Disponibles</h2>`;
+            htmlBody += `
+            <div id="viz">
+            <h2>Liste des Médicaments Disponibles</h2>`;
             if (data.rows1 && data.rows1.length > 0) {
                 htmlBody += `<div class="status1-content">
                     <div class="status1-header">
@@ -1119,6 +1129,7 @@ async function generatePDF(){
             } else {
                 htmlBody += `<p class="status5-message">Aucun médicament trouvé.</p>`;
             }
+            htmlBody += `</div></body></html>`;
 
                     
         // Combinaison de l'en-tête et du corps pour générer le PDF
