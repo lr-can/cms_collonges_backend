@@ -673,6 +673,9 @@ async function generatePDF(){
         <html>
         <head>
         <style>
+            html{
+                font-family: Arial, sans-serif;
+            }
                             #viz{
                     overflow-x: auto;
                 }
@@ -796,35 +799,35 @@ async function generatePDF(){
 
                 .status3-content {
                     display: table;
-                    width: 120%;
+                    width: 100%;
                     margin-bottom: 1rem;
                     overflow-x: scroll;
                     white-space: nowrap;
                 }
                 .status2-content {
                     display: table;
-                    width: 120%;
+                    width: 100%;
                     margin-bottom: 1rem;
                     overflow-x: scroll;
                     white-space: nowrap;
                 }
                 .status5-content {
                     display: table;
-                    width: 120%;
+                    width: 100%;
                     margin-bottom: 1rem;
                     overflow-x: scroll;
                     white-space: nowrap;
                 }
                 .utilisationsASUP-content {
                     display: table;
-                    width: 120%;
+                    width: 100%;
                     margin-bottom: 1rem;
                     overflow-x: scroll;
                     white-space: nowrap;
                 }
                 .status1-content {
                     display: table;
-                    width: 120%;
+                    width: 100%;
                     margin-bottom: 1rem;
                     overflow-x: scroll;
                     white-space: nowrap;
