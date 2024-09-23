@@ -44,6 +44,7 @@ const replaceStep2 = require("./routes/replaceStep2");
 const getReplaceStep3 = require("./routes/getReplaceStep3");
 const replaceStep3 = require("./routes/replaceStep3");
 const getVizDataAsup = require("./routes/getVizDataAsup");
+const asupPDF = require("./routes/generateAsupPDF");
 
 app.use(express.json());
 app.use(cors());
@@ -98,6 +99,8 @@ app.use("/replaceStep2", replaceStep2);
 app.use("/getReplaceStep3", getReplaceStep3);
 app.use("/replaceStep3", replaceStep3);
 app.use("/getVizDataAsup", getVizDataAsup);
+app.use("/asupPDF", asupPDF);
+
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;

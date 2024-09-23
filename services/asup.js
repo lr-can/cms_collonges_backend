@@ -3,6 +3,7 @@ const helper = require('../helper');
 const config = require('../config');
 const { google } = require('googleapis');
 const fs = require('fs');
+const pdf = require('html-pdf');
 let fetch
 
 
@@ -664,6 +665,460 @@ async function getVizData(){
     };
 };
 
+async function generatePDF(){
+    data = await getVizData();
+    async function generatePDF(){
+        const data = await getVizData();
+        
+        const htmlHeader = `
+        <html>
+        <head>
+        <style>
+                            #viz{
+                    overflow-x: auto;
+                }
+                .illustrationImg{
+                    border-radius: 10px;
+                    scale: 1.1;
+                }
+                .illustrationImg:hover{
+                    scale: 1.2;
+                    cursor: pointer;
+                }
+                .agentInfo {
+                    display: flex;
+                    align-items: center;
+                }
+                .agentInfo > img {
+                    margin-right: 0.5rem;
+                    display: inline-flex;
+                    align-items: center;
+                    vertical-align: middle;
+                    border-radius: 5px;
+                }
+                .agentInfo > span {
+                    display: inline-flex;
+                    align-items: center;
+                    vertical-align: middle;
+                }
+                .illustration > div{
+                    margin: auto;
+                }
+                .replacementPanelFilter {
+                    backdrop-filter: blur(10px) brightness(0.8);
+                    width: 100vw;
+                    height: 100vh;
+                    z-index: 3;
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+
+                }
+
+                .replacementPanel {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    z-index: 9999;
+                    background-color: white;
+                    border-radius: 10px;
+                    padding: 1rem;
+                    flex-wrap: wrap;
+                    min-width: 30%;
+                    max-width: 50%;
+                    max-height: 80vh;
+                    transition: all 0.5s ease-in-out;
+                    overflow-y: scroll;
+                }
+                @media screen and (max-width: 768px) {
+                    .replacementPanel {
+                        min-width: 90vw;
+                        max-width: 90vw;
+                    }
+                    
+                }
+                .bold{
+                    font-weight: bold;
+                }
+                #dropdown{
+                    width: 100%;
+                    margin: auto;
+                    margin-top: 1rem;
+                    margin-bottom: 1rem;
+                }
+                .imgLoading{
+                    margin: auto;
+                    margin-top: 1rem;
+                    margin-bottom: 1rem;
+                }
+
+                .replacementPanel > div {
+                    margin: 1rem;
+                }
+                #utilisationMessage{
+                    font-style: italic;
+                    color: #666666;
+                    margin-bottom: 1rem;
+                    font-size: 0.8rem;
+                }
+                .status3, .status2, .utilisationsASUP, .database{
+                    margin-bottom: 1rem;
+                    border-bottom: 1px solid #e5e5e5;
+                    padding-bottom: 1rem;
+                }
+                .status3-title{
+                    font-size: 1rem;
+                    font-weight: bold;
+                    margin-bottom: 1rem;
+                    color: #d64d00;
+                }
+                .status2-title{
+                    font-size: 1rem;
+                    font-weight: bold;
+                    margin-bottom: 1rem;
+                    color: #0078f3;
+                }
+                .utilisationsASUP-title{
+                    font-size: 1rem;
+                    font-weight: bold;
+                    margin-bottom: 1rem;
+                    color: #009081;
+                }
+                .database-title{
+                    font-size: 1rem;
+                    font-weight: bold;
+                    margin-bottom: 1rem;
+                    color: #C08C65;
+                }
+
+                .status3-content {
+                    display: table;
+                    width: 120%;
+                    margin-bottom: 1rem;
+                    overflow-x: scroll;
+                    white-space: nowrap;
+                }
+                .status2-content {
+                    display: table;
+                    width: 120%;
+                    margin-bottom: 1rem;
+                    overflow-x: scroll;
+                    white-space: nowrap;
+                }
+                .status5-content {
+                    display: table;
+                    width: 120%;
+                    margin-bottom: 1rem;
+                    overflow-x: scroll;
+                    white-space: nowrap;
+                }
+                .utilisationsASUP-content {
+                    display: table;
+                    width: 120%;
+                    margin-bottom: 1rem;
+                    overflow-x: scroll;
+                    white-space: nowrap;
+                }
+                .status1-content {
+                    display: table;
+                    width: 120%;
+                    margin-bottom: 1rem;
+                    overflow-x: scroll;
+                    white-space: nowrap;
+                }
+                .status1-header{
+                    display: table-row;
+                }
+                .status3-header{
+                    display: table-row;
+                }
+                .status2-header{
+                    display: table-row;
+                }
+                .status5-header{
+                    display: table-row;
+    }
+                .utilisationsASUP-header{
+                    display: table-row;
+                }
+                .status3-header-item{
+                    display: table-cell;
+                    font-weight: bold;
+                    padding: 0.5rem;
+                    border-bottom: 1px solid #d64d00;
+                    text-align: center;
+                    vertical-align: middle;
+                }
+                .status2-header-item{
+                    display: table-cell;
+                    font-weight: bold;
+                    padding: 0.5rem;
+                    border-bottom: 1px solid #0078f3;
+                    text-align: center;
+                    vertical-align: middle;
+                }
+                .utilisationsASUP-header-item{
+                    display: table-cell;
+                    font-weight: bold;
+                    padding: 0.5rem;
+                    border-bottom: 1px solid #009081;
+                    text-align: center;
+                    vertical-align: middle;
+                }
+                .status5-header-item{
+                    display: table-cell;
+                    font-weight: bold;
+                    padding: 0.5rem;
+                    border-bottom: 1px solid #009081;
+                    text-align: center;
+                    vertical-align: middle;
+            }
+
+                .status3-content-items{
+                    display: table-row;
+                    padding: 0.5rem;
+                }
+                .status2-content-items{
+                    display: table-row;
+                    padding: 0.5rem;
+                }
+                .status5-content-items{
+                    display: table-row;
+                    padding: 0.5rem;
+                }   
+                .utilisationsASUP-content-items{
+                    display: table-row;
+                    padding: 0.5rem;
+                }
+                .status1-content-items{
+                    display: table-row;
+                    padding: 0.5rem;
+                }
+                .status3-content-item{
+                    display: table-cell;
+                    border-bottom: 1px solid #d64d00;
+                    text-align: center;
+                    vertical-align: middle;
+                    padding: 0.5rem;
+                }
+                .status2-content-item{
+                    display: table-cell;
+                    border-bottom: 1px solid #0078f3;
+                    text-align: center;
+                    vertical-align: middle;
+                    padding: 0.5rem;
+                }
+                .utilisationsASUP-content-item{
+                    display: table-cell;
+                    border-bottom: 1px solid #009081;
+                    text-align: center;
+                    vertical-align: middle;
+                    padding: 0.5rem;
+                }
+                .status5-content-item{
+                    display: table-cell;
+                    border-bottom: 1px solid #009081;
+                    text-align: center;
+                    vertical-align: middle;
+                    padding: 0.5rem;
+                }
+                .status1-content-item{
+                    display: table-cell;
+                    border-bottom: 1px solid #C08C65;
+                    text-align: center;
+                    vertical-align: middle;
+                    padding: 0.5rem;
+                }
+                .status1-header-item{
+                    display: table-cell;
+                    font-weight: bold;
+                    padding: 0.5rem;
+                    border-bottom: 1px solid #C08C65;
+                    text-align: center;
+                    vertical-align: middle;
+                }
+                .utilisationsASUP-content-item:hover{
+                    background-color: #dffdf7;
+                    cursor: pointer;
+                }
+                .status3-content-items:nth-child(odd){
+                    background-color: #fff4f3;
+                }
+                .status2-content-items:nth-child(odd){
+                    background-color: #f4f6ff;
+                }
+                .utilisationsASUP-content-items:nth-child(odd){
+                    background-color: #dffdf7;
+                }
+                .status5-content-items:nth-child(odd){
+                    background-color: #dffdf7;
+                }
+                .status1-content-items:nth-child(odd){
+                    background-color: #fbf5f2;
+                }
+                .status3-message, .status2-message, .utilisationsASUP-message, .status1-message, .message{
+                    font-style: italic;
+                    text-align: center;
+                    margin-top: 1rem;
+                    text-align: left;
+                    color: #666666;
+                    margin-bottom: 1.3rem;
+                    font-size: 0.8rem;
+                }
+        </style>
+        </head>`;
+        
+
+                    // Corps du HTML avec insertion dynamique des données
+            let htmlBody = `<body>`;
+
+            // Section des médicaments
+            htmlBody += `<h2>Liste des Médicaments Disponibles</h2>`;
+            if (data.rows1.length > 0) {
+                htmlBody += `<div class="status1-content">
+                    <div class="status1-header">
+                        <div class="status1-header-item">Nom Médicament</div>
+                        <div class="status1-header-item">Numéro de Lot</div>
+                        <div class="status1-header-item">Date de Péremption</div>
+                        <div class="status1-header-item">Créateur</div>
+                    </div>`;
+                data.rows1.forEach(row => {
+                    htmlBody += `
+                        <div class="status1-content-items">
+                            <div class="status1-content-item">${row.nomMedicament}</div>
+                            <div class="status1-content-item">${row.numLot}</div>
+                            <div class="status1-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
+                            <div class="status1-content-item">${row.createur.nomAgent} ${row.createur.prenomAgent} (${row.createur.grade})</div>
+                        </div>`;
+                });
+                htmlBody += `</div>`;
+            } else {
+                htmlBody += `<p class="status1-message">Aucun médicament trouvé.</p>`;
+            }
+
+            // Section des actes de soin
+            htmlBody += `<h2>Actes de Soin</h2>`;
+            if (data.rows4.length > 0) {
+                htmlBody += `<div class="utilisationASUP-content">
+                    <div class="utilisationASUP-header">
+                        <div class="utilisationASUP-header-item">Numéro d'Intervention</div>
+                        <div class="utilisationASUP-header-item">Acte Soin</div>
+                        <div class="utilisationASUP-header-item">Date</div>
+                        <div class="utilisationASUP-header-item">Médecin Prescripteur</div>
+                    </div>`;
+                data.rows4.forEach(row => {
+                    htmlBody += `
+                        <div class="utilisationASUP-content-items">
+                            <div class="utilisationASUP-content-item">${row.numIntervention}</div>
+                            <div class="utilisationASUP-content-item">${row.acteSoin}</div>
+                            <div class="utilisationASUP-content-item">${new Date(row.dateActe).toLocaleDateString()}</div>
+                            <div class="utilisationASUP-content-item">${row.medecinPrescripteur.nomExercice} ${row.medecinPrescripteur.prenomExercice}</div>
+                        </div>`;
+                });
+                htmlBody += `</div>`;
+            } else {
+                htmlBody += `<p class="utilisationASUP-message">Aucun acte de soin trouvé.</p>`;
+            }
+
+            // Section des médicaments à remplacer
+            htmlBody += `<h2>Liste des Médicaments en Remplacement (Utilisation)</h2>`;
+            if (data.rows2.length > 0) {
+                htmlBody += `<div class="status2-content">
+                    <div class="status2-header">
+                        <div class="status2-header-item">Nom Médicament</div>
+                        <div class="status2-header-item">Numéro de Lot</div>
+                        <div class="status2-header-item">Date de Péremption</div>
+                        <div class="status2-header-item">Créateur</div>
+                        <div class="status2-header-item">Remplaçant</div>
+                    </div>`;
+                data.rows2.forEach(row => {
+                    htmlBody += `
+                        <div class="status2-content-items">
+                            <div class="status2-content-item">${row.nomMedicament}</div>
+                            <div class="status2-content-item">${row.numLot}</div>
+                            <div class="status2-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
+                            <div class="status2-content-item">${row.createur.nomAgent} ${row.createur.prenomAgent} (${row.createur.grade})</div>
+                            <div class="status2-content-item">${row.matriculeRemplaceur}</div>
+                        </div>`;
+                });
+                htmlBody += `</div>`;
+            } else {
+                htmlBody += `<p class="status2-message">Aucun médicament trouvé.</p>`;
+            }
+
+            // Section des médicaments à remplacer
+            htmlBody += `<h2>Liste des Médicaments en Remplacement (Péremption)</h2>`;
+            if (data.rows3.length > 0) {
+                htmlBody += `<div class="status3-content">
+                    <div class="status3-header">
+                        <div class="status3-header-item">Nom Médicament</div>
+                        <div class="status3-header-item">Numéro de Lot</div>
+                        <div class="status3-header-item">Date de Péremption</div>
+                        <div class="status3-header-item">Créateur</div>
+                        <div class="status3-header-item">Remplaçant</div>
+                    </div>`;
+                data.rows3.forEach(row => {
+                    htmlBody += `
+                        <div class="status3-content-items">
+                            <div class="status3-content-item">${row.nomMedicament}</div>
+                            <div class="status3-content-item">${row.numLot}</div>
+                            <div class="status3-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
+                            <div class="status3-content-item">${row.createur.nomAgent} ${row.createur.prenomAgent} (${row.createur.grade})</div>
+                            <div class="status3-content-item">${row.matriculeRemplaceur}</div>
+                        </div>`;
+                });
+                htmlBody += `</div>`;
+            } else {
+                htmlBody += `<p class="status3-message">Aucun médicament trouvé.</p>`;
+            }
+
+            // Section des médicaments archivés
+            htmlBody += `<h2>Liste des Médicaments Archivés</h2>`;
+            if (data.rows5.length > 0) {
+                htmlBody += `<div class="status5-content">
+                    <div class="status5-header">
+                        <div class="status5-header-item">Nom Médicament</div>
+                        <div class="status5-header-item">Numéro de Lot</div>
+                        <div class="status5-header-item">Date de Péremption</div>
+                        <div class="status5-header-item">Créateur</div>
+                        <div class="status5-header-item">Remplaçant</div>
+                    </div>`;
+                data.rows5.forEach(row => {
+                    htmlBody += `
+                        <div class="status5-content-items">
+                            <div class="status5-content-item">${row.nomMedicament}</div>
+                            <div class="status5-content-item">${row.numLot}</div>
+                            <div class="status5-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
+                            <div class="status5-content-item">${row.createur.nomAgent} ${row.createur.prenomAgent} (${row.createur.grade})</div>
+                            <div class="status5-content-item">${row.matriculeRemplaceur}</div>
+                        </div>`;
+                });
+                htmlBody += `</div>`;
+            } else {
+                htmlBody += `<p class="status5-message">Aucun médicament trouvé.</p>`;
+            }
+
+                    
+        // Combinaison de l'en-tête et du corps pour générer le PDF
+        const finalHTML = htmlHeader + htmlBody;
+        return new Promise((resolve, reject) => {
+            pdf.create(finalHTML).toBuffer((err, buffer) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(buffer);
+            }
+            });
+        });
+    }
+    
+
+}
+
 
 module.exports = {
     getAsupAgent,
@@ -683,5 +1138,6 @@ module.exports = {
     createNewStock,
     getMedicamentsWithoutVsav,
     affectVsav,
-    getVizData
+    getVizData,
+    generatePDF
 };
