@@ -1027,7 +1027,7 @@ async function generatePDF(){
                             <div class="status1-content-item">${row.count}</div>
                             <div class="status1-content-item"  style="text-align: left">${row.nomMedicament}</div>
                             <div class="status1-content-item">${row.numLot}</div>
-                            <div class="status1-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
+                            <div class="status1-content-item">${new Date(row.datePeremption).toLocaleDateString('fr-FR')}</div>
                             <div class="status1-content-item"  style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
                         </div>`;
                 });
@@ -1053,7 +1053,7 @@ async function generatePDF(){
                         <div class="utilisationsASUP-content-items">
                             <div class="utilisationsASUP-content-item">${row.numIntervention}</div>
                             <div class="utilisationsASUP-content-item">${row.acteSoin}</div>
-                            <div class="utilisationsASUP-content-item">${new Date(row.dateActe).toLocaleDateString()}</div>
+                            <div class="utilisationsASUP-content-item">${new Date(row.dateActe).toLocaleDateString('fr-FR')}</div>
                             <div class="utilisationsASUP-content-item"  style="text-align: left">${row.agent.nomAgent} ${row.agent.prenomAgent}</div>
                             <div class="utilisationsASUP-content-item"  style="text-align: left">${row.medecinPrescripteur.nomExercice} ${row.medecinPrescripteur.prenomExercice} (${row.medecinPrescripteur.identifiantRPPS})</div>
                             <div class="utilisationsASUP-content-item">${row.idMedicamentsList ? row.idMedicamentsList.length : "0"}</div>
@@ -1083,7 +1083,7 @@ async function generatePDF(){
                             <div class="status2-content-item">${row.count}</div>
                             <div class="status2-content-item"  style="text-align: left">${row.nomMedicament}</div>
                             <div class="status2-content-item">${row.numLot}</div>
-                            <div class="status2-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
+                            <div class="status2-content-item">${new Date(row.datePeremption).toLocaleDateString('fr-FR')}</div>
                             <div class="status2-content-item" style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
                             <div class="status2-content-item">${row.matriculeRemplaceur}</div>
                         </div>`;
@@ -1111,7 +1111,7 @@ async function generatePDF(){
                             <div class="status3-content-item">${row.count}</div>
                             <div class="status3-content-item"  style="text-align: left">${row.nomMedicament}</div>
                             <div class="status3-content-item"  style="text-align: left">${row.numLot}</div>
-                            <div class="status3-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
+                            <div class="status3-content-item">${new Date(row.datePeremption).toLocaleDateString('fr-FR')}</div>
                             <div class="status3-content-item"  style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
                             <div class="status3-content-item">${row.matriculeRemplaceur}</div>
                         </div>`;
@@ -1139,7 +1139,7 @@ async function generatePDF(){
                             <div class="status5-content-item">${row.count}</div>
                             <div class="status5-content-item" style="text-align: left">${row.nomMedicament}</div>
                             <div class="status5-content-item" style="text-align: left">${row.numLot}</div>
-                            <div class="status5-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
+                            <div class="status5-content-item">${new Date(row.datePeremption).toLocaleDateString('fr-FR')}</div>
                             <div class="status5-content-item" style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
                             <div class="status5-content-item">${row.matriculeRemplaceur}</div>
                         </div>`;
