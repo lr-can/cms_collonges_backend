@@ -976,7 +976,7 @@ async function generatePDF(){
 
             // Section des médicaments
             htmlBody += `<h2>Liste des Médicaments Disponibles</h2>`;
-            if (data.rows1.length > 0) {
+            if (data.rows1 && data.rows1.length > 0) {
                 htmlBody += `<div class="status1-content">
                     <div class="status1-header">
                         <div class="status1-header-item">Nom Médicament</div>
@@ -1000,7 +1000,7 @@ async function generatePDF(){
 
             // Section des actes de soin
             htmlBody += `<h2>Actes de Soin</h2>`;
-            if (data.rows4.length > 0) {
+            if (data.rows4 && data.rows4.length > 0) {
                 htmlBody += `<div class="utilisationASUP-content">
                     <div class="utilisationASUP-header">
                         <div class="utilisationASUP-header-item">Numéro d'Intervention</div>
@@ -1024,7 +1024,7 @@ async function generatePDF(){
 
             // Section des médicaments à remplacer
             htmlBody += `<h2>Liste des Médicaments en Remplacement (Utilisation)</h2>`;
-            if (data.rows2.length > 0) {
+            if (data.rows2 && data.rows2.length > 0) {
                 htmlBody += `<div class="status2-content">
                     <div class="status2-header">
                         <div class="status2-header-item">Nom Médicament</div>
@@ -1050,7 +1050,7 @@ async function generatePDF(){
 
             // Section des médicaments à remplacer
             htmlBody += `<h2>Liste des Médicaments en Remplacement (Péremption)</h2>`;
-            if (data.rows3.length > 0) {
+            if (data.rows3 && data.rows3.length > 0) {
                 htmlBody += `<div class="status3-content">
                     <div class="status3-header">
                         <div class="status3-header-item">Nom Médicament</div>
@@ -1076,7 +1076,7 @@ async function generatePDF(){
 
             // Section des médicaments archivés
             htmlBody += `<h2>Liste des Médicaments Archivés</h2>`;
-            if (data.rows5.length > 0) {
+            if (data.rows5 && data.rows5.length > 0) {
                 htmlBody += `<div class="status5-content">
                     <div class="status5-header">
                         <div class="status5-header-item">Nom Médicament</div>
