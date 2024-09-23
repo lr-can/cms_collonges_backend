@@ -667,8 +667,6 @@ async function getVizData(){
 
 async function generatePDF(){
     data = await getVizData();
-    async function generatePDF(){
-        const data = await getVizData();
         
         const htmlHeader = `
         <html>
@@ -1116,8 +1114,6 @@ async function generatePDF(){
         });
     }
     
-
-}
 
 
 module.exports = {
