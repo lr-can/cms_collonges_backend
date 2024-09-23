@@ -1020,10 +1020,10 @@ async function generatePDF(){
                     htmlBody += `
                         <div class="status1-content-items">
                             <div class="status1-content-item">${row.count}</div>
-                            <div class="status1-content-item">${row.nomMedicament}</div>
+                            <div class="status1-content-item"  style="text-align: left">${row.nomMedicament}</div>
                             <div class="status1-content-item">${row.numLot}</div>
                             <div class="status1-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
-                            <div class="status1-content-item agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.createur.grade}.png?raw=true" width="25px" height="auto"><span> ${row.createur.nomAgent} ${row.createur.prenomAgent}</span></div>
+                            <div class="status1-content-item"  style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
                         </div>`;
                 });
                 htmlBody += `</div>`;
@@ -1049,8 +1049,8 @@ async function generatePDF(){
                             <div class="utilisationsASUP-content-item">${row.numIntervention}</div>
                             <div class="utilisationsASUP-content-item">${row.acteSoin}</div>
                             <div class="utilisationsASUP-content-item">${new Date(row.dateActe).toLocaleDateString()}</div>
-                            <div class="utilisationsASUP-content-item agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.agent.grade}.png?raw=true" width="25px" height="auto"><span> ${row.agent.nomAgent} ${row.agent.prenomAgent}</span></div>
-                            <div class="utilisationsASUP-content-item">${row.medecinPrescripteur.nomExercice} ${row.medecinPrescripteur.prenomExercice} (${row.medecinPrescripteur.identifiantRPPS})</div>
+                            <div class="utilisationsASUP-content-item"  style="text-align: left">${row.agent.nomAgent} ${row.agent.prenomAgent}</div>
+                            <div class="utilisationsASUP-content-item"  style="text-align: left">${row.medecinPrescripteur.nomExercice} ${row.medecinPrescripteur.prenomExercice} (${row.medecinPrescripteur.identifiantRPPS})</div>
                             <div class="utilisationsASUP-content-item">${row.idMedicamentsList ? row.idMedicamentsList.length : "0"}</div>
                         </div>`;
                 });
@@ -1076,10 +1076,10 @@ async function generatePDF(){
                     htmlBody += `
                         <div class="status2-content-items">
                             <div class="status2-content-item">${row.count}</div>
-                            <div class="status2-content-item">${row.nomMedicament}</div>
+                            <div class="status2-content-item"  style="text-align: left">${row.nomMedicament}</div>
                             <div class="status2-content-item">${row.numLot}</div>
                             <div class="status2-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
-                            <div class="status2-content-item agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.createur.grade}.png?raw=true" width="25px" height="auto"><span> ${row.createur.nomAgent} ${row.createur.prenomAgent}</span></div>
+                            <div class="status2-content-item" style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
                             <div class="status2-content-item">${row.matriculeRemplaceur}</div>
                         </div>`;
                 });
@@ -1103,10 +1103,11 @@ async function generatePDF(){
                 data.rows3.forEach(row => {
                     htmlBody += `
                         <div class="status3-content-items">
-                            <div class="status3-content-item">${row.nomMedicament}</div>
-                            <div class="status3-content-item">${row.numLot}</div>
+                            <div class="status3-content-item">${row.count}</div>
+                            <div class="status3-content-item"  style="text-align: left">${row.nomMedicament}</div>
+                            <div class="status3-content-item"  style="text-align: left">${row.numLot}</div>
                             <div class="status3-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
-                            <div class="status3-content-item">${row.createur.nomAgent} ${row.createur.prenomAgent} (${row.createur.grade})</div>
+                            <div class="status3-content-item"  style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
                             <div class="status3-content-item">${row.matriculeRemplaceur}</div>
                         </div>`;
                 });
@@ -1131,10 +1132,10 @@ async function generatePDF(){
                     htmlBody += `
                         <div class="status5-content-items">
                             <div class="status5-content-item">${row.count}</div>
-                            <div class="status5-content-item">${row.nomMedicament}</div>
-                            <div class="status5-content-item">${row.numLot}</div>
+                            <div class="status5-content-item" style="text-align: left">${row.nomMedicament}</div>
+                            <div class="status5-content-item" style="text-align: left">${row.numLot}</div>
                             <div class="status5-content-item">${new Date(row.datePeremption).toLocaleDateString()}</div>
-                            <div class="status5-content-item agentInfo"><img :src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/${row.createur.grade}.png?raw=true" width="25px" height="auto"><span> ${row.createur.nomAgent} ${row.createur.prenomAgent}</span></div>
+                            <div class="status5-content-item" style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
                             <div class="status5-content-item">${row.matriculeRemplaceur}</div>
                         </div>`;
                 });
@@ -1151,7 +1152,7 @@ async function generatePDF(){
             const options = {
                 format: 'A4',
                 orientation: 'landscape',
-                border: '2.5cm'
+                border: '1.5cm'
             };
 
             pdf.create(finalHTML, options).toBuffer((err, buffer) => {
