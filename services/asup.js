@@ -569,9 +569,10 @@ async function getVizData(){
             row.idMedicamentsList = medicaments;
         }
         const intervention = interventions.find(intervention => {
-            const interventionYear = new Date(intervention.notificationDate).getFullYear();
-            const acteYear = new Date(row.dateActe).getFullYear();
-            return intervention.numeroInter.toString() === row.numIntervention.toString() && interventionYear === acteYear;
+            const interventionDate = new Date(intervention.notificationDate).toISOString().split('T')[0];
+            const acteDate = new Date(row.dateActe).toISOString().split('T')[0];
+                    
+            return intervention.numeroInter.trim() === row.numIntervention.trim() && interventionDate === acteDate;
         });
         if (intervention) {
             row.interventionDetails = intervention;
