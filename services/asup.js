@@ -32,65 +32,87 @@ async function getDoctor(RPPS) {
         fetch = (await import('node-fetch')).default;
     };
     const privateKey = config.google.private_key.replace(/\\n/g, '\n');
-        const auth = new google.auth.JWT(
-            config.google.client_email,
-            null,
-            privateKey,
-            ['https://www.googleapis.com/auth/spreadsheets']
-        );
+    const auth = new google.auth.JWT(
+        config.google.client_email,
+        null,
+        privateKey,
+        ['https://www.googleapis.com/auth/spreadsheets']
+    );
+    const shortDataResponse = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/RPPS_short');
+    const shortData = await shortDataResponse.json();
+    const doctor = shortData.find(doc => doc.identifiantRPPS === RPPS);
 
-    const sheets = google.sheets({version: 'v4', auth});
-    const spreadsheetId = config.google.spreadsheetId2;
-    const rppsNumber = RPPS;
-    const range = 'recherche_RPPS!A2';
+    if (doctor) {
+        return {
+            identifiantRPPS: doctor.identifiantRPPS,
+            nomExercice: doctor.nomExercice,
+            prenomExercice: doctor.prenomExercice
+        };
+    } else {
+        const sheets = google.sheets({ version: 'v4', auth });
+        const spreadsheetId = config.google.spreadsheetId2;
+        const rppsNumber = RPPS;
+        const range = 'recherche_RPPS!A2';
 
-    try {
-        // Append the new row to the spreadsheet
-        await sheets.spreadsheets.values.update({
-            spreadsheetId,
-            range,
-            valueInputOption: 'USER_ENTERED',
-            resource: {
-                values: [
-                    [
-                    `=MATCH(${rppsNumber}; RPPS!A:A; 0)`
+        try {
+            // Append the new row to the spreadsheet
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: [
+                        [
+                            `=MATCH(${rppsNumber}; RPPS!A:A; 0)`
                         ]
                     ],
-            },
-        });
-        
-    } catch (err) {
-        console.error('Error appending row:', err);
-        throw err; // Renvoie l'erreur pour être gérée par l'appelant
-    }
-    try {
-        const response = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/recherche_RPPS');
-        const data = await response.json();
-        
-        const rowNumber = data[0].RowNumber;
+                },
+            });
 
-        const range = `RPPS!A${rowNumber}:C${rowNumber}`;
-
-        const response2 = await sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range,
-        });
-
-        console.log(response);
-
-        const values = response2.data.values;
-
-        if (!values || values.length === 0) {
-            throw new Error('No data found in the specified row.');
+        } catch (err) {
+            console.error('Error appending row:', err);
+            throw err; // Renvoie l'erreur pour être gérée par l'appelant
         }
+        try {
+            const response = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/recherche_RPPS');
+            const data = await response.json();
 
-        const [identifiantRPPS, nomExercice, prenomExercice] = values[0];
+            const rowNumber = data[0].RowNumber;
 
-        return { identifiantRPPS, nomExercice, prenomExercice };
-        
-    } catch (error) {
-        console.error(error);
-        throw new Error(error);
+            const range = `RPPS!A${rowNumber}:C${rowNumber}`;
+
+            const response2 = await sheets.spreadsheets.values.get({
+                spreadsheetId,
+                range,
+            });
+
+            console.log(response);
+
+            const values = response2.data.values;
+
+            if (!values || values.length === 0) {
+                throw new Error('No data found in the specified row.');
+            }
+
+            const [identifiantRPPS, nomExercice, prenomExercice] = values[0];
+
+            await sheets.spreadsheets.values.append({
+                spreadsheetId,
+                range: 'RPPS_short!A:C',
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: [
+                        [identifiantRPPS, nomExercice, prenomExercice]
+                    ],
+                },
+            });
+
+            return { identifiantRPPS, nomExercice, prenomExercice };
+
+        } catch (error) {
+            console.error(error);
+            throw new Error(error);
+        }
     }
 }
 
