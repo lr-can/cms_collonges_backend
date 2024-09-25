@@ -554,18 +554,21 @@ async function getVizData(){
         if (intervention) {
             row.interventionDetails = intervention;
         } else {
+            const dateActe = new Date(row.dateActe);
+            const formattedDate = `${dateActe.getDate()}/${dateActe.getMonth() + 1}/${dateActe.getFullYear()}`;
+            const timeActe = dateActe.toISOString().slice(11, 16);
             row.interventionDetails = {
-            identifiant: "",
-            numeroInter: row.numIntervention,
-            notificationDate: row.dateActe,
-            notificationHeure: "",
-            notificationTitre: "Entrée manuelle",
-            notificationAdresse: "",
-            notificationLon: "4.8448856",
-            notificationLat: "45.8172792",
-            notificationEngins: "",
-            notificationVille: "",
-            notification: ""
+                identifiant: "",
+                numeroInter: row.numIntervention,
+                notificationDate: formattedDate,
+                notificationHeure: timeActe,
+                notificationTitre: "Entrée manuelle",
+                notificationAdresse: "",
+                notificationLon: "4.8448856",
+                notificationLat: "45.8172792",
+                notificationEngins: "",
+                notificationVille: "",
+                notification: ""
             };
         }
         const doctorCache = {};
@@ -577,6 +580,7 @@ async function getVizData(){
                 const doctor = await getDoctor(row.medecinPrescripteur);
                 doctorCache[row.medecinPrescripteur] = doctor;
                 row.medecinPrescripteur = doctor;
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
         }
 
