@@ -585,12 +585,12 @@ async function getVizData(){
                 notificationDate: formattedDate,
                 notificationHeure: timeActe,
                 notificationTitre: "Entrée manuelle",
-                notificationAdresse: "",
+                notificationAdresse: "Aucune adresse trouvée",
                 notificationLon: "4.8448856",
                 notificationLat: "45.8172792",
-                notificationEngins: "",
-                notificationVille: "",
-                notification: ""
+                notificationEngins: "0",
+                notificationVille: "Aucune ville trouvée",
+                notification: "Pas de notif associée"
             };
         }
         const doctorCache = {};
