@@ -68,6 +68,7 @@ async function getDoctor(RPPS) {
                     ],
                 },
             });
+            await new Promise(resolve => setTimeout(resolve, 2500));
 
         } catch (err) {
             console.error('Error appending row:', err);
