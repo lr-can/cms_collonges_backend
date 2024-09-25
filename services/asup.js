@@ -577,7 +577,7 @@ async function getVizData(){
             const acteYear = new Date(row.dateActe).getFullYear();
 
 
-            return intervention.numeroInter.trim() === row.numIntervention.trim() && interventionYear === acteYear;
+            return intervention.numeroInter.toString() === row.numIntervention.toString() && interventionYear === acteYear;
         });
         if (intervention) {
             row.interventionDetails = intervention;
