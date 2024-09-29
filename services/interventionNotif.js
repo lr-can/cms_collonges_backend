@@ -110,6 +110,9 @@ async function insertSmartemisResponse(data) {
                 data.result.lib,
                 data.result.num
             ]);
+            const currentTime = new Date().toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
+            values.forEach(row => row.push(currentTime));
+
 
             const response = await sheets.spreadsheets.values.update({
                 spreadsheetId,
