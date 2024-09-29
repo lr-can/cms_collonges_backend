@@ -80,7 +80,7 @@ async function giveInterventionType(titre) {
     }
 }
 
-async function insertSmartemisResponse(data){
+async function insertSmartemisResponse(data) {
     const privateKey = config.google.private_key.replace(/\\n/g, '\n');
     const auth = new google.auth.JWT(
         config.google.client_email,
@@ -89,31 +89,42 @@ async function insertSmartemisResponse(data){
         ['https://www.googleapis.com/auth/spreadsheets']
     );
 
-    const sheets = google.sheets({version: 'v4', auth});
+    const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = config.google.spreadsheetId;
-    const result = data;
-    const range = 'Feuille 4!A2:K';
+    const range = 'Feuille 4!A2:M';
 
-    if (result.engList){
+    if (data.engList) {
+        try {
+            const values = data.engList.map(eng => [
+                eng.famEngCod,
+                eng.famEngLib,
+                eng.engId,
+                eng.engLib,
+                eng.engStatusCod,
+                eng.engStatusBgRgb,
+                eng.engStatusFgRgb,
+                eng.engAbon,
+                data.availablePersonCounter.nbAvailable,
+                data.availablePersonCounter.nbMax,
+                data.result.code,
+                data.result.lib,
+                data.result.num
+            ]);
 
-    try {
-        // Update the new row to the spreadsheet
-        const response = await sheets.spreadsheets.values.update({
-            spreadsheetId,
-            range,
-            valueInputOption: 'USER_ENTERED',
-            resource: {
-                values: [[result]],
-            },
-        });
-        console.log('Row appended successfully!');
-        
-        return response;
-    } catch (err) {
-        console.error('Error appending row:', err);
-        throw err; // Renvoie l'erreur pour être gérée par l'appelant
+            const response = await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: values,
+                },
+            });
+
+            console.log('Update successful:', response.data);
+        } catch (error) {
+            console.error('Error updating spreadsheet:', error);
+        }
     }
-}
 }
 
 module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse };
