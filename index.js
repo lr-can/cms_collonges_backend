@@ -45,6 +45,7 @@ const getReplaceStep3 = require("./routes/getReplaceStep3");
 const replaceStep3 = require("./routes/replaceStep3");
 const getVizDataAsup = require("./routes/getVizDataAsup");
 const asupPDF = require("./routes/generateAsupPDF");
+const smartemis = require("./routes/smartemis");
 
 app.use(express.json());
 app.use(cors());
@@ -100,6 +101,7 @@ app.use("/getReplaceStep3", getReplaceStep3);
 app.use("/replaceStep3", replaceStep3);
 app.use("/getVizDataAsup", getVizDataAsup);
 app.use("/asupPDF", asupPDF);
+app.use("/smartemis", smartemis);
 
 
 app.use((err, req, res, next) => {

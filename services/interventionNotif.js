@@ -80,4 +80,40 @@ async function giveInterventionType(titre) {
     }
 }
 
-module.exports = { insertInterventionNotif, giveInterventionType};
+async function insertSmartemisResponse(data){
+    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+    const auth = new google.auth.JWT(
+        config.google.client_email,
+        null,
+        privateKey,
+        ['https://www.googleapis.com/auth/spreadsheets']
+    );
+
+    const sheets = google.sheets({version: 'v4', auth});
+    const spreadsheetId = config.google.spreadsheetId;
+    const result = data;
+    const range = 'Feuille 4!A2:K';
+
+    if (result.engList){
+
+    try {
+        // Update the new row to the spreadsheet
+        const response = await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: [['rowData']],
+            },
+        });
+        console.log('Row appended successfully!');
+        
+        return response;
+    } catch (err) {
+        console.error('Error appending row:', err);
+        throw err; // Renvoie l'erreur pour être gérée par l'appelant
+    }
+}
+}
+
+module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse };
