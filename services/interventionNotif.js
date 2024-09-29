@@ -91,7 +91,7 @@ async function insertSmartemisResponse(data) {
 
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = config.google.spreadsheetId;
-    const range = 'Feuille 4!A2:M';
+    const range = 'Feuille 4!A2:N';
 
     if (data.engList) {
         try {
