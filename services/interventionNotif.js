@@ -99,7 +99,7 @@ async function insertSmartemisResponse(data) {
                 eng.famEngCod,
                 eng.famEngLib,
                 eng.engId,
-                eng.engLib,
+                eng.engLib.startsWith('+') ? `'${eng.engLib}` : eng.engLib,
                 eng.engStatusCod,
                 eng.engStatusBgRgb,
                 eng.engStatusFgRgb,
