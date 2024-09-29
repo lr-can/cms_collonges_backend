@@ -103,7 +103,7 @@ async function insertSmartemisResponse(data){
             range,
             valueInputOption: 'USER_ENTERED',
             resource: {
-                values: [['rowData']],
+                values: [[result]],
             },
         });
         console.log('Row appended successfully!');
