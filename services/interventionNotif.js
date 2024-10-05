@@ -130,4 +130,23 @@ async function insertSmartemisResponse(data) {
     }
 }
 
-module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse };
+async function verifyIfInter(){
+    if (!fetch) {
+        fetch = (await import('node-fetch')).default;
+    };
+    try {
+        const response = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201');
+        const data = await response.json();
+        const lastLine = data[data.length - 1];
+        if (lastLine.departStatus === "TRUE") {
+            return true;
+        } else {
+            return false;
+        }
+    } catch (err) {
+        console.error('Error fetching data:', err);
+        throw err;
+    }
+}
+
+module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter };
