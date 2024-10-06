@@ -24,7 +24,7 @@ async function insertInterventionNotif(data) {
             range,
             valueInputOption: 'USER_ENTERED',
             resource: {
-                values: [['Added with CMS API','','','','','','','','','',rowData]],
+                values: [['Added with CMS API','','','','','','','','','',rowData, 'TRUE']],
             },
         });
         console.log('Row appended successfully!');
