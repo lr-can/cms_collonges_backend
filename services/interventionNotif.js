@@ -4,6 +4,20 @@ let fetch
 
 
 async function insertInterventionNotif(data) {
+
+    if (!fetch) {
+        fetch = (await import('node-fetch')).default;
+    }
+
+    const response = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201');
+    const sheetData = await response.json();
+
+    const existingNotification = sheetData.find(item => item.notification === data.notification);
+
+    if (existingNotification) {
+        console.log('Notification already exists, doing nothing.');
+        return;
+    } else {
         const privateKey = config.google.private_key.replace(/\\n/g, '\n');
         const auth = new google.auth.JWT(
             config.google.client_email,
@@ -16,6 +30,8 @@ async function insertInterventionNotif(data) {
     const spreadsheetId = config.google.spreadsheetId;
     const rowData = data.notification;
     const range = 'Feuille 1!A1:K';
+    
+
 
     try {
         // Append the new row to the spreadsheet
@@ -34,6 +50,7 @@ async function insertInterventionNotif(data) {
         console.error('Error appending row:', err);
         throw err; // Renvoie l'erreur pour être gérée par l'appelant
     }
+}
 }
 
 async function giveInterventionType(titre) {
