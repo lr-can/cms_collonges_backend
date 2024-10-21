@@ -254,7 +254,7 @@ async function getPeremption(page = 1){
    await db.query(
       `UPDATE retourIntervention SET statutRI = 1
       WHERE idMateriel = 'controleGluco' OR idMateriel = 'gantL' OR idMateriel = 'gantM' 
-      OR idMateriel = 'gantS' OR idMateriel = 'gantXL' OR idMateriel = 'masqueChir' OR idMateriel = 'sprayDesinfect'
+      OR idMateriel = 'gantS' OR idMateriel = 'gantXL' OR idMateriel = 'masqueChir'
       OR idMateriel = 'gelHydroAlcolo'`);
 
     for (let i = 0; i < systematique.length; i++) {
