@@ -1,11 +1,5 @@
-const db = require('./db');
-const helper = require('../helper');
-const config = require('../config');
-const { google } = require('googleapis');
 const fs = require('fs');
-const pdf = require('html-pdf');
 const turf = require('@turf/turf');
-let fetch
 
 const telexFirstPartGeoJson = JSON.parse(fs.readFileSync('ressources/firstPart.geojson', 'utf8'));
 const telexSecondPartGeoJson = JSON.parse(fs.readFileSync('ressources/secondPart.geojson', 'utf8'));
@@ -18,7 +12,7 @@ async function getFirstPartGeoJson(lon, lat) {
             return feature;
         }
     }
-    return {est: true, data:getClosestFeature(firstPart, point)};
+    return { est: true, data: getClosestFeature(firstPart, point) };
 }
 
 async function getSecondPartGeoJson(lon, lat) {
@@ -42,15 +36,19 @@ function getClosestFeature(geoJson, point) {
             closestFeature = feature;
         }
     }
-    return closestFeature;
+    if (minDistance < 0.5) {
+        return closestFeature;
+    } else {
+        return null;
+    }
 }
 
 async function getMapCoordinates(lon, lat) {
     const firstPart = await getFirstPartGeoJson(lon, lat);
-    const firstPartString = firstPart.est ? "est. " + firstPart.data.properties.assigned_data : firstPart.properties.assigned_data;
+    const firstPartString = firstPart && firstPart.est ? "est. " + (firstPart.data && firstPart.data.properties ? firstPart.data.properties.assigned_data : '') : firstPart && firstPart.properties ? firstPart.properties.assigned_data : '';
     const secondPart = await getSecondPartGeoJson(lon, lat);
-    const secondPartString = secondPart.properties.assigned_data;
-    return { coordinates: { lon, lat }, mapCoordinates: `${firstPartString} ${secondPartString}` };
+    const secondPartString = secondPart && secondPart.properties ? secondPart.properties.assigned_data : '';
+    return { coordinates: { lon, lat }, mapCoordinates: `${firstPartString} ${secondPartString}`.replace("est.  ", "inconnu") };
 }
 
 module.exports = {
