@@ -145,7 +145,7 @@ async function insertSmartemisResponse(data) {
             console.error('Error updating spreadsheet:', error);
         }
     if (data.csPersList){
-        if (data.csPersList.length() >= 2 && data.csPersList.length() < 30){
+        if (true){
             if (!fetch){
                 fetch = (await import('node-fetch')).default;
             }
@@ -155,7 +155,7 @@ async function insertSmartemisResponse(data) {
                 const agent = agentsData.find(agent => agent.matricule === `${person.persStatutCod}${person.persId}`);
                 return {
                     persStatutCod: person.persStatutCod,
-                    matricule: person.persId,
+                    matricule: `${person.persStatutCod}${person.persId}`,
                     grade: agent ? agent.grade : 'Unknown',
                     nom: person.nom,
                     prenom: person.prenom,
