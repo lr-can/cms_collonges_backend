@@ -144,6 +144,84 @@ async function insertSmartemisResponse(data) {
         } catch (error) {
             console.error('Error updating spreadsheet:', error);
         }
+    if (data.csPersList){
+        if (data.csPersList.length > 2 && data.csPersList.length < 30){
+            if (!fetch){
+                fetch = (await import('node-fetch')).default;
+            }
+            const agentsInfo = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup');
+            const agentsData = await agentsInfo.json();
+            const agentInfoList = data.csPersList.map(person => {
+                const agent = agentsData.find(agent => agent.matricule === `${person.persStatutCod}${person.persId}`);
+                return {
+                    persStatutCod: person.persStatutCod,
+                    matricule: person.persId,
+                    grade: agent ? agent.grade : 'Unknown',
+                    nom: person.nom,
+                    prenom: person.prenom,
+                    administrativeStatusCode: person.administrativeStatus.code,
+                    administrativeStatusRgb: person.administrativeStatus.rgb
+                };              
+            });
+            const values = agentInfoList.map(agent => [
+                agentInfoList.matricule,
+                agentInfoList.grade,
+                agentInfoList.nom,
+                agentInfoList.prenom,
+                agentInfoList.administrativeStatusCode,
+                agentInfoList.administrativeStatusRgb
+            ]);
+            let range2 = 'Feuille 5!A2:F100';
+            try {
+                await sheets.spreadsheets.values.clear({
+                    spreadsheetId,
+                    range: range2,
+                });
+                console.log('Data cleared successfully!');
+            } catch (error) {
+                console.error('Error clearing data:', error);
+            }
+            try {
+                const response = await sheets.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: range2,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: {
+                        values: values,
+                    },
+                });
+                console.log('Data inserted successfully:', response.data);
+            } catch (error) {
+                console.error('Error inserting data:', error);
+            }
+
+            console.log(agentInfoList);
+        }
+    }
+    }
+}
+
+async function clearSmartemisResponse() {
+    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+    const auth = new google.auth.JWT(
+        config.google.client_email,
+        null,
+        privateKey,
+        ['https://www.googleapis.com/auth/spreadsheets']
+    );
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = config.google.spreadsheetId;
+    const range = 'Feuille 5!A2:F100';
+
+    try {
+        await sheets.spreadsheets.values.clear({
+            spreadsheetId,
+            range,
+        });
+        console.log('Data cleared successfully!');
+    } catch (error) {
+        console.error('Error clearing data:', error);
     }
 }
 
@@ -166,4 +244,4 @@ async function verifyIfInter(){
     }
 }
 
-module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter };
+module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse };
