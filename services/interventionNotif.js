@@ -164,12 +164,12 @@ async function insertSmartemisResponse(data) {
                 };              
             });
             const values = agentInfoList.map(agent => [
-                agentInfoList.matricule,
-                agentInfoList.grade,
-                agentInfoList.nom,
-                agentInfoList.prenom,
-                agentInfoList.administrativeStatusCode,
-                agentInfoList.administrativeStatusRgb
+                agent.matricule,
+                agent.grade,
+                agent.nom,
+                agent.prenom,
+                agent.administrativeStatusCode,
+                agent.administrativeStatusRgb
             ]);
             let range2 = 'Feuille 5!A2:F100';
             try {
@@ -244,4 +244,24 @@ async function verifyIfInter(){
     }
 }
 
-module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse };
+async function giveAgentsAndVehicules(){
+    if (!fetch){
+        fetch = (await import('node-fetch')).default;
+    }
+    try{
+        const vehiculeResponse = await fetch("https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%204")
+        const vehiculeData = await vehiculeResponse.json();
+        const agentsResponse = await fetch("https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%205")
+        const agentsData = await agentsResponse.json();
+        const vehiculeList = vehiculeData
+            .filter(vehicule => vehicule.engStatusCod === "AL" || vehicule.engStatusCod === "RE")
+            .map(vehicule => vehicule.engLib);
+
+        return { vehiculeList, agentsData };
+    } catch (err){
+        console.error('Error fetching data:', err);
+        throw err;
+    }
+}
+
+module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules };

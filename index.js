@@ -50,6 +50,7 @@ const verifyIfInter = require("./routes/verifyIfInter");
 const getFormationCoordinates = require("./routes/getFormationCoordinates");
 const getFormationAutoSuggest = require("./routes/getFormationAutoSuggest");
 const clearInterPeople = require("./routes/clearInterPeople");
+const getVehiculesandPeople = require("./routes/getVehiculesandPeople");
 
 app.use(express.json());
 app.use(cors());
@@ -110,6 +111,7 @@ app.use("/verifyIfInter", verifyIfInter);
 app.use("/getFormationCoordinates", getFormationCoordinates);
 app.use("/getFormationAutoSuggest", getFormationAutoSuggest);
 app.use("/clearInterPeople", clearInterPeople);
+app.use("/getVehiculesandPeople", getVehiculesandPeople);
 
 
 
