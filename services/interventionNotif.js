@@ -194,8 +194,8 @@ async function insertSmartemisResponse(data) {
             } catch (error) {
                 console.error('Error inserting data:', error);
             }
-
             console.log(agentInfoList);
+            return values;
         }
     }
     }
