@@ -45,7 +45,6 @@ function getClosestFeature(geoJson, point) {
 }
 
 async function getClosestFireHydrants(lon, lat) {
-
     const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
     if (!fetch) {
         fetch = (await import('node-fetch')).default;
@@ -84,6 +83,35 @@ async function getClosestFireHydrants(lon, lat) {
         }));
     }
 
+    function getSessionToken() {
+        // Generate a unique session token
+        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    }
+
+async function autoCompleteAddress(input_str) {
+    if (typeof input_str !== 'string') {
+        throw new Error('input_str must be a string');
+    }
+    if (!fetch) {
+        fetch = (await import('node-fetch')).default;
+    }
+
+    const input = input_str.replace("%20", "+");
+
+    const url = `https://api-adresse.data.gouv.fr/search/?q=${input}&lat=45.8172792&lon=4.8474605`;
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch address suggestions from api-adresse.data.gouv.fr');
+    }
+
+    const data = await response.json();
+    return data;
+}
+
 async function getMapCoordinates(lon, lat) {
     const firstPart = await getFirstPartGeoJson(lon, lat);
     const firstPartString = firstPart && firstPart.est ? "est. " + (firstPart.data && firstPart.data.properties ? firstPart.data.properties.assigned_data : '') : firstPart && firstPart.properties ? firstPart.properties.assigned_data : '';
@@ -97,5 +125,6 @@ async function getMapCoordinates(lon, lat) {
 }
 
 module.exports = {
-    getMapCoordinates
+    getMapCoordinates,
+    autoCompleteAddress
 };

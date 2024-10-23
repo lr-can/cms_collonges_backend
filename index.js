@@ -48,6 +48,7 @@ const asupPDF = require("./routes/generateAsupPDF");
 const smartemis = require("./routes/smartemis");
 const verifyIfInter = require("./routes/verifyIfInter");
 const getFormationCoordinates = require("./routes/getFormationCoordinates");
+const getFormationAutoSuggest = require("./routes/getFormationAutoSuggest");
 
 app.use(express.json());
 app.use(cors());
@@ -106,6 +107,8 @@ app.use("/asupPDF", asupPDF);
 app.use("/smartemis", smartemis);
 app.use("/verifyIfInter", verifyIfInter);
 app.use("/getFormationCoordinates", getFormationCoordinates);
+app.use("/getFormationAutoSuggest", getFormationAutoSuggest);
+
 
 
 app.use((err, req, res, next) => {
