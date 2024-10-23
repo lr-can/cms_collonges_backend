@@ -146,7 +146,7 @@ async function insertSmartemisResponse(data) {
         }
     }
     if (data.csPersList){
-        if (data.csPersList.length() >= 2 && data.csPersList.length() < 30){
+        if (data.csPersList.length >= 2 && data.csPersList.length < 30){
             if (!fetch){
                 fetch = (await import('node-fetch')).default;
             }
