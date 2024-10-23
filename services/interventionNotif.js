@@ -144,8 +144,9 @@ async function insertSmartemisResponse(data) {
         } catch (error) {
             console.error('Error updating spreadsheet:', error);
         }
+    }
     if (data.csPersList){
-        if (true){
+        if (data.csPersList.length() >= 2 && data.csPersList.length() < 30){
             if (!fetch){
                 fetch = (await import('node-fetch')).default;
             }
@@ -194,12 +195,12 @@ async function insertSmartemisResponse(data) {
             } catch (error) {
                 console.error('Error inserting data:', error);
             }
+
             console.log(agentInfoList);
-            return values;
         }
     }
     }
-}
+
 
 async function clearSmartemisResponse() {
     const privateKey = config.google.private_key.replace(/\\n/g, '\n');
