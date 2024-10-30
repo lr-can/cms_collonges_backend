@@ -125,6 +125,9 @@ async function getMapCoordinates(lon, lat) {
 }
 
 async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = []) {
+    if (!fetch) {
+        fetch = (await import('node-fetch')).default;
+    }
     try {
         // Charger les données nécessaires
         const [sinistres, engins, emploisGFO, agents] = await Promise.all([
