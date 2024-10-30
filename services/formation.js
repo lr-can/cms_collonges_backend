@@ -165,9 +165,7 @@ async function assignAgentsToVehicles(matricules, gfos) {
 
                     // Chercher les agents ayant les emplois minimums et préférés pour ce GFO
                     const eligibleAgents = filteredAgents.filter(agent => {
-                        // Vérifie si l'agent a un emploi minimum
                         const hasMinEmploi = emploisMin.some(emploi => agent[emploi] === "1");
-                        // Vérifie si l'agent a un emploi préféré
                         const hasPrefEmploi = emploisPref.some(emploi => agent[emploi] === "1");
                         return hasMinEmploi || hasPrefEmploi;
                     });
@@ -176,7 +174,15 @@ async function assignAgentsToVehicles(matricules, gfos) {
                     emploisMin.concat(emploisPref).forEach(emploi => {
                         const agent = eligibleAgents.find(agent => agent[emploi] === "1");
                         if (agent && !Object.values(emploisAssignments).includes(agent)) {
-                            emploisAssignments[emploi] = agent;
+                            emploisAssignments[emploi] = {
+                                grade: agent.grade,
+                                emploi: emploi,
+                                agent: {
+                                    nom: agent.nom,
+                                    prenom: agent.prenom,
+                                    matricule: agent.matricule
+                                }
+                            };
                         }
                     });
                 }
@@ -196,6 +202,7 @@ async function assignAgentsToVehicles(matricules, gfos) {
         return {};
     }
 }
+
 
 module.exports = {
     getMapCoordinates,
