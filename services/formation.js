@@ -132,8 +132,10 @@ async function assignAgentsToVehicles(matricules, gfos) {
         const agentsResponse = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsASUP');
         const agentsData = await agentsResponse.json();
 
-        // Filtrer les agents par matricules donnés
-        const filteredAgents = agentsData.filter(agent => matricules.includes(agent.matricule));
+        // Filtrer les agents par matricules donnés et trier par ancienneté (matricule) et prénom
+        const filteredAgents = agentsData
+            .filter(agent => matricules.includes(agent.matricule))
+            .sort((a, b) => a.matricule.localeCompare(b.matricule) || a.prenomAgent.localeCompare(b.prenomAgent));
 
         // 2. Fetch des véhicules et GFO associés
         const vehiclesResponse = await fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_COLLONGES');
@@ -152,50 +154,49 @@ async function assignAgentsToVehicles(matricules, gfos) {
             };
         });
 
-        // 4. Créer une liste structurée pour les affectations
+        // Créer une liste pour les affectations
         const assignments = [];
 
-        vehiclesData.forEach(vehicle => {
-            const vehicleGFOs = vehicle.gfoEngin.split(', ');
-            const emploisAssignments = {};
+        vehiclesData.forEach((vehicle) => {
+            let emploisAssignments = {};
+            let gfoFinal = null;
 
-            for (const gfo of vehicleGFOs) {
-                if (gfos.includes(gfo)) {
-                    const { emploisMin, emploisPref } = gfoMapping[gfo];
-                    const emploisToUse = emploisPref.length <= filteredAgents.length ? emploisPref : emploisMin;
+            // Obtenir les configurations de GFO prioritaires et de fallback
+            let vehicleGFOs = vehicle.gfoEngin.split(', ');
+            for (let gfo of vehicleGFOs) {
+                if (!gfos.includes(gfo)) continue;
+                const { emploisMin, emploisPref } = gfoMapping[gfo];
 
-                    // Chercher les agents ayant les emplois minimums ou préférés pour ce GFO
-                    const eligibleAgents = filteredAgents.filter(agent => {
-                        const hasMinEmploi = emploisMin.some(emploi => agent[emploi] === "1");
-                        const hasPrefEmploi = emploisPref.some(emploi => agent[emploi] === "1");
-                        return hasMinEmploi || hasPrefEmploi;
-                    });
-
-                    emploisToUse.forEach(emploi => {
-                        const agent = eligibleAgents.find(agent => agent[emploi] === "1" && !Object.values(emploisAssignments).some(a => a.agent.matricule === agent.matricule));
-                        if (agent) {
-                            emploisAssignments[emploi] = {
-                                grade: agent.grade,
-                                emploi: emploi,
-                                agent: {
-                                    matricule: agent.matricule,
-                                    nom: agent.nomAgent,
-                                    prenom: agent.prenomAgent
-                                }
-                            };
-                        }
-                    });
-
-                    // Stop looping through GFOs once we have valid assignments
-                    if (Object.keys(emploisAssignments).length > 0) {
-                        assignments.push({
-                            nom_engin: vehicle.libEngin,
-                            gfo: gfo,
-                            emplois: emploisAssignments
-                        });
-                        break; // On prend le premier GFO valide pour l'affectation
+                // Essayer d'assigner les emplois préférés
+                emploisAssignments = assignEmplois(filteredAgents, emploisPref);
+                
+                // Vérifier si l'équipe est complète
+                if (Object.keys(emploisAssignments).length < emploisPref.length) {
+                    // Essayer d'assigner les emplois minimums si l'équipe préférée est incomplète
+                    emploisAssignments = assignEmplois(filteredAgents, emploisMin);
+                    
+                    // Si l'équipe minimale est toujours incomplète, essayer PS
+                    if (Object.keys(emploisAssignments).length < emploisMin.length) {
+                        gfo = gfo === "SAP" ? "PSSAP" : gfo === "INC" ? "PSINC" : gfo;
+                        const { emploisMin: fallbackMin } = gfoMapping[gfo];
+                        emploisAssignments = assignEmplois(filteredAgents, fallbackMin);
                     }
                 }
+                
+                // Si une configuration complète a été trouvée, sauvegarder le GFO final
+                if (Object.keys(emploisAssignments).length === emploisMin.length) {
+                    gfoFinal = gfo;
+                    break;
+                }
+            }
+
+            // Ajouter la structure si des emplois sont assignés et que gfoFinal est défini
+            if (gfoFinal && Object.keys(emploisAssignments).length > 0) {
+                assignments.push({
+                    nom_engin: vehicle.libEngin,
+                    gfo: gfoFinal,
+                    emplois: emploisAssignments
+                });
             }
         });
 
@@ -205,6 +206,27 @@ async function assignAgentsToVehicles(matricules, gfos) {
         return [];
     }
 }
+
+// Fonction d'aide pour assigner les emplois sans doublons
+function assignEmplois(agents, emplois) {
+    const assignments = {};
+    emplois.forEach(emploi => {
+        const agent = agents.find(agent => agent[emploi] === "1" && !Object.values(assignments).some(a => a.agent.matricule === agent.matricule));
+        if (agent) {
+            assignments[emploi] = {
+                grade: agent.grade,
+                emploi,
+                agent: {
+                    matricule: agent.matricule,
+                    nom: agent.nomAgent,
+                    prenom: agent.prenomAgent
+                }
+            };
+        }
+    });
+    return assignments;
+}
+
 
 
 module.exports = {
