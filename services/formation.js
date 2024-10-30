@@ -123,114 +123,136 @@ async function getMapCoordinates(lon, lat) {
         fireHydrants: await getClosestFireHydrants(lon, lat)
     };
 }
-async function assignAgentsToVehicles(matricules, engins) {
-    if (!fetch) {
-        fetch = (await import('node-fetch')).default;
-    }
+
+async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = []) {
     try {
-        // 1. Fetch des agents
-        const agentsResponse = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsASUP');
-        const agentsData = await agentsResponse.json();
+        // Charger les données nécessaires
+        const [sinistres, engins, emploisGFO, agents] = await Promise.all([
+            fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/libelleSinistres').then(res => res.json()),
+            fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_COLLONGES').then(res => res.json()),
+            fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_EMPLOIS').then(res => res.json()),
+            fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup').then(res => res.json())
+        ]);
 
-        // Filtrer les agents par matricules donnés et trier par ancienneté (matricule) et prénom
-        const filteredAgents = agentsData
+        // Identifier les GFO correspondant au codeSinistre
+        const sinistre = sinistres.find(s => s.sinistreCode === codeSinistre);
+        if (!sinistre) throw new Error('Code sinistre non trouvé');
+        const gfoBase = sinistre.sinistreGFOBase.split(', ');
+
+        // Trier les engins par priorité
+        const enginsTries = engins.sort((a, b) => a.prioriteEngin - b.prioriteEngin);
+
+        // Filtrer et trier les agents selon leur matricule
+        const agentsDispo = agents
             .filter(agent => matricules.includes(agent.matricule))
-            .sort((a, b) => a.matricule.localeCompare(b.matricule) || a.prenomAgent.localeCompare(b.prenomAgent));
+            .sort((a, b) => a.matricule.localeCompare(b.matricule));
 
-        // 2. Fetch des véhicules et GFO associés
-        const vehiclesResponse = await fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_COLLONGES');
-        const vehiclesData = await vehiclesResponse.json();
+        // Initialiser les affectations et les GFO restants
+        const affectations = [];
+        const gfoRestants = [...gfoBase];
 
-        // 3. Fetch des emplois préférés et minimums pour chaque GFO
-        const gfoResponse = await fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_EMPLOIS');
-        const gfoData = await gfoResponse.json();
+        // Fonction pour assigner un agent à un emploi
+        const assignerAgent = (emploi, agentsDispo) => {
+            const agent = agentsDispo.find(a => a[emploi] === '1');
+            if (agent) {
+                agentsDispo.splice(agentsDispo.indexOf(agent), 1);
+                return agent;
+            }
+            return null;
+        };
 
-        // Créer un mapping des GFO pour retrouver les emplois min et préférés rapidement
-        const gfoMapping = {};
-        gfoData.forEach(gfo => {
-            gfoMapping[gfo.GFO] = {
-                emploisMin: gfo.emploisGFO_min.split(', '),
-                emploisPref: gfo.emploisGFO_pref.split(', ')
-            };
-        });
+        // Gérer les personnalisations
+        for (const perso of personnalises) {
+            const agent = agentsDispo.find(a => a.matricule === perso.matricule);
+            if (agent) {
+                const emploi = perso.emploi;
+                const engin = affectations.find(a => a.personnel && a.personnel[emploi]);
+                if (engin) {
+                    engin.personnel[emploi] = {
+                        matricule: agent.matricule,
+                        grade: agent.grade,
+                        prenom: agent.prenomAgent,
+                        nom: agent.nomAgent
+                    };
+                } else {
+                    const newEngin = {
+                        enginLib: '',
+                        gfo: [],
+                        personnel: {
+                            [emploi]: {
+                                matricule: agent.matricule,
+                                grade: agent.grade,
+                                prenom: agent.prenomAgent,
+                                nom: agent.nomAgent
+                            }
+                        }
+                    };
+                    affectations.push(newEngin);
+                }
+                agentsDispo.splice(agentsDispo.indexOf(agent), 1);
+            }
+        }
 
-        // 4. Créer une liste pour les affectations
-        const assignments = [];
+        // Assigner les agents aux engins et emplois
+        for (const engin of enginsTries) {
+            const gfoEngin = engin.gfoEngin.split(', ');
+            const personnel = {};
 
-        // Parcourir chaque engin et déterminer le bon GFO
-        vehiclesData.forEach(vehicle => {
-            if (!engins.includes(vehicle.libEngin)) return; // Ignorer les véhicules non demandés
+            for (const gfo of gfoEngin) {
+                if (gfoRestants.includes(gfo)) {
+                    const emplois = emploisGFO.find(e => e.GFO === gfo);
+                    if (emplois) {
+                        const emploisPref = emplois.emploisGFO_pref.split(', ');
+                        const emploisMin = emplois.emploisGFO_min.split(', ');
 
-            let emploisAssignments = {};
-            let gfoFinal = null;
+                        for (const emploi of emploisPref) {
+                            if (!personnel[emploi]) {
+                                const agent = assignerAgent(emploi, agentsDispo);
+                                if (agent) {
+                                    personnel[emploi] = {
+                                        matricule: agent.matricule,
+                                        grade: agent.grade,
+                                        prenom: agent.prenomAgent,
+                                        nom: agent.nomAgent
+                                    };
+                                }
+                            }
+                        }
 
-            // Parcourir les GFO disponibles pour le véhicule
-            const vehicleGFOs = vehicle.gfoEngin.split(', ');
-            for (let gfo of vehicleGFOs) {
-                const { emploisMin, emploisPref } = gfoMapping[gfo];
+                        for (const emploi of emploisMin) {
+                            if (!personnel[emploi]) {
+                                const agent = assignerAgent(emploi, agentsDispo);
+                                if (agent) {
+                                    personnel[emploi] = {
+                                        matricule: agent.matricule,
+                                        grade: agent.grade,
+                                        prenom: agent.prenomAgent,
+                                        nom: agent.nomAgent
+                                    };
+                                }
+                            }
+                        }
 
-                // Essayer d'assigner les emplois préférés
-                emploisAssignments = assignEmplois(filteredAgents, emploisPref);
-
-                // Vérifier si l'équipe est complète
-                if (Object.keys(emploisAssignments).length < emploisPref.length) {
-                    // Fallback aux emplois minimums
-                    emploisAssignments = assignEmplois(filteredAgents, emploisMin);
-
-                    // Si l'équipe minimale est incomplète, tenter le PS
-                    if (Object.keys(emploisAssignments).length < emploisMin.length) {
-                        gfo = gfo === "SAP" ? "PSSAP" : gfo === "INC" ? "PSINC" : gfo;
-                        const { emploisMin: fallbackMin } = gfoMapping[gfo];
-                        emploisAssignments = assignEmplois(filteredAgents, fallbackMin);
+                        gfoRestants.splice(gfoRestants.indexOf(gfo), 1);
                     }
                 }
-
-                // Si une configuration complète est trouvée, sauvegarder le GFO final et terminer la boucle
-                if (Object.keys(emploisAssignments).length === emploisMin.length) {
-                    gfoFinal = gfo;
-                    break;
-                }
             }
 
-            // Ajouter la structure si des emplois sont assignés et que gfoFinal est défini
-            if (gfoFinal && Object.keys(emploisAssignments).length > 0) {
-                assignments.push({
-                    nom_engin: vehicle.libEngin,
-                    gfo: gfoFinal,
-                    emplois: emploisAssignments
+            if (Object.keys(personnel).length > 0) {
+                affectations.push({
+                    enginLib: engin.libEngin,
+                    gfo: gfoEngin,
+                    personnel
                 });
             }
-        });
+        }
 
-        return assignments;
+        return { affectations, gfoRestants };
     } catch (error) {
-        console.error("Erreur lors de l'attribution des agents :", error);
-        return [];
+        console.error('Erreur lors de l\'assignation des agents aux véhicules:', error);
+        return { affectations: [], gfoRestants: [] };
     }
 }
-
-// Fonction d'aide pour assigner les emplois sans doublons
-function assignEmplois(agents, emplois) {
-    const assignments = {};
-    emplois.forEach(emploi => {
-        const agent = agents.find(agent => agent[emploi] === "1" && !Object.values(assignments).some(a => a.agent.matricule === agent.matricule));
-        if (agent) {
-            assignments[emploi] = {
-                grade: agent.grade,
-                emploi,
-                agent: {
-                    matricule: agent.matricule,
-                    nom: agent.nomAgent,
-                    prenom: agent.prenomAgent
-                }
-            };
-        }
-    });
-    return assignments;
-}
-
-
-
 
 module.exports = {
     getMapCoordinates,
