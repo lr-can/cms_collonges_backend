@@ -219,11 +219,24 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
                         const emploisPref = emplois.emploisGFO_pref.split(', ');
                         const emploisMin = emplois.emploisGFO_min.split(', ');
 
+                        const emploiCounts = {};
+
+                        const getUniqueEmploiKey = (emploi) => {
+                            if (!emploiCounts[emploi]) {
+                                emploiCounts[emploi] = 1;
+                                return emploi;
+                            } else {
+                                emploiCounts[emploi]++;
+                                return `${emploi}${emploiCounts[emploi]}`;
+                            }
+                        };
+
                         for (const emploi of emploisPref) {
-                            if (!personnel[emploi]) {
+                            const uniqueEmploiKey = getUniqueEmploiKey(emploi);
+                            if (!personnel[uniqueEmploiKey]) {
                                 const agent = assignerAgent(emploi, agentsDispo);
                                 if (agent) {
-                                    personnel[emploi] = {
+                                    personnel[uniqueEmploiKey] = {
                                         matricule: agent.matricule,
                                         grade: agent.grade,
                                         prenom: agent.prenomAgent,
@@ -235,10 +248,11 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
                         }
 
                         for (const emploi of emploisMin) {
-                            if (!personnel[emploi]) {
+                            const uniqueEmploiKey = getUniqueEmploiKey(emploi);
+                            if (!personnel[uniqueEmploiKey]) {
                                 const agent = assignerAgent(emploi, agentsDispo);
                                 if (agent) {
-                                    personnel[emploi] = {
+                                    personnel[uniqueEmploiKey] = {
                                         matricule: agent.matricule,
                                         grade: agent.grade,
                                         prenom: agent.prenomAgent,
