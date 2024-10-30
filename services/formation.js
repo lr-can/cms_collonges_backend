@@ -162,6 +162,7 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
         // Initialiser les affectations et les GFO restants
         const affectations = [];
         const gfoRestants = [...gfoBase];
+        const agentsNonAffectes = [...agentsDispo];
 
         // Fonction pour assigner un agent à un emploi
         const assignerAgent = (emploi, agentsDispo) => {
@@ -202,6 +203,7 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
                     affectations.push(newEngin);
                 }
                 agentsDispo.splice(agentsDispo.indexOf(agent), 1);
+                agentsNonAffectes.splice(agentsNonAffectes.indexOf(agent), 1);
             }
         }
 
@@ -227,6 +229,7 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
                                         prenom: agent.prenomAgent,
                                         nom: agent.nomAgent
                                     };
+                                    agentsNonAffectes.splice(agentsNonAffectes.indexOf(agent), 1);
                                 }
                             }
                         }
@@ -241,6 +244,7 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
                                         prenom: agent.prenomAgent,
                                         nom: agent.nomAgent
                                     };
+                                    agentsNonAffectes.splice(agentsNonAffectes.indexOf(agent), 1);
                                 }
                             }
                         }
@@ -261,11 +265,12 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
 
         console.log('Affectations finales:', affectations);
         console.log('GFO restants:', gfoRestants);
+        console.log('Agents non affectés:', agentsNonAffectes);
 
-        return { affectations, gfoRestants };
+        return { affectations, gfoRestants, agentsNonAffectes };
     } catch (error) {
         console.error('Erreur lors de l\'assignation des agents aux véhicules:', error);
-        return { affectations: [], gfoRestants: [] };
+        return { affectations: [], gfoRestants: [], agentsNonAffectes: [] };
     }
 }
 
