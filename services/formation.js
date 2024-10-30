@@ -152,54 +152,57 @@ async function assignAgentsToVehicles(matricules, gfos) {
             };
         });
 
-        // 4. Créer un dictionnaire structuré pour les affectations
-        const assignments = {};
+        // 4. Créer une liste structurée pour les affectations
+        const assignments = [];
 
-        vehiclesData.forEach((vehicle, index) => {
+        vehiclesData.forEach(vehicle => {
             const vehicleGFOs = vehicle.gfoEngin.split(', ');
             const emploisAssignments = {};
 
-            vehicleGFOs.forEach(gfo => {
+            for (const gfo of vehicleGFOs) {
                 if (gfos.includes(gfo)) {
                     const { emploisMin, emploisPref } = gfoMapping[gfo];
+                    const emploisToUse = emploisPref.length <= filteredAgents.length ? emploisPref : emploisMin;
 
-                    // Chercher les agents ayant les emplois minimums et préférés pour ce GFO
+                    // Chercher les agents ayant les emplois minimums ou préférés pour ce GFO
                     const eligibleAgents = filteredAgents.filter(agent => {
                         const hasMinEmploi = emploisMin.some(emploi => agent[emploi] === "1");
                         const hasPrefEmploi = emploisPref.some(emploi => agent[emploi] === "1");
                         return hasMinEmploi || hasPrefEmploi;
                     });
 
-                    // Assigner les emplois aux agents
-                    emploisMin.concat(emploisPref).forEach(emploi => {
-                        const agent = eligibleAgents.find(agent => agent[emploi] === "1");
-                        if (agent && !Object.values(emploisAssignments).includes(agent)) {
+                    emploisToUse.forEach(emploi => {
+                        const agent = eligibleAgents.find(agent => agent[emploi] === "1" && !Object.values(emploisAssignments).some(a => a.agent.matricule === agent.matricule));
+                        if (agent) {
                             emploisAssignments[emploi] = {
                                 grade: agent.grade,
                                 emploi: emploi,
                                 agent: {
-                                    nom: agent.nom,
-                                    prenom: agent.prenom,
-                                    matricule: agent.matricule
+                                    matricule: agent.matricule,
+                                    nom: agent.nomAgent,
+                                    prenom: agent.prenomAgent
                                 }
                             };
                         }
                     });
-                }
-            });
 
-            // Ajouter la structure de chaque engin
-            assignments[`engin_${index + 1}`] = {
-                nom_engin: vehicle.libEngin,
-                gfo: vehicle.gfoEngin,
-                emplois: emploisAssignments
-            };
+                    // Stop looping through GFOs once we have valid assignments
+                    if (Object.keys(emploisAssignments).length > 0) {
+                        assignments.push({
+                            nom_engin: vehicle.libEngin,
+                            gfo: gfo,
+                            emplois: emploisAssignments
+                        });
+                        break; // On prend le premier GFO valide pour l'affectation
+                    }
+                }
+            }
         });
 
         return assignments;
     } catch (error) {
         console.error("Erreur lors de l'attribution des agents :", error);
-        return {};
+        return [];
     }
 }
 
