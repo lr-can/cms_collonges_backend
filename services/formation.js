@@ -134,10 +134,17 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
             fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup').then(res => res.json())
         ]);
 
+        console.log('Données chargées:', { sinistres, engins, emploisGFO, agents });
+
         // Identifier les GFO correspondant au codeSinistre
         const sinistre = sinistres.find(s => s.sinistreCode === codeSinistre);
-        if (!sinistre) throw new Error('Code sinistre non trouvé');
+        if (!sinistre) {
+            console.error('Code sinistre non trouvé:', codeSinistre);
+            throw new Error('Code sinistre non trouvé');
+        }
         const gfoBase = sinistre.sinistreGFOBase.split(', ');
+
+        console.log('GFO de base:', gfoBase);
 
         // Trier les engins par priorité
         const enginsTries = engins.sort((a, b) => a.prioriteEngin - b.prioriteEngin);
@@ -146,6 +153,8 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
         const agentsDispo = agents
             .filter(agent => matricules.includes(agent.matricule))
             .sort((a, b) => a.matricule.localeCompare(b.matricule));
+
+        console.log('Agents disponibles:', agentsDispo);
 
         // Initialiser les affectations et les GFO restants
         const affectations = [];
@@ -246,6 +255,9 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
                 });
             }
         }
+
+        console.log('Affectations finales:', affectations);
+        console.log('GFO restants:', gfoRestants);
 
         return { affectations, gfoRestants };
     } catch (error) {
