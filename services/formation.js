@@ -123,7 +123,7 @@ async function getMapCoordinates(lon, lat) {
         fireHydrants: await getClosestFireHydrants(lon, lat)
     };
 }
-async function assignAgentsToVehicles(matricules, gfos) {
+async function assignAgentsToVehicles(matricules, engins) {
     if (!fetch) {
         fetch = (await import('node-fetch')).default;
     }
@@ -154,36 +154,38 @@ async function assignAgentsToVehicles(matricules, gfos) {
             };
         });
 
-        // Créer une liste pour les affectations
+        // 4. Créer une liste pour les affectations
         const assignments = [];
 
-        vehiclesData.forEach((vehicle) => {
+        // Parcourir chaque engin et déterminer le bon GFO
+        vehiclesData.forEach(vehicle => {
+            if (!engins.includes(vehicle.libEngin)) return; // Ignorer les véhicules non demandés
+
             let emploisAssignments = {};
             let gfoFinal = null;
 
-            // Obtenir les configurations de GFO prioritaires et de fallback
-            let vehicleGFOs = vehicle.gfoEngin.split(', ');
+            // Parcourir les GFO disponibles pour le véhicule
+            const vehicleGFOs = vehicle.gfoEngin.split(', ');
             for (let gfo of vehicleGFOs) {
-                if (!gfos.includes(gfo)) continue;
                 const { emploisMin, emploisPref } = gfoMapping[gfo];
 
                 // Essayer d'assigner les emplois préférés
                 emploisAssignments = assignEmplois(filteredAgents, emploisPref);
-                
+
                 // Vérifier si l'équipe est complète
                 if (Object.keys(emploisAssignments).length < emploisPref.length) {
-                    // Essayer d'assigner les emplois minimums si l'équipe préférée est incomplète
+                    // Fallback aux emplois minimums
                     emploisAssignments = assignEmplois(filteredAgents, emploisMin);
-                    
-                    // Si l'équipe minimale est toujours incomplète, essayer PS
+
+                    // Si l'équipe minimale est incomplète, tenter le PS
                     if (Object.keys(emploisAssignments).length < emploisMin.length) {
                         gfo = gfo === "SAP" ? "PSSAP" : gfo === "INC" ? "PSINC" : gfo;
                         const { emploisMin: fallbackMin } = gfoMapping[gfo];
                         emploisAssignments = assignEmplois(filteredAgents, fallbackMin);
                     }
                 }
-                
-                // Si une configuration complète a été trouvée, sauvegarder le GFO final
+
+                // Si une configuration complète est trouvée, sauvegarder le GFO final et terminer la boucle
                 if (Object.keys(emploisAssignments).length === emploisMin.length) {
                     gfoFinal = gfo;
                     break;
@@ -226,6 +228,7 @@ function assignEmplois(agents, emplois) {
     });
     return assignments;
 }
+
 
 
 
