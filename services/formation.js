@@ -474,6 +474,7 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
       return { affectations: [], gfoRestants: [], agentsNonAffectes: [] };
   }
 }
+}
 
 module.exports = {
     getMapCoordinates,
