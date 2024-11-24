@@ -279,7 +279,7 @@ async function giveAgentsAndVehicules(){
         const agentsResponse = await fetch("https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%205")
         const agentsData = await agentsResponse.json();
         const vehiculeList = vehiculeData
-            .filter(vehicule => vehicule.engStatusCod === "AL" || vehicule.engStatusCod === "RE")
+            .filter(vehicule => vehicule.engStatusCod === "AL" || vehicule.engStatusCod === "RE" || vehicule.engStatusCod === "PA")
             .map(vehicule => vehicule.engLib);
 
         return { vehiculeList, agentsData };
