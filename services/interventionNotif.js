@@ -3,7 +3,7 @@ const config = require('../config');
 let fetch
 
 
-async function insertInterventionNotif(data) {
+async function insertInterventionNotif(data, msg="Added with CMS API") {
 
     if (!fetch) {
         fetch = (await import('node-fetch')).default;
@@ -40,7 +40,7 @@ async function insertInterventionNotif(data) {
             range,
             valueInputOption: 'USER_ENTERED',
             resource: {
-                values: [['Added with CMS API','','','','','','','','','',rowData, 'TRUE']],
+                values: [[msg,'','','','','','','','','',rowData, 'TRUE']],
             },
         });
         console.log('Row appended successfully!');
@@ -199,6 +199,30 @@ async function insertSmartemisResponse(data) {
             console.log(agentInfoList);
         }
     }
+        if (data.notificationList){
+            if (!fetch) {
+                fetch = (await import('node-fetch')).default;
+            };
+            const backendNotifications = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201');
+            const backendData = await backendNotifications.json();
+            const currentTime = new Date().getTime();
+            const fiveHoursInMillis = 5 * 60 * 60 * 1000;
+
+            for (const notification of data.notificationList) {
+                if (notification.notificationTyp === "ITV") {
+                    let notificationTxt_modified = "🚧 " + notification.notificationTxt.replace(/\\n/g, " - ");
+                    const notificationTime = new Date(notification.notificationDate.date).getTime();
+
+                    if (currentTime - notificationTime <= fiveHoursInMillis) {
+                        const existingNotification = backendData.find(item => item.notification === notificationTxt_modified);
+
+                        if (!existingNotification) {
+                            await insertInterventionNotif({ notification: notificationTxt_modified }, "Added with Smartemis App");
+                        }
+                    }
+                }
+            }
+        }
     }
 
 
@@ -265,77 +289,4 @@ async function giveAgentsAndVehicules(){
     }
 }
 
-async function assignAgentsToVehicles(matricules, gfos) {
-    try {
-        // 1. Fetch des agents
-        const agentsResponse = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsASUP');
-        const agentsData = await agentsResponse.json();
-
-        // Filtrer les agents par matricules donnés
-        const filteredAgents = agentsData.filter(agent => matricules.includes(agent.matricule));
-
-        // 2. Fetch des véhicules et GFO associés
-        const vehiclesResponse = await fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_COLLONGES');
-        const vehiclesData = await vehiclesResponse.json();
-
-        // 3. Fetch des emplois préférés et minimums pour chaque GFO
-        const gfoResponse = await fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_EMPLOIS');
-        const gfoData = await gfoResponse.json();
-
-        // Créer un mapping des GFO pour retrouver les emplois min et préférés rapidement
-        const gfoMapping = {};
-        gfoData.forEach(gfo => {
-            gfoMapping[gfo.GFO] = {
-                emploisMin: gfo.emploisGFO_min.split(', '),
-                emploisPref: gfo.emploisGFO_pref.split(', ')
-            };
-        });
-
-        // 4. Créer un dictionnaire structuré pour les affectations
-        const assignments = {};
-
-        vehiclesData.forEach((vehicle, index) => {
-            const vehicleGFOs = vehicle.gfoEngin.split(', ');
-            const emploisAssignments = {};
-
-            vehicleGFOs.forEach(gfo => {
-                if (gfos.includes(gfo)) {
-                    const { emploisMin, emploisPref } = gfoMapping[gfo];
-
-                    // Chercher les agents ayant les emplois minimums et préférés pour ce GFO
-                    const eligibleAgents = filteredAgents.filter(agent => {
-                        // Vérifie si l'agent a un emploi minimum
-                        const hasMinEmploi = emploisMin.some(emploi => agent[emploi] === "1");
-                        // Vérifie si l'agent a un emploi préféré
-                        const hasPrefEmploi = emploisPref.some(emploi => agent[emploi] === "1");
-                        return hasMinEmploi || hasPrefEmploi;
-                    });
-
-                    // Assigner les emplois aux agents
-                    emploisMin.concat(emploisPref).forEach(emploi => {
-                        const agent = eligibleAgents.find(agent => agent[emploi] === "1");
-                        if (agent && !Object.values(emploisAssignments).includes(agent)) {
-                            emploisAssignments[emploi] = agent;
-                        }
-                    });
-                }
-            });
-
-            // Ajouter la structure de chaque engin
-            assignments[`engin_${index + 1}`] = {
-                nom_engin: vehicle.libEngin,
-                gfo: vehicle.gfoEngin,
-                emplois: emploisAssignments
-            };
-        });
-
-        return assignments;
-    } catch (error) {
-        console.error("Erreur lors de l'attribution des agents :", error);
-        return {};
-    }
-}
-
-
-
-module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, assignAgentsToVehicles };
+module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules };
