@@ -209,7 +209,7 @@ async function insertSmartemisResponse(data) {
             const fiveHoursInMillis = 5 * 60 * 60 * 1000;
 
             for (const notification of data.notificationList) {
-                if (notification.notificationTyp === "ITV") {
+                if (notification.notificationTyp === "ITV" && !notification.notificationTxt.includes("xercice")) {
                     let notificationTxt_modified = "🚧 " + notification.notificationTxt.replace(/\\n/g, " - ");
                     const notificationTime = new Date(notification.notificationDate.date).getTime();
 
