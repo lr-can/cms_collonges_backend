@@ -208,6 +208,12 @@ async function insertSmartemisResponse(data) {
             const currentTime = new Date().getTime();
             const fiveHoursInMillis = 5 * 60 * 60 * 1000;
 
+             data.notificationList.sort((a, b) => {
+                const dateA = new Date(a.notificationDate.date).getTime();
+                const dateB = new Date(b.notificationDate.date).getTime();
+                return dateA - dateB; // Tri ascendant, le plus ancien en premier
+            });
+
             for (const notification of data.notificationList) {
                 if (notification.notificationTyp === "ITV" && !notification.notificationTxt.includes("xercice")) {
                     let notificationTxt_modified = "🚧 " + notification.notificationTxt.replace(/\\n/g, "-");
