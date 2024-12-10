@@ -54,7 +54,7 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
 
     if (dateInter) {
         let annee = new Date().getFullYear();
-        dateInter = `{dateInter[1]}/{dateInter[2]}/${annee}`;
+        dateInter = `${dateInter[1]}/${dateInter[2]}/${annee}`;
     } else {
         dateInter = '';
     }
@@ -73,7 +73,7 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
     villeInter = "";
 
     if (addressInter) {
-        addressInter = addressInter[1].replace(/🚧.*?-.*?-.*?-/, '');
+        addressInter = addressInter[1].replace(/🚧.*?-.*?-.*?-/, '').replace(" ", "");
         if (addressInter.includes('HYDR SAONE')) {
             longitude = "4.855327";
             latitude = "45.821767";
@@ -89,7 +89,8 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
         }
         let splittedAddress = addressInter.split(' ');
         if (addressInter.includes("LYON 0")){
-            villeInter = splittedAddress[0] + " " + splittedAddress[1].replace("0", "");
+            villeInter = splittedAddress[0] + " " + splittedAddress[1].replace("0", "") + "ÈME";
+            addressInter = addressInter.replace(/LYON 0\d/, villeInter);
         } else {
             villeInter = splittedAddress[0];
         }
