@@ -30,8 +30,90 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
     const spreadsheetId = config.google.spreadsheetId;
     const rowData = data.notification;
     const range = 'Feuille 1!A1:K';
-    
+    let enginsInter = "";
+    let numInter = "";
+    let dateInter = "";
+    let heureInter = "";
+    let addressInter = "";
+    let longitude = "";
+    let latitude = "";
+    let villeInter = "";
+    let incidentInter = "";
 
+    if (rowData.startsWith('🚧')) {
+    let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/(\|.*? -)/g, '-').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee');
+    numInter = cleanedEntry.match(/N°(\d+)/);
+
+    if (numInter) {
+        numInter = numInter[1];
+    } else {
+        numInter = '';
+    }
+    
+    dateInter = cleanedEntry.match(/- (\d+).(\d+)/);
+
+    if (dateInter) {
+        let annee = new Date().getFullYear();
+        dateInter = `{dateInter[1]}/{dateInter[2]}/${annee}`;
+    } else {
+        dateInter = '';
+    }
+
+    heureInter = cleanedEntry.match(/(\d+):(\d+)/);
+
+    if (heureInter) {
+        heureInter = `${heureInter[0]}`;
+    } else {
+        heureInter = '';
+    }
+
+    addressInter = cleanedEntry.match(/(.*) - (\d+) Engins/);
+    longitude = "";
+    latitude = "";
+    villeInter = "";
+
+    if (addressInter) {
+        addressInter = addressInter[1].replace(/🚧.*?-.*?-.*?-/, '');
+        if (addressInter.includes('HYDR SAONE')) {
+            longitude = "4.855327";
+            latitude = "45.821767";
+        } else {
+            try {
+                const coords = await findInterventionCoordinates(addressInter);
+                longitude = coords.lng;
+                latitude = coords.lat;
+            } catch (err) {
+                console.error('Error finding coordinates:', err);
+                throw err;
+            }
+        }
+        let splittedAddress = addressInter.split(' ');
+        if (addressInter.includes("LYON 0")){
+            villeInter = splittedAddress[0] + " " + splittedAddress[1].replace("0", "");
+        } else {
+            villeInter = splittedAddress[0];
+        }
+    } else {
+        addressInter = '';
+    }
+
+    incidentInter = cleanedEntry.match(/(\d+):(\d+) -(.*)-/);
+
+    if (incidentInter) {
+        incidentInter = incidentInter[3].toString().match(/ (.*) -/)[1];
+    } else {
+        incidentInter = '';
+    }
+
+    enginsInter = cleanedEntry.match(/- (\d+) Engins/);
+
+    if (enginsInter) {
+        enginsInter = enginsInter[1];
+    } else {
+        enginsInter = '';
+    }
+}
+    
 
     try {
         // Append the new row to the spreadsheet
@@ -40,11 +122,39 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
             range,
             valueInputOption: 'USER_ENTERED',
             resource: {
-                values: [[msg,'','','','','','','','','',rowData, 'TRUE']],
+                values: [[msg,numInter,dateInter,heureInter,incidentInter,addressInter,longitude,latitude,villeInter,enginsInter,rowData, 'TRUE']],
             },
         });
         console.log('Row appended successfully!');
-        
+        let payload = {
+            "identifiant": msg,
+            "numeroInter": numInter,
+            "notificationDate": dateInter,
+            "notificationHeure": heureInter,
+            "notificationTitre": incidentInter,
+            "notificationAdresse": addressInter,
+            "notificationLon": longitude,
+            "notificationLat": latitude,
+            "notificationEngins": enginsInter,
+            "notificationVille": villeInter,
+            "notification": rowData,
+            "departStatus": "TRUE"
+        }
+        const postOptions = {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload),
+            redirect: "follow"
+        };
+            const postResponse = await fetch(process.env.MACRO_TRIGGER, postOptions);
+            if (!postResponse.ok) {
+                console.error('Error in post request:', postResponse.statusText);
+            } else {
+                console.log('Post request successful!');
+            }
+
         return response;
     } catch (err) {
         console.error('Error appending row:', err);
@@ -53,47 +163,19 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
 }
 }
 
-async function giveInterventionType(titre) {
-    let interTypeDictionnary = {};
-    if (!fetch) {
+async function findInterventionCoordinates(adress){
+    if (!fetch){
         fetch = (await import('node-fetch')).default;
-    };
-    try {
-        const response = await fetch('https://opensheet.elk.sh/19kgbE-Z4kIbM49-rVE0hv9ihMBv_a5hOzP9DAa1CHt8/1');
-        const data = await response.json();
+    }
+    const api_key = process.env.GMAPS_API;
+    const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(adress)}&bounds=46.2926,%204.2811%7C45.4225,%205.1137&key=${api_key}`);
+    const data = await response.json();
 
-        data.forEach(row => {
-            const interventionCode = row['codeSinistre']; // Correction ici
-            const libelleMajSinistre = row['libelleMajSinistre'];
-            let value = "";
-
-            if (interventionCode.startsWith('1')) {
-                value = "SSUAP";
-            } else if (interventionCode.startsWith('2')) {
-                if (/^2[AB]\d{2}$/.test(interventionCode)) {
-                    value = "Violences_Urbaines";
-                } else {
-                    value = "Accident";
-                }
-            } else if (interventionCode.startsWith('3')) {
-                if (interventionCode.length === 3) {
-                    value = "Violences_Urbaines_Graves";
-                } else {
-                    value = "Incendie";
-                }
-            } else if (interventionCode.startsWith('4') || interventionCode.startsWith('5')) {
-                value = "PPBE";
-            }
-
-            interTypeDictionnary[libelleMajSinistre] = value;
-        });
-
-        const type = interTypeDictionnary[titre];
-        return { type: type };
-
-    } catch (err) {
-        console.error('Error fetching data:', err);
-        throw err;
+    if (data.status === 'OK') {
+        const location = data.results[0].geometry.location;
+        return { lat: location.lat, lng: location.lng };
+    } else {
+        throw new Error('Unable to find coordinates for the given address');
     }
 }
 
