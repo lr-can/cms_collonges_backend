@@ -80,8 +80,8 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
         } else {
             try {
                 const coords = await findInterventionCoordinates(addressInter);
-                longitude = coords.lng;
-                latitude = coords.lat;
+                longitude = coords.lng.replace(",", ".");
+                latitude = coords.lat.replace(",", ".");
             } catch (err) {
                 console.error('Error finding coordinates:', err);
                 throw err;
@@ -123,7 +123,7 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
             range,
             valueInputOption: 'USER_ENTERED',
             resource: {
-                values: [[msg,numInter,dateInter,heureInter,incidentInter,addressInter,longitude,latitude,villeInter,enginsInter,rowData, 'TRUE']],
+                values: [[msg,numInter,dateInter,heureInter,incidentInter,addressInter,longitude,latitude, enginsInter,villeInter,rowData, 'TRUE']],
             },
         });
         console.log('Row appended successfully!');
