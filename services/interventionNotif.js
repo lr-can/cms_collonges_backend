@@ -80,8 +80,8 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
         } else {
             try {
                 const coords = await findInterventionCoordinates(addressInter);
-                longitude = coords.lng.replace(",", ".");
-                latitude = coords.lat.replace(",", ".");
+                longitude = String(coords.lng).replace(',', '.');
+                latitude = String(coords.lat).replace(',', '.');
             } catch (err) {
                 console.error('Error finding coordinates:', err);
                 throw err;
