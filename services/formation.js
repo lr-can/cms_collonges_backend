@@ -125,380 +125,263 @@ async function getMapCoordinates(lon, lat) {
 }
 
 async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = []) {
-    if (!fetch) {
-        fetch = (await import('node-fetch')).default;
-    }
-    try {
-        // Charger les données nécessaires
-        const [sinistres, engins, emploisGFO, agents] = await Promise.all([
-            fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/libelleSinistres').then(res => res.json()),
-            fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_COLLONGES').then(res => res.json()),
-            fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_EMPLOIS').then(res => res.json()),
-            fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup').then(res => res.json())
-        ]);
-
-        console.log('Données chargées:', { sinistres, engins, emploisGFO, agents });
-
-        // Identifier les GFO correspondant au codeSinistre
-        const sinistre = sinistres.find(s => s.sinistreCode === codeSinistre);
-        if (!sinistre) {
-            console.error('Code sinistre non trouvé:', codeSinistre);
-            throw new Error('Code sinistre non trouvé');
-        }
-        const gfoBase = sinistre.sinistreGFOBase.split(', ');
-
-        console.log('GFO de base:', gfoBase);
-
-        // Trier les engins par priorité
-        const enginsTries = engins.sort((a, b) => a.prioriteEngin - b.prioriteEngin);
-
-        // Filtrer et trier les agents selon leur matricule
-        const agentsDispo = agents
-            .filter(agent => matricules.includes(agent.matricule))
-            .sort((a, b) => a.matricule.localeCompare(b.matricule));
-
-        console.log('Agents disponibles:', agentsDispo);
-
-        // Initialiser les affectations et les GFO restants
-        const affectations = [];
-        const gfoRestants = [...gfoBase];
-        const agentsNonAffectes = [...agentsDispo];
-
-        // Fonction pour assigner un agent à un emploi
-        const assignerAgent = (emploi, agentsDispo) => {
-            const agent = agentsDispo.find(a => a[emploi] === '1');
-            if (agent) {
-                agentsDispo.splice(agentsDispo.indexOf(agent), 1);
-                return agent;
-            }
-            return null;
-        };
-
-        // Gérer les personnalisations
-        for (const perso of personnalises) {
-            const agent = agentsDispo.find(a => a.matricule === perso.matricule);
-            if (agent) {
-                const emploi = perso.emploi;
-                const engin = affectations.find(a => a.personnel && a.personnel[emploi]);
-                if (engin) {
-                    engin.personnel[emploi] = {
-                        matricule: agent.matricule,
-                        grade: agent.grade,
-                        prenom: agent.prenomAgent,
-                        nom: agent.nomAgent
-                    };
-                } else {
-                    const newEngin = {
-                        enginLib: '',
-                        gfo: [],
-                        personnel: {
-                            [emploi]: {
-                                matricule: agent.matricule,
-                                grade: agent.grade,
-                                prenom: agent.prenomAgent,
-                                nom: agent.nomAgent
-                            }
-                        }
-                    };
-                    affectations.push(newEngin);
-                }
-                agentsDispo.splice(agentsDispo.indexOf(agent), 1);
-                agentsNonAffectes.splice(agentsNonAffectes.indexOf(agent), 1);
-            }
-        }
-
-        // Assigner les agents aux engins et emplois
-        for (const engin of enginsTries) {
-            const gfoEngin = engin.gfoEngin.split(', ');
-            const personnel = {};
-
-            for (const gfo of gfoEngin) {
-                if (gfoRestants.includes(gfo)) {
-                    const emplois = emploisGFO.find(e => e.GFO === gfo);
-                    if (emplois) {
-                        const emploisPref = emplois.emploisGFO_pref.split(', ');
-                        const emploisMin = emplois.emploisGFO_min.split(', ');
-
-                        const emploiCounts = {};
-
-                        const getUniqueEmploiKey = (emploi) => {
-                            if (!emploiCounts[emploi]) {
-                                emploiCounts[emploi] = 1;
-                                return emploi;
-                            } else {
-                                emploiCounts[emploi]++;
-                                return `${emploi}${emploiCounts[emploi]}`;
-                            }
-                        };
-
-                        for (const emploi of emploisPref) {
-                            const uniqueEmploiKey = getUniqueEmploiKey(emploi);
-                            if (!personnel[uniqueEmploiKey]) {
-                                const agent = assignerAgent(emploi, agentsDispo);
-                                if (agent) {
-                                    personnel[uniqueEmploiKey] = {
-                                        matricule: agent.matricule,
-                                        grade: agent.grade,
-                                        prenom: agent.prenomAgent,
-                                        nom: agent.nomAgent
-                                    };
-                                    agentsNonAffectes.splice(agentsNonAffectes.indexOf(agent), 1);
-                                }
-                            }
-                        }
-
-                        for (const emploi of emploisMin) {
-                            const uniqueEmploiKey = getUniqueEmploiKey(emploi);
-                            if (!personnel[uniqueEmploiKey]) {
-                                const agent = assignerAgent(emploi, agentsDispo);
-                                if (agent) {
-                                    personnel[uniqueEmploiKey] = {
-                                        matricule: agent.matricule,
-                                        grade: agent.grade,
-                                        prenom: agent.prenomAgent,
-                                        nom: agent.nomAgent
-                                    };
-                                    agentsNonAffectes.splice(agentsNonAffectes.indexOf(agent), 1);
-                                }
-                            }
-                        }
-
-                        gfoRestants.splice(gfoRestants.indexOf(gfo), 1);
-                    }
-                }
-            }
-
-            if (Object.keys(personnel).length > 0) {
-                affectations.push({
-                    enginLib: engin.libEngin,
-                    gfo: gfoEngin,
-                    personnel
-                });
-            }
-        }
-
-        console.log('Affectations finales:', affectations);
-        console.log('GFO restants:', gfoRestants);
-        console.log('Agents non affectés:', agentsNonAffectes);
-
-        return { affectations, gfoRestants, agentsNonAffectes };
-    } catch (error) {
-        console.error('Erreur lors de l\'assignation des agents aux véhicules:', error);
-        return { affectations: [], gfoRestants: [], agentsNonAffectes: [] };
-    }
-}
-async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = {}) {
-    // Cette fonction assigne les agents aux véhicules en fonction du code sinistre et des personnalisations
-    // matricules: tableau des matricules des agents disponibles
-    // codeSinistre: code du sinistre
-    // personnalises: tableau des personnalisations des agents 
-    //     (chaque personnalisation contient les propriétés suivantes: matricule, emploi, engin)
-    /* assignAgentsToVehicles(
-  ['V06175', 'V01049', 'V16673', 'V33393', 'V30001', 'V26371'],
-  '1130',
-  {
-    agents: [
-      { matricule: 'V01049', emploi: 'SAP_SAP_ca', engin: 'VSAV-1' },
-      { matricule: 'V26371', emploi: 'SAP_SAP_eqc', engin: 'VSAV-1' },
-    ],
-    gfo_additionnel: ['INFAMU'],
-    gfo_soustraction: [],
+  if (!fetch) {
+      fetch = (await import('node-fetch')).default;
   }
-);
-    */
-if (!fetch) {
-    fetch = (await import('node-fetch')).default;
-  }
+  const personnalise = personnalises;
   try {
-    const [sinistres, engins, emploisGFO, agents] = await Promise.all([
-      fetch(
-        'https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/libelleSinistres'
-      ).then(res => res.json()),
-      fetch(
-        'https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_COLLONGES'
-      ).then(res => res.json()),
-      fetch(
-        'https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_EMPLOIS'
-      ).then(res => res.json()),
-      fetch(
-        'https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup'
-      ).then(res => res.json()),
-    ]);
+      // Charger les données nécessaires
+      const [sinistres, engins, emploisGFO, agents] = await Promise.all([
+          fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/libelleSinistres').then(res => res.json()),
+          fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_COLLONGES').then(res => res.json()),
+          fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_EMPLOIS').then(res => res.json()),
+          fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup').then(res => res.json())
+      ]);
 
-    const sinistre = sinistres.find(s => s.sinistreCode === codeSinistre);
-    if (!sinistre) {
-      console.error('Code sinistre non trouvé:', codeSinistre);
-      throw new Error('Code sinistre non trouvé');
-    }
+      console.log('Données chargées:', { sinistres, engins, emploisGFO, agents });
 
-    const gfoBase = sinistre.sinistreGFOBase.split(', ');
-    const gfoComplets = [
-      ...gfoBase,
-      ...(personnalises.gfo_additionnel || []),
-    ].filter(gfo => !(personnalises.gfo_soustraction || []).includes(gfo));
-
-    const agentsDispo = agents
-      .filter(agent => matricules.includes(agent.matricule))
-      .sort((a, b) => a.matricule.localeCompare(b.matricule))
-      .reverse();
-
-    const affectations = [];
-    const gfoRestants = [...gfoComplets];
-    const agentsNonAffectes = [...agentsDispo];
-
-    // Ajout d'assignations personnalisées
-    personnalises.agents?.forEach(agentPerso => {
-      const agent = {
-        matricule: agentPerso.matricule,
-        emploi: agentPerso.emploi,
-        engin: agentPerso.engin,
-      };
-      agentsDispo.push(agent); // Ajouter à la liste des agents disponibles
-    });
-
-    const assignerAgent = (emploi, agentsDispo) => {
-      const agent = agentsDispo.find(a => a[emploi.replace(/\d/, '')] === '1');
-      if (agent) {
-        agentsDispo.splice(agentsDispo.indexOf(agent), 1);
-        return agent;
+      // Identifier les GFO correspondant au codeSinistre
+      const sinistre = sinistres.find(s => s.sinistreCode === codeSinistre);
+      if (!sinistre) {
+          console.error('Code sinistre non trouvé:', codeSinistre);
+          throw new Error('Code sinistre non trouvé');
       }
-      return null;
-    };
+      let gfoAvailable = [];
+      for (const key of Object.keys(engins[0])){
+        if (key.includes("GFO")){
+          gfoAvailable.push(key.replace("priorite_GFO_", ""));
+        }
 
-    const assignerAgentsAuxEngins = (gfo, engin, personnel) => {
-      const emplois = emploisGFO.find(e => e.GFO === gfo);
-      if (emplois) {
-        const emploisPref = emplois.emploisGFO_pref
-          .split(', ')
-          .map(emploi => `${gfo}_${emploi}`);
-        const emploisMin = emplois.emploisGFO_min
-          .split(', ')
-          .map(emploi => `${gfo}_${emploi}`);
+      }
+      const gfoBase = sinistre.sinistreGFOBase
+                    .split(', ')
+                    .filter(gfo => gfoAvailable.includes(gfo));
 
-        for (const emploi of emploisPref.concat(emploisMin)) {
-          if (!personnel[emploi]) {
-            const agent = assignerAgent(
-              emploi.replace(`${gfo}_`, ''),
-              agentsDispo
-            );
-            if (agent) {
-              personnel[emploi] = {
-                matricule: agent.matricule,
-                grade: agent.grade,
-                prenom: agent.prenomAgent,
-                nom: agent.nomAgent,
-              };
-              agentsNonAffectes.splice(agentsNonAffectes.indexOf(agent), 1);
+      console.log('GFO de base:', gfoBase);
+
+      // Trier les engins par priorité
+      const enginsTries = engins.sort((a, b) => a.prioriteEngin - b.prioriteEngin);
+
+      // Filtrer et trier les agents selon leur matricule
+      const agentsDispo = agents
+          .filter(agent => matricules.includes(agent.matricule))
+          .sort((a, b) => a.matricule.localeCompare(b.matricule));
+      
+      let agentsDispoWithEmplois = agentsDispo.map(agent => {
+          const emplois = [];
+          for (const key in agent) {
+        if (key.endsWith('_ca') || key.endsWith('_cd') || key.endsWith('_eq') || key.endsWith('_eqc') || key.endsWith('_ce') || key.endsWith('_cdg') || key.endsWith('_inf')) {
+            if (agent[key] === '1') {
+          emplois.push(key);
             }
+        }
           }
+          return {
+        matricule: agent.matricule,
+        grade: gradeAbbreviation(agent.grade),
+        nomAgent: agent.nomAgent,
+        prenomAgent: agent.prenomAgent,
+        emplois
+          };
+      });
+
+      console.log('Agents disponibles:', agentsDispo);
+
+      // Initialiser les affectations et les GFO restants
+      const affectations = [];
+      const gfoRestants = [...gfoBase];
+      // Ajouter les GFO personnalisés additionnels
+      if (personnalise.gfo_additionnel && Array.isArray(personnalise.gfo_additionnel)) {
+          gfoRestants.splice(0,0,...personnalise.gfo_additionnel);
+      }
+
+      // Retirer les GFO personnalisés de soustraction
+      if (personnalise.gfo_soustraction && Array.isArray(personnalise.gfo_soustraction)) {
+          for (const gfo of personnalise.gfo_soustraction) {
+        const index = gfoRestants.indexOf(gfo);
+        if (index !== -1) {
+            gfoRestants.splice(index, 1);
+        }
+          }
+      }
+      // Remove duplicates of "INC" in gfoRestants
+      const uniqueGfoRestants = [];
+      const seenGfo = new Set();
+      for (const gfo of gfoRestants) {
+        if (gfo !== "INC" || !seenGfo.has("INC")) {
+          uniqueGfoRestants.push(gfo);
+          seenGfo.add(gfo);
         }
       }
-    };
+      const agentsNonAffectes = [...agentsDispoWithEmplois];
+      const { score: score1, affectation: try1, agentsNonAffectesRestants: agentsRestants1  } = affectByGFO(
+        uniqueGfoRestants,
+        agentsNonAffectes,
+        enginsTries,
+        emploisGFO,
+        "min",
+        personnalise
+    );
+    affectations.push({ score: score1, affectation: try1, agentsNonAffectesRestants: agentsRestants1 });
+    
+    const { score: score2, affectation: try2, agentsNonAffectesRestants: agentsRestants2 } = affectByGFO(
+        uniqueGfoRestants,
+        agentsNonAffectes,
+        enginsTries,
+        emploisGFO,
+        "max",
+        personnalise
+    );
+    affectations.push({ score: score2, affectation: try2,  agentsNonAffectesRestants: agentsRestants2});
+    
+      console.log(affectations);
+      // Return max score's affectation
+      console.log(affectations.sort((a, b) => b.score - a.score)[0]);
+      return affectations.sort((a, b) => b.score - a.score)[0];
+      
 
-    const obtenirPrioritePourGFO = (gfo, engin) => {
-      const prioriteGfo = `priorite_GFO_${gfo}`;
-      return parseInt(engin[prioriteGfo]) || Infinity;
-    };
+    }
+    catch (err) {
+      console.error('Erreur lors de l\'affectation des agents aux véhicules:', err.message);
+      throw err;
+  }
+}
 
-    // Forcer l'affectation des agents personnalisés
-    personnalises.agents?.forEach(agentPerso => {
-      const engin = affectations.find(a => a.enginLib === agentPerso.engin);
-      if (!engin) {
-        const nouveauEngin = {
-          enginLib: agentPerso.engin,
-          gfo: [],
-          personnel: {},
-        };
-        nouveauEngin.personnel[`${agentPerso.emploi}`] = {
-          matricule: agentPerso.matricule,
-          grade: agents.find(a => a.matricule === agentPerso.matricule).grade,
-          prenom: agents.find(a => a.matricule === agentPerso.matricule).prenomAgent,
-          nom: agents.find(a => a.matricule === agentPerso.matricule).nomAgent,
-        };
-        affectations.push(nouveauEngin);
-      } else {
-        engin.personnel[`${agentPerso.emploi}`] = {
-          matricule: agentPerso.matricule,
-          grade: agents.find(a => a.matricule === agentPerso.matricule).grade,
-          prenom: agents.find(a => a.matricule === agentPerso.matricule).prenomAgent,
-          nom: agents.find(a => a.matricule === agentPerso.matricule).nomAgent,
-        };
-      }
-      agentsDispo.splice(agentsDispo.findIndex(a => a.matricule === agentPerso.matricule), 1);
-      agentsNonAffectes.splice(agentsNonAffectes.findIndex(a => a.matricule === agentPerso.matricule), 1);
-    });
 
-    for (const gfo of gfoComplets) {
-      const enginsPourGFO = engins
-        .filter(
-          engin =>
-            engin[`priorite_GFO_${gfo}`] && engin[`priorite_GFO_${gfo}`] !== '0'
-        )
-        .sort(
-          (a, b) =>
-            obtenirPrioritePourGFO(gfo, a) - obtenirPrioritePourGFO(gfo, b)
-        );
+function affectByGFO(gfoRestants, agentsNonAffectes, enginsTries, emploisGFO, config, personnalise) {
+// Affecter les agents aux engins selon les GFO
+// renvoie un dictionnaire de la forme { score : int , affectation : []}
+// personnalise sera utilisé en personnalise.agents de la forme : [{"matricule" : "VXXXXX", "engin":"X", "emploi" : "X"}]
+const affectation = [];
+let enginsTriesRestants = [...enginsTries];
+let agentsNonAffectesRestants = [...agentsNonAffectes];
+let score = 0;
+for (const gfo of gfoRestants) {
+    filteredEngins = enginsTriesRestants
+      .filter(engin => engin["priorite_GFO_" + gfo] !== "0")
+      .sort((a, b) => a["priorite_GFO_" + gfo] - b["priorite_GFO_" + gfo])[0];
+    if (!filteredEngins) {
+        console.warn('Aucun engin disponible pour le GFO', gfo);
+        continue;
+    }
+    const engin = filteredEngins;
+    console.log(engin.libEngin);
+    let i = enginsTriesRestants.findIndex(e => e.libEngin === engin.libEngin);
+    enginsTriesRestants.splice(i, 1);
 
-      const enginExist = affectations.find(
-        affectation => affectation.enginLib === enginsPourGFO[0]?.libEngin
-      );
 
-      if (!enginExist) {
-        const enginLePlusComplet = {
-          enginLib: enginsPourGFO[0]?.libEngin,
-          gfo: [gfo],
-          personnel: {},
-        };
-        affectations.push(enginLePlusComplet);
-      } else {
-        enginExist.gfo.push(gfo);
-      }
-
-      assignerAgentsAuxEngins(
-        gfo,
-        enginsPourGFO[0],
-        enginExist ? enginExist.personnel : affectations[affectations.length - 1].personnel
-      );
-
-      gfoRestants.splice(gfoRestants.indexOf(gfo), 1);
+    // Trouver les emplois correspondant au GFO
+    const emplois = emploisGFO.filter(emploi => emploi.GFO === gfo);
+    let emploiConfig = [];
+    let gfoAffect = [];
+    if (config === "min"){ 
+     emploiConfig = emplois[0].emploisGFO_min.split(", ")
+    } else if (config === "max"){
+      emploiConfig = emplois[0].emploisGFO_pref.split(", ")
+    }
+    
+    for (const emploi of emploiConfig) {
+        // Trouver les agents disponibles pour cet emploi
+const agentsDispo = agentsNonAffectesRestants
+.filter(agent => agent.emplois.includes(emploi))
+.sort((a, b) => a.emplois.length - b.emplois.length); // Tri ascendant par longueur du tableau emplois
+for(const agent of personnalise.agents){
+        let index;
+        index = agentsDispo.findIndex(a => a.matricule === agent.matricule);
+        if (index !== -1) {
+            agentsDispo.splice(index, 1);
+        }
+        if (engin.libEngin === agent.engin && agent.emploi === emploi){
+          agentsDispo.splice(0, 0, agent);
+        
+        }
     }
 
-    for (const engin of affectations) {
-      const postesVides = emploisGFO
-        .find(e => engin.gfo.includes(e.GFO))
-        ?.emploisGFO_min.split(', ')
-        .map(emploi => `${engin.gfo[0]}_${emploi}`)
-        .filter(emploi => !engin.personnel[emploi]);
-
-      postesVides?.forEach(emploi => {
-        const agent = assignerAgent(
-          emploi.replace(`${engin.gfo[0]}_`, ''),
-          agentsNonAffectes
-        );
-        if (agent) {
-          engin.personnel[emploi] = {
+        if (agentsDispo.length === 0) {
+            console.warn('Aucun agent disponible pour l\'emploi', emploi);
+            let emptyAgent = {
+                matricule: "",
+                prenom: "",
+                nom: "",
+                grade: "",
+                engin: engin.libEngin,
+                emploi: emploi
+            }
+            gfoAffect.push(emptyAgent);
+            score -= 10;
+            continue;
+        }
+        const agent = agentsDispo[0];
+        const index = agentsNonAffectesRestants.findIndex(a => a.matricule === agent.matricule);
+        agentsNonAffectesRestants.splice(index, 1);
+        const agentAffectation = {
             matricule: agent.matricule,
-            grade: agent.grade,
             prenom: agent.prenomAgent,
             nom: agent.nomAgent,
-          };
-        }
-      });
+            grade: agent.grade,
+            engin: engin.libEngin,
+            emploi: emploi
+        };
+        gfoAffect.push(agentAffectation);
+        
     }
-
-    console.log('Affectations finales:', affectations);
-    console.log('GFO restants:', gfoRestants);
-    console.log('Agents non affectés:', agentsNonAffectes);
-
-    return { affectations, gfoRestants, agentsNonAffectes };
-  } catch (error) {
-    console.error(
-      "Erreur lors de l'assignation des agents aux véhicules:",
-      error
-    );
-    return { affectations: [], gfoRestants: [], agentsNonAffectes: [] };
-  }
+    affectation.push({"engin": engin.libEngin, "affectation": gfoAffect});
+    score -= 5 * agentsNonAffectesRestants.length;
 }
+console.log(affectation);
+return {score, affectation, agentsNonAffectesRestants};
+}
+
+function gradeAbbreviation(grade){
+const grades = {
+  "Sap 2CL": "SAP",
+  "Sap 1CL": "SAP",
+  "Caporal" : "CAP",
+  "Caporal-Chef": "CCH",
+  "Sergent": "SGT",
+  "Sergent-Chef": "SCHE",
+  "Adjudant": "ADJ",
+  "Adjudant-Chef": "ADC",
+  "Lieutenant": "LTN",
+  "Capitaine": "CNE",
+  "Commandant": "CDT",
+  "Colonel": "COL",
+  "Lieutenant-Colonel": "LCL",
+  "Infirmière": "INF",
+}
+return grades[grade];
+}
+
+/* assignAgentsToVehicles(
+  matricules= ["V30001",
+"V33624",
+"V06208",
+"V33117",
+"V33369",
+"V25076",
+"V29738",
+"V29952",
+"V26371",
+"V13706",
+"V27192",
+"V29997",
+"V06175",
+"V29242",
+"V33243",
+"V29996",
+"V06734",
+"V32227"],
+  codeSinistre= "3160",
+  personnalise={
+       "agents": [
+          {"matricule" : "V29996", "engin":"VSAV-2", "emploi" : "SAP_ca", "grade": "CNE", "nomAgent": "CHATEAUX", "prenomAgent": "Thierry"},
+       {"matricule": "V06175","grade":"SCHE","nomAgent":"BERNARD", "prenomAgent":"Albert","engin": "VSAV-2", "emploi":"SAP_cd"}],
+  "gfo_additionnel": ["SAP"],
+  "gfo_soustraction": []
+  }
+)
+*/
+
 module.exports = {
     getMapCoordinates,
     autoCompleteAddress,
