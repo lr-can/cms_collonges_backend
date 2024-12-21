@@ -326,7 +326,7 @@ for(const agent of personnalise.agents){
         
     }
     affectation.push({"engin": engin.libEngin, "affectation": gfoAffect});
-    score -= 5 * agentsNonAffectesRestants.length;
+    score -= 50 * agentsNonAffectesRestants.length;
 }
 console.log(affectation);
 return {score, affectation, agentsNonAffectesRestants};
