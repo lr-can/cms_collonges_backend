@@ -88,6 +88,45 @@ async function getClosestFireHydrants(lon, lat) {
         return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     }
 
+async function getERP(lon, lat){
+    if (!fetch) {
+        fetch = (await import('node-fetch')).default;
+    }
+    let url = 'https://www.data.gouv.fr/fr/datasets/r/3a239a53-cb5b-4d40-a87c-a71584ca82b2'
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        redirect: 'follow'
+    });
+    let url2 = 'https://www.data.gouv.fr/fr/datasets/r/009eada5-fc28-4efd-ba9e-a84c7e615cd8'
+    const response2 = await fetch(url2, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        redirect: 'follow'
+    });
+    const erpGeoJson = await response.json();
+    const casernesGeoJson = await response2.json();
+    const point = turf.point([lon, lat]);
+    const erpDistances = erpGeoJson.features.map(feature => {
+        const erpPoint = turf.point(feature.geometry.coordinates);
+        const distance = turf.distance(point, erpPoint, { units: 'meters' });
+        let nom = `${feature.properties.denomination} - ${feature.properties.code}`
+        return { feature: nom, distance };
+    });
+
+    const casernesDistances = casernesGeoJson.features.map(feature => {
+        const erpPoint = turf.point(feature.geometry.coordinates);
+        const distance = turf.distance(point, erpPoint, { units: 'meters' });
+        let nom = `CT ${feature.properties.nom_officiel_site} - ${feature.properties.cis} - ${feature.properties.groupement}`;
+        return { feature: nom, distance };
+    });
+
+    const allDistances = [...erpDistances, ...casernesDistances];
+    allDistances.sort((a, b) => a.distance - b.distance);
+
+    return allDistances.slice(0, 5);
+}
+
 async function autoCompleteAddress(input_str) {
     if (typeof input_str !== 'string') {
         throw new Error('input_str must be a string');
@@ -120,7 +159,8 @@ async function getMapCoordinates(lon, lat) {
     return {
         coordinates: { lon, lat },
         mapCoordinates: `${firstPartString} ${secondPartString}`.replace("est.  ", "inconnu"),
-        fireHydrants: await getClosestFireHydrants(lon, lat)
+        fireHydrants: await getClosestFireHydrants(lon, lat),
+        erp: await getERP(lon, lat)
     };
 }
 
