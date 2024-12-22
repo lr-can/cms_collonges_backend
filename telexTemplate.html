@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordre de départ</title>
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .TNR{
+            font-family: "Times New Roman", Times, serif;
+        }
+        .Arial{
+            font-family: Arial, sans-serif;
+        } 
+        .F12{
+            font-size: 12px;
+        }
+        .F14{
+            font-size: 14px;
+        }
+        .F16{
+            font-size: 16px;
+        }
+        .F18{
+            font-size: 18px;
+        }
+        .F20{
+            font-size: 20px;
+        }
+        .F12{
+            font-size: 12px;
+        }
+        .bold{
+            font-weight: bold;
+        }
+        .center{
+            text-align: center;
+        }
+        .left{
+            text-align: left;
+        }
+        .right{
+            text-align: right;
+        }
+        .italic{
+            font-style: italic;
+        }
+        .sinistre{
+            border-top: black 3px solid;
+            border-bottom: black 3px solid;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            padding: 0.5rem;
+        }
+        .dotted{
+            padding-bottom: 0.3rem;
+            border-bottom: dimgray 0.5px dotted;
+        }
+        .upper{
+            text-transform: uppercase;
+        }
+        .bordered{
+            padding: 1%;
+            margin-top: 1rem;
+            border: black 3px solid;
+            width: 97%;
+            margin-bottom: 1rem;
+        }
+        .underline{
+            text-decoration: underline;
+            text-decoration-thickness: 0.5px;
+        }
+        @media print {
+            section {page-break-before: always;}
+        }
+        #dateAlerte{
+            margin-left: 2rem;
+        }
+        .T10{
+            width: 10%;
+        }
+        .T15{
+            width: 15%;
+        }
+        .T20{
+            width: 20%;
+        }
+        .T25{
+            width: 25%;
+        }
+        .T30{
+            width: 30%;
+        }
+        .T35{
+            width: 35%;
+        }
+        .T40{
+            width: 40%;
+        }
+        .T50{
+            width: 50%;
+        }
+        .T75{
+            width: 75%;
+        }
+        .T80{
+            width: 80%;
+        }
+        .T90{
+            width: 90%;
+        }
+        .T100{
+            width: 100%;
+        }
+        .T10{
+            width: 10%;
+        }
+        .gray{
+            background-color: lightgray;
+        }
+        table{
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        .noMargin{
+            margin-bottom: 0;
+        }
+        p{
+            margin-top: 0;
+        }
+        .top{
+            vertical-align: top;
+        }
+
+    </style>
+</head>
+<body>
+    <section>
+        <div id="header" class="F14 TNR">
+            <table class="T100">
+                <tr>
+                    <td class="T50">
+                        Déclenchement de l'alerte
+                        <span id="dateAlerte">22/12/2024 23:35:03</span>
+                    </td>
+                    <td class="T40 center gray">
+                        <span id="caserneAlerte" class="">COLLONGE</span>
+                    </td>
+                    <td class="T10 right gray">
+                        <span id="vehiculeAlerte" class="">VSAV-1</span>
+                    </td>
+                </tr>
+            </table>
+            <table class="T100">
+                <tr>
+                    <td class="T100 bold right upper">
+                        Code appairage : 
+                        <span id="codeApparaige" class="F18">99999</span>
+                    </td>
+                </tr>
+            </table>
+            <table class="T100 Arial F12">
+                <tr>
+                    <td class="T50 upper center">
+                        N° d'intervention
+                        <span id="numIntervention" class="bold F14">M063XXXX</span>                        
+                    </td>
+                    <td class="T50 upper center">
+                        Ordre de départ
+                        <span id="telIntervention" class="bold F14">M063XXXX-1</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="sinistre">
+            1110 - Arret cardiaque, mort subite
+        </div>
+        <div class="bold T100 dotted">
+            <p class="bold italic underline upper center">Consignes</p>
+            <p id="consignes">Pour communiquer avec le CDG du SDMIS, veiller la SPE1 au Nord du pont de Givors, Pour communiquer avec le CDG du 38 (COS en aval du pk18), veiller la DIR624 au Sud du pont de Givors. <br>Prendre Atlas fluvial Rhône / Saône</p>
+        </div>
+        <div class="bordered">
+            <p class="bold italic underline upper center">CRM / PRM - ECHELON 0</p>
+            <p class="bold italic upper F16">SE RENDRE AU PRM</p>
+            <table class="T100 F14 noMargin">
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Commune</span>
+                    </td>
+                    <td class="T30">
+                        <span>:</span>
+                        <span class="bold upper">CALUIRE-ET-CUIRE</span>
+                    </td>
+                    <td class="T15 center">
+                        <span class="upper italic F12">Livre : </span>
+                        <span class="bold">Caluire</span>
+                    </td>
+                    <td class="T35 right">
+                        <span class="upper italic F12">Coordonnées : </span>
+                        <span class="bold">1216 - BL 73</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Voie</span>
+                    </td>
+                    <td class="T30">
+                        <span>:</span>
+                        <span class="bold upper">1 Montée de la Boucle</span>
+                    </td>
+                </tr>
+            </table>
+            <table class="T100 F14 noMargin">
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Pt remarq.</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">ERP_ABBAYE DE COLLONGES PAUL BOCUSE</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12 top">Observations</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">DIR 663</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="T100 dotted">
+            <p class="bold italic underline upper center">Localisation du sinistre</p>
+            <table class="T100 F14 noMargin">
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Commune</span>
+                    </td>
+                    <td class="T30">
+                        <span>:</span>
+                        <span class="bold upper">CALUIRE-ET-CUIRE</span>
+                    </td>
+                    <td class="T15 center">
+                        <span class="upper italic F12">Livre : </span>
+                        <span class="bold">Caluire</span>
+                    </td>
+                    <td class="T35 right">
+                        <span class="upper italic F12">Coordonnées : </span>
+                        <span class="bold">1216 - BL 73</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Voie</span>
+                    </td>
+                    <td class="T30">
+                        <span>:</span>
+                        <span class="bold upper">1 Montée de la Boucle</span>
+                    </td>
+                </tr>
+            </table>
+            <table class="T100 F14 noMargin">
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Pt remarq.</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">ERP_ABBAYE DE COLLONGES PAUL BOCUSE</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Etage</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">VP</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="T15 top">
+                        <span class="italic upper F12">Observations</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">A la demande du SAMU qui se déplace <br>rcp en cours par med sll <br><br>Victime : X (X A)<br>Type de lieu: Domicile</span>
+                    </td>
+                </tr>
+            </table>            
+        </div>
+
+    </section>
+    
+</body>
+</html>
