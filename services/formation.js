@@ -117,7 +117,7 @@ async function getERP(lon, lat){
     const casernesDistances = casernesGeoJson.features.map(feature => {
         const erpPoint = turf.point(feature.geometry.coordinates);
         const distance = turf.distance(point, erpPoint, { units: 'meters' });
-        let nom = `CT ${feature.properties.nom_officiel_site} - ${feature.properties.cis} - ${feature.properties.groupement}`;
+        let nom = `CT ${feature.properties.nom_officiel_site} - ${feature.properties.groupement}`;
         return { feature: nom, distance };
     });
 
