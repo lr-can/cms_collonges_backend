@@ -92,13 +92,13 @@ async function getERP(lon, lat){
     if (!fetch) {
         fetch = (await import('node-fetch')).default;
     }
-    let url = 'https://www.data.gouv.fr/fr/datasets/r/3a239a53-cb5b-4d40-a87c-a71584ca82b2'
+    let url = 'https://data.grandlyon.com/geoserver/service-departemental-metropolitain-d-incendie-et-de-secours-sdmis/ows?SERVICE=WFS&VERSION=2.0.0&request=GetFeature&typename=service-departemental-metropolitain-d-incendie-et-de-secours-sdmis:sdmis.erp&outputFormat=application/json&SRSNAME=EPSG:4171&startIndex=0&sortBy=gid'
     const response = await fetch(url, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         redirect: 'follow'
     });
-    let url2 = 'https://www.data.gouv.fr/fr/datasets/r/009eada5-fc28-4efd-ba9e-a84c7e615cd8'
+    let url2 = 'https://data.grandlyon.com/geoserver/service-departemental-metropolitain-d-incendie-et-de-secours-sdmis/ows?SERVICE=WFS&VERSION=2.0.0&request=GetFeature&typename=service-departemental-metropolitain-d-incendie-et-de-secours-sdmis:sdmis.caserne&outputFormat=application/json&SRSNAME=EPSG:4171&startIndex=0&sortBy=gid'
     const response2 = await fetch(url2, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
