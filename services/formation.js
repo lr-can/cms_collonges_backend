@@ -392,6 +392,11 @@ const grades = {
 return grades[grade];
 }
 
+async function getVehiculesAndCaserne (){
+    const artemisData = JSON.parse(fs.readFileSync('ressources/artemisData.json', 'utf8'));
+    return artemisData;
+}
+
 /* assignAgentsToVehicles(
   matricules= ["V30001",
 "V33624",
@@ -425,5 +430,6 @@ return grades[grade];
 module.exports = {
     getMapCoordinates,
     autoCompleteAddress,
-    assignAgentsToVehicles
+    assignAgentsToVehicles,
+    getVehiculesAndCaserne
 };

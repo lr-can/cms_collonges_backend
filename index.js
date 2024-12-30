@@ -52,6 +52,7 @@ const getFormationAutoSuggest = require("./routes/getFormationAutoSuggest");
 const clearInterPeople = require("./routes/clearInterPeople");
 const getVehiculesandPeople = require("./routes/getVehiculesandPeople");
 const vehiculesAffectation = require("./routes/vehiculesAffectation");
+const getVehiculesAndCaserne = require("./routes/getCaserneAndVehicules");
 
 app.use(express.json());
 app.use(cors());
@@ -114,6 +115,7 @@ app.use("/getFormationAutoSuggest", getFormationAutoSuggest);
 app.use("/clearInterPeople", clearInterPeople);
 app.use("/getVehiculesandPeople", getVehiculesandPeople);
 app.use("/vehiculesAffectation", vehiculesAffectation);
+app.use("/getVehiculesAndCaserne", getVehiculesAndCaserne);
 
 
 

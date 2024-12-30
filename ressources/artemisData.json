@@ -1,0 +1,2576 @@
+{
+	"vehicleTypes": [
+		{
+			"code": "A",
+			"name": "Astreinte A"
+		},
+		{
+			"code": "ABATI",
+			"name": "Astreinte BATIment"
+		},
+		{
+			"code": "ACOMM",
+			"name": "Astreinte Communication"
+		},
+		{
+			"code": "AINFO",
+			"name": "Astreinte INFOrmatique"
+		},
+		{
+			"code": "AMECA",
+			"name": "Astreinte MECAnique"
+		},
+		{
+			"code": "AMVLM",
+			"name": "SMUR Ambérieu - VL"
+		},
+		{
+			"code": "ANUMH",
+			"name": "SMUR Annecy - UMH"
+		},
+		{
+			"code": "ANVLM",
+			"name": "SMUR Annecy - VL"
+		},
+		{
+			"code": "ATRANS",
+			"name": "Astreinte TRANSmission"
+		},
+		{
+			"code": "B",
+			"name": "Astreinte B"
+		},
+		{
+			"code": "BEA55",
+			"name": "Bras Elévateur Aérien 55m"
+		},
+		{
+			"code": "BIP_GD",
+			"name": "Bip garde Dep CTA/CODIS"
+		},
+		{
+			"code": "BLR",
+			"name": "Bateau léger de reconnaissance"
+		},
+		{
+			"code": "BLS",
+			"name": "Bateau moyen de secours"
+		},
+		{
+			"code": "BLSP",
+			"name": "Bat léger de sauvetage pneuma"
+		},
+		{
+			"code": "BMS",
+			"name": "Bateau moyen de secours"
+		},
+		{
+			"code": "BOUMH",
+			"name": "SMUR Bourg en Bresse - UMH"
+		},
+		{
+			"code": "BOVLM",
+			"name": "SMUR Bourg en Bresse - VL"
+		},
+		{
+			"code": "BPS",
+			"name": "Bateau polyvalent de secours"
+		},
+		{
+			"code": "BPSM",
+			"name": "Bat polyvalent mutualisé"
+		},
+		{
+			"code": "BRON",
+			"name": "SMUR BRON"
+		},
+		{
+			"code": "BRS",
+			"name": "Bat de reco et de sauvetage"
+		},
+		{
+			"code": "BRSM",
+			"name": "BRS Mutualisé"
+		},
+		{
+			"code": "BRSP",
+			"name": "Bat de reco sauvetage pneuma"
+		},
+		{
+			"code": "BRVLM",
+			"name": "SMUR Bourgoin - VL"
+		},
+		{
+			"code": "CBEA",
+			"name": "Camion bras élévateur articulé"
+		},
+		{
+			"code": "CCFM",
+			"name": "CCF moyen"
+		},
+		{
+			"code": "CCGC",
+			"name": "Camion citerne grande capacité"
+		},
+		{
+			"code": "CCI",
+			"name": "Camion citerne d'incendie"
+		},
+		{
+			"code": "CCIHR",
+			"name": "Camion citerne d'incendie HR"
+		},
+		{
+			"code": "CCTE",
+			"name": "Camion citerne transport d'ému"
+		},
+		{
+			"code": "CDCPMA",
+			"name": "Chef de colonne PMA"
+		},
+		{
+			"code": "CDCPRV",
+			"name": "Chef de colonne PRV"
+		},
+		{
+			"code": "CDHR",
+			"name": "Camion Dévidoir HR"
+		},
+		{
+			"code": "CEBF",
+			"name": "Cellule barrage flottant"
+		},
+		{
+			"code": "CECONF",
+			"name": "Cône de confinement"
+		},
+		{
+			"code": "CED150",
+			"name": "Cellule dévidoir 150"
+		},
+		{
+			"code": "CEDEC",
+			"name": "Cellule décontamination fine"
+		},
+		{
+			"code": "CEEM",
+			"name": "Cellule émulseur"
+		},
+		{
+			"code": "CENBC",
+			"name": "Cellule NBC"
+		},
+		{
+			"code": "CEPC",
+			"name": "Cellule PC"
+		},
+		{
+			"code": "CEPOL",
+			"name": "Cellule pollution"
+		},
+		{
+			"code": "CESD",
+			"name": "Cellule sauvetage déblaiement"
+		},
+		{
+			"code": "CEUMD",
+			"name": "Unité Mobile de Déconta"
+		},
+		{
+			"code": "CEVDE",
+			"name": "Cellule ventil dénoy éclair"
+		},
+		{
+			"code": "CGHR",
+			"name": "Camion grue hors route"
+		},
+		{
+			"code": "CPCE",
+			"name": "Camion porte cellule"
+		},
+		{
+			"code": "CPLAT",
+			"name": "Camion plateau"
+		},
+		{
+			"code": "CSL",
+			"name": "Camion soutien logistique"
+		},
+		{
+			"code": "CSLEPI",
+			"name": "Camion soutien logistique EPI"
+		},
+		{
+			"code": "CSLFDF",
+			"name": "Camion soutien logistique FDF"
+		},
+		{
+			"code": "CTUL",
+			"name": "Camion tous usage lourd"
+		},
+		{
+			"code": "DPS",
+			"name": "Dispositif preventif securite"
+		},
+		{
+			"code": "DRA69",
+			"name": "Dragon 69"
+		},
+		{
+			"code": "DRA74",
+			"name": "Dragon 74"
+		},
+		{
+			"code": "ECMO",
+			"name": "SMUR HEH ECMO"
+		},
+		{
+			"code": "EMA",
+			"name": "Ensemble Mobile d'Alerte"
+		},
+		{
+			"code": "EP",
+			"name": "Echelle sur porteur"
+		},
+		{
+			"code": "EPC30",
+			"name": "E Piv à mouvement continu"
+		},
+		{
+			"code": "EPS24",
+			"name": "E Piv semi automatique 24 m"
+		},
+		{
+			"code": "EPS32",
+			"name": "E Piv semi automatique 32 m"
+		},
+		{
+			"code": "FCYN",
+			"name": "Fourgon d'inter cynotechnique"
+		},
+		{
+			"code": "FELD",
+			"name": "Fourgon d'explo longue durée"
+		},
+		{
+			"code": "FEURS",
+			"name": "SMUR FEURS"
+		},
+		{
+			"code": "FMC",
+			"name": "Fourgon Milieu Confiné"
+		},
+		{
+			"code": "FMOGP",
+			"name": "Fourgon mousse GP"
+		},
+		{
+			"code": "FNRBC",
+			"name": "Fourgon d'intervention NRBC"
+		},
+		{
+			"code": "FPT",
+			"name": "Fourgon pompe tonne"
+		},
+		{
+			"code": "FPTASR",
+			"name": "FPT Abordage Secours Routier"
+		},
+		{
+			"code": "FPTGP",
+			"name": "Fourgon pompe tonne GP"
+		},
+		{
+			"code": "FPTGPA",
+			"name": "FPTGP Abordage Secours Routier"
+		},
+		{
+			"code": "FPTGRE",
+			"name": "FPT GRES FDL2024"
+		},
+		{
+			"code": "FPTL",
+			"name": "Fourgon pompe tonne léger"
+		},
+		{
+			"code": "FPTLAR",
+			"name": "FPTL Abordage Secours Routier"
+		},
+		{
+			"code": "FPTLHR",
+			"name": "Fourgon pompe tonne léger HR"
+		},
+		{
+			"code": "FSD",
+			"name": "Fourgon SD"
+		},
+		{
+			"code": "FSE",
+			"name": "Fourgon Appui Situation Except"
+		},
+		{
+			"code": "FSR",
+			"name": "Fourgon de secours routier"
+		},
+		{
+			"code": "FSRLHR",
+			"name": "Fourgon de secours routier LHR"
+		},
+		{
+			"code": "FSRM",
+			"name": "Fourgon secours routier moyen"
+		},
+		{
+			"code": "FSUL",
+			"name": "Fourgon Soutien USAR Lourd"
+		},
+		{
+			"code": "GRUMH",
+			"name": "SMUR Grenoble - UMH"
+		},
+		{
+			"code": "GRVLM",
+			"name": "SMUR Grenoble - VL"
+		},
+		{
+			"code": "HCL",
+			"name": "SMUR HLC"
+		},
+		{
+			"code": "HEH",
+			"name": "SMUR HEH"
+		},
+		{
+			"code": "HEL38",
+			"name": "Hélicoptère 38"
+		},
+		{
+			"code": "HEL42",
+			"name": "Hélicoptère ST Etienne"
+		},
+		{
+			"code": "HELGE",
+			"name": "Hélicoptère SMUR GE"
+		},
+		{
+			"code": "HELHE",
+			"name": "Hélicoptère SMUR HEH"
+		},
+		{
+			"code": "HEPCM",
+			"name": "SMUR HEH - PCM"
+		},
+		{
+			"code": "HEUMH",
+			"name": "SMUR HEH - UMH"
+		},
+		{
+			"code": "HEVLM",
+			"name": "SMUR HEH - VLM"
+		},
+		{
+			"code": "LANTI",
+			"name": "Lot PRV Antidotes"
+		},
+		{
+			"code": "LASIAT",
+			"name": "Lot frelons asiatiques"
+		},
+		{
+			"code": "LBACHE",
+			"name": "Lot Bache"
+		},
+		{
+			"code": "LBALIS",
+			"name": "Lot Balise"
+		},
+		{
+			"code": "LBARI",
+			"name": "Lot bariatrique"
+		},
+		{
+			"code": "LCITS5",
+			"name": "LOT CITERNE SOUPLE 5000L"
+		},
+		{
+			"code": "LCOMP",
+			"name": "Lot Compresseur"
+		},
+		{
+			"code": "LCPS",
+			"name": "Lot coussin pneu. de sauvetage"
+		},
+		{
+			"code": "LCTHER",
+			"name": "Caméra thermique"
+		},
+		{
+			"code": "LDEC",
+			"name": "Lot decontaminataion"
+		},
+		{
+			"code": "LDEPOL",
+			"name": "Kit dépollution"
+		},
+		{
+			"code": "LDNOY",
+			"name": "Lot Dénoyage"
+		},
+		{
+			"code": "LDRONE",
+			"name": "Lot DRONE"
+		},
+		{
+			"code": "LECLE",
+			"name": "Lot Eclairage"
+		},
+		{
+			"code": "LELEC",
+			"name": "Valise electro secours"
+		},
+		{
+			"code": "LEMA",
+			"name": "Ensemble Mobile d'Alerte"
+		},
+		{
+			"code": "LETAI",
+			"name": "Lot Etaiement"
+		},
+		{
+			"code": "LFDCH",
+			"name": "Lot Feu de Cheminée"
+		},
+		{
+			"code": "LFEUJD",
+			"name": "Lot Feu de Joint de Dilatation"
+		},
+		{
+			"code": "LFORC",
+			"name": "Lot manoeuvre de Force"
+		},
+		{
+			"code": "LGAZ",
+			"name": "Valise recherche d'éman. gaz"
+		},
+		{
+			"code": "LGEBAT",
+			"name": "Lot Groupe électrogène GBAT"
+		},
+		{
+			"code": "LGLFDF",
+			"name": "Lot Etablissement GL FDF"
+		},
+		{
+			"code": "LGOUL",
+			"name": "Kit goulottes d'évacuation"
+		},
+		{
+			"code": "LINERT",
+			"name": "Kit inertage "
+		},
+		{
+			"code": "LJOG",
+			"name": "L JOG"
+		},
+		{
+			"code": "LMPE",
+			"name": "Lot motopompe d'épuist"
+		},
+		{
+			"code": "LNBC",
+			"name": "Kit NBC"
+		},
+		{
+			"code": "LORRY",
+			"name": "Véhicule transport pour rail"
+		},
+		{
+			"code": "LPCRAD",
+			"name": "Lot Portique de Contrôle RAD"
+		},
+		{
+			"code": "LPIRBC",
+			"name": "Lot EPI NRBC"
+		},
+		{
+			"code": "LPRV",
+			"name": "Lot PRV"
+		},
+		{
+			"code": "LREL",
+			"name": "Lot de relevage"
+		},
+		{
+			"code": "LRIP",
+			"name": "Lot relai independant portable"
+		},
+		{
+			"code": "LSDL",
+			"name": "Lot Sauvetage Déblai Lourd"
+		},
+		{
+			"code": "LSINUS",
+			"name": "Lot SINUS"
+		},
+		{
+			"code": "LSONAR",
+			"name": "SONAR"
+		},
+		{
+			"code": "LSRL",
+			"name": "Lot Secours routier Lourd"
+		},
+		{
+			"code": "LSUMH",
+			"name": "SMUR Lyon Sud - UMH"
+		},
+		{
+			"code": "LSVLM",
+			"name": "SMUR Lyon Sud - VLM"
+		},
+		{
+			"code": "LTENTE",
+			"name": "Tente"
+		},
+		{
+			"code": "LTOILE",
+			"name": "Toile de sauvetage"
+		},
+		{
+			"code": "LTRAM",
+			"name": "Lot de sécu éléct Tramway"
+		},
+		{
+			"code": "LTRON",
+			"name": "Lot Tronçonnage"
+		},
+		{
+			"code": "LTUY",
+			"name": "Lot Tuyaux"
+		},
+		{
+			"code": "LVERIN",
+			"name": "Lot Verin Metro"
+		},
+		{
+			"code": "LYSUD",
+			"name": "SMUR LYON SUD"
+		},
+		{
+			"code": "MACON",
+			"name": "SMUR MACON"
+		},
+		{
+			"code": "MPR",
+			"name": "Motopompe remorquable"
+		},
+		{
+			"code": "MPRGP",
+			"name": "Motopompe remorquable GP"
+		},
+		{
+			"code": "R2BLR",
+			"name": "Remorque 2 BLR"
+		},
+		{
+			"code": "R2BLS",
+			"name": "Remorque 2 BLS"
+		},
+		{
+			"code": "RBF",
+			"name": "Remorque barrage flottant"
+		},
+		{
+			"code": "RGE",
+			"name": "Remorque groupe électrogène  "
+		},
+		{
+			"code": "RGEDE",
+			"name": "Remorque gpe elec dénoy éclair"
+		},
+		{
+			"code": "RLEM",
+			"name": "Remorque lance eau et mousse "
+		},
+		{
+			"code": "RMOHF",
+			"name": "Remorque mousse haut foisont"
+		},
+		{
+			"code": "RMV",
+			"name": "Remorque moto ventilateur"
+		},
+		{
+			"code": "RMVGD",
+			"name": "Remorque moto ventil grd débit"
+		},
+		{
+			"code": "ROANN",
+			"name": "SMUR ROANNE"
+		},
+		{
+			"code": "RPO",
+			"name": "Remorque extincteur à poudre"
+		},
+		{
+			"code": "RSA",
+			"name": "Remorque sable"
+		},
+		{
+			"code": "RSAT",
+			"name": "Remorque satellite"
+		},
+		{
+			"code": "RSR",
+			"name": "Remorque secours routier"
+		},
+		{
+			"code": "RSUB",
+			"name": "Remorque subsistances"
+		},
+		{
+			"code": "SMH69",
+			"name": "Secours médical Héliporté "
+		},
+		{
+			"code": "SSH",
+			"name": "Sauveteur spécialisé héliporté"
+		},
+		{
+			"code": "TARAR",
+			"name": "SMUR TARARE"
+		},
+		{
+			"code": "TAVLM",
+			"name": "SMUR Tarare - VL"
+		},
+		{
+			"code": "TRACT",
+			"name": "Porte Char"
+		},
+		{
+			"code": "UMHHD",
+			"name": "SMUR HOTEL DIEU - UMH"
+		},
+		{
+			"code": "UMHRO",
+			"name": "SMUR ROANNE - UMH"
+		},
+		{
+			"code": "VACG",
+			"name": "Véhicule d'accompagnement CG"
+		},
+		{
+			"code": "VAMM",
+			"name": "Véhic Appui Mouillant Moussant"
+		},
+		{
+			"code": "VAPS",
+			"name": "Véhi Action Primai Santé"
+		},
+		{
+			"code": "VAR",
+			"name": "Véhicule assistance respiratoi"
+		},
+		{
+			"code": "VAT",
+			"name": "Véhicule atelier"
+		},
+		{
+			"code": "VCS",
+			"name": "Véhicule chef de site"
+		},
+		{
+			"code": "VCSS1",
+			"name": "Chef de site Permanence S1"
+		},
+		{
+			"code": "VCYN",
+			"name": "Véhicule d'inter cynotechnique"
+		},
+		{
+			"code": "VDDA",
+			"name": "Véhicule DDA"
+		},
+		{
+			"code": "VDDSIS",
+			"name": "Véhicule DDSIS"
+		},
+		{
+			"code": "VDIP",
+			"name": "Vehic detect Identif preleve"
+		},
+		{
+			"code": "VEPB",
+			"name": "V Equipement Prot Ballistique"
+		},
+		{
+			"code": "VFI",
+			"name": "Véhicule fourgonnette d'inter."
+		},
+		{
+			"code": "VFIHR",
+			"name": "Véhicule fourgon.  d'inte. HR"
+		},
+		{
+			"code": "VFITT",
+			"name": "Véhicule fourgon. d'inter. TT"
+		},
+		{
+			"code": "VFUMH",
+			"name": "SMUR Villefranche - UMH"
+		},
+		{
+			"code": "VFVLM",
+			"name": "SMUR Villefranche - VL"
+		},
+		{
+			"code": "VID",
+			"name": "Véhicule d'Inter Div"
+		},
+		{
+			"code": "VIDP",
+			"name": "VID présignalisation"
+		},
+		{
+			"code": "VIENN",
+			"name": "SMUR VIENNE"
+		},
+		{
+			"code": "VILLEF",
+			"name": "SMUR VILLEFRANCHE"
+		},
+		{
+			"code": "VIM90",
+			"name": "Véhicule d'Intervention Mousse"
+		},
+		{
+			"code": "VIMP",
+			"name": "Véh. d'inter. milieu périlleux"
+		},
+		{
+			"code": "VINF",
+			"name": "Véhicule Inf"
+		},
+		{
+			"code": "VINFCH",
+			"name": "Véhuicle Inf Chef"
+		},
+		{
+			"code": "VIS",
+			"name": "Véhicule Intervention Sécurité"
+		},
+		{
+			"code": "VIVLM",
+			"name": "SMUR Vienne - VL"
+		},
+		{
+			"code": "VLCARB",
+			"name": "VL transport de Carburant"
+		},
+		{
+			"code": "VLCDG",
+			"name": "VL CDG"
+		},
+		{
+			"code": "VLCYN",
+			"name": "VL d'inter. cynotechnique"
+		},
+		{
+			"code": "VLI",
+			"name": "Vehicule leger d'intervention"
+		},
+		{
+			"code": "VLINF",
+			"name": "VL INFIRMIER"
+		},
+		{
+			"code": "VLM",
+			"name": "Véhicule Léger Medicalisé"
+		},
+		{
+			"code": "VLMED",
+			"name": "VL MEDECIN"
+		},
+		{
+			"code": "VLMFE",
+			"name": "SMUR Feurs - VL"
+		},
+		{
+			"code": "VLMMA",
+			"name": "SMUR Macon - VL"
+		},
+		{
+			"code": "VLMRO",
+			"name": "SMUR Roanne - VL"
+		},
+		{
+			"code": "VLPC",
+			"name": "VL poste de commandement"
+		},
+		{
+			"code": "VLPCHR",
+			"name": "VL poste de commandement HR"
+		},
+		{
+			"code": "VMED",
+			"name": "Véhicule medecin"
+		},
+		{
+			"code": "VMEDCH",
+			"name": "Véhicule Permanence MEDCH"
+		},
+		{
+			"code": "VPC",
+			"name": "Véhicule poste de commandement"
+		},
+		{
+			"code": "VPHARM",
+			"name": "Véhicule Pharmacien"
+		},
+		{
+			"code": "VPI",
+			"name": "Véhicule de première inter"
+		},
+		{
+			"code": "VPIHR",
+			"name": "Véhicule de première inter HR"
+		},
+		{
+			"code": "VPLHR",
+			"name": "Véhicule plongeurs hors route"
+		},
+		{
+			"code": "VPMA",
+			"name": "Véhicule post médical avancé"
+		},
+		{
+			"code": "VPRV",
+			"name": "Véhicule PRV"
+		},
+		{
+			"code": "VPSP",
+			"name": "V. Premier Sec. à Personnes"
+		},
+		{
+			"code": "VPSY",
+			"name": "Véhicule PSY"
+		},
+		{
+			"code": "VSAV",
+			"name": "V. sec. et assist aux victimes"
+		},
+		{
+			"code": "VSM",
+			"name": "Véhicule de soutien médical"
+		},
+		{
+			"code": "VSMA",
+			"name": "VSM d'Appui"
+		},
+		{
+			"code": "VSMTT",
+			"name": "Véhicule de soutien médical TT"
+		},
+		{
+			"code": "VSN",
+			"name": "Véhicule de secours nautiques"
+		},
+		{
+			"code": "VSNHR",
+			"name": "Véhicule secours nautiques HR"
+		},
+		{
+			"code": "VSSUAP",
+			"name": "V Sec et Soins Urg Aux Pers"
+		},
+		{
+			"code": "VTAQUA",
+			"name": "Véhicule de Secours Aquatique"
+		},
+		{
+			"code": "VTBAT",
+			"name": "VTUT TRACTEUR BATEAU"
+		},
+		{
+			"code": "VTCORD",
+			"name": "Vecteur Coordination HUB"
+		},
+		{
+			"code": "VTDEPI",
+			"name": "Véhicule transport Dépistage"
+		},
+		{
+			"code": "VTP",
+			"name": "Veh transport pers"
+		},
+		{
+			"code": "VTSAV",
+			"name": "Vehicule SAV"
+		},
+		{
+			"code": "VTURBC",
+			"name": "VTUT NRBC"
+		},
+		{
+			"code": "VTUT",
+			"name": "Véhicule tout usage tracteur"
+		},
+		{
+			"code": "VTUTP",
+			"name": "VTUT Présignalisation"
+		},
+		{
+			"code": "VTVACC",
+			"name": "Véhicule transport Vaccination"
+		},
+		{
+			"code": "VVET",
+			"name": "Véhicule Véterinaire"
+		},
+		{
+			"code": "XFDF",
+			"name": "Conseiller technique FDF"
+		},
+		{
+			"code": "XIUVSR",
+			"name": "Conseiller technique IUVSR"
+		},
+		{
+			"code": "XRAD",
+			"name": "Conseiller technique RAD"
+		},
+		{
+			"code": "XRCH",
+			"name": "Conseiller technique RCH"
+		},
+		{
+			"code": "XROUSS",
+			"name": "SMUR XROUSSE"
+		},
+		{
+			"code": "XSDE",
+			"name": "Conseiller technique SDE"
+		},
+		{
+			"code": "XSIC",
+			"name": "Conseiller technique SIC"
+		},
+		{
+			"code": "_VSM",
+			"name": "Véhicule soutien médical FDL"
+		}
+	],
+	"fireunits": [
+		{
+			"code": "006",
+			"name": "AMPLEPUIS",
+			"shortname": "AMPLEPUI"
+		},
+		{
+			"code": "007",
+			"name": "AMPUIS",
+			"shortname": "AMPUIS"
+		},
+		{
+			"code": "009",
+			"name": "ANSE / LUCENAY",
+			"shortname": "ANSE"
+		},
+		{
+			"code": "052",
+			"name": "AZERGUES",
+			"shortname": "AZERGUES"
+		},
+		{
+			"code": "029",
+			"name": "BASEH",
+			"shortname": "BASEH"
+		},
+		{
+			"code": "018",
+			"name": "BEAUJEU EN BEAUJOLAIS",
+			"shortname": "BEAUJEU"
+		},
+		{
+			"code": "179",
+			"name": "BEAUVALLON",
+			"shortname": "BOVALLON"
+		},
+		{
+			"code": "019",
+			"name": "BELLEVILLE/ST GEORGES",
+			"shortname": "BELLEVIL"
+		},
+		{
+			"code": "021",
+			"name": "BESSENAY",
+			"shortname": "BESSENAY"
+		},
+		{
+			"code": "023",
+			"name": "BLACE/DENICE",
+			"shortname": "BLACE"
+		},
+		{
+			"code": "028",
+			"name": "BRINDAS",
+			"shortname": "BRINDAS"
+		},
+		{
+			"code": "032",
+			"name": "BULLY",
+			"shortname": "BULLY"
+		},
+		{
+			"code": "228",
+			"name": "CHABANIERE",
+			"shortname": "CHABAN"
+		},
+		{
+			"code": "270",
+			"name": "CHAPONNAY/MARENNES",
+			"shortname": "CHAPONAY"
+		},
+		{
+			"code": "043",
+			"name": "CHAPONOST",
+			"shortname": "CHAPONOS"
+		},
+		{
+			"code": "056",
+			"name": "CHESSY LES MINES",
+			"shortname": "CHESSY"
+		},
+		{
+			"code": "063",
+			"name": "COLLONGES AU MONT D'OR",
+			"shortname": "COLLONGE"
+		},
+		{
+			"code": "299",
+			"name": "COLOMBIER SAUGNIEU",
+			"shortname": "COLOMBIE"
+		},
+		{
+			"code": "272",
+			"name": "COMMUNAY/TERNAY",
+			"shortname": "COMMUNAY"
+		},
+		{
+			"code": "064",
+			"name": "CONDRIEU",
+			"shortname": "CONDRIEU"
+		},
+		{
+			"code": "066",
+			"name": "COURS",
+			"shortname": "COURS"
+		},
+		{
+			"code": "067",
+			"name": "COURZIEU",
+			"shortname": "COURZIEU"
+		},
+		{
+			"code": "068",
+			"name": "COUZON/SAINT ROMAIN",
+			"shortname": "COUZON"
+		},
+		{
+			"code": "CTA",
+			"name": "CTA/CODIS",
+			"shortname": "CTACODIS"
+		},
+		{
+			"code": "CTD9",
+			"name": "CTD ANTIQUAILLE",
+			"shortname": "CTD ANTI"
+		},
+		{
+			"code": "CTD4",
+			"name": "CTD BELLECOUR",
+			"shortname": "CTD BELL"
+		},
+		{
+			"code": "CTD3",
+			"name": "CTD CELESTINS",
+			"shortname": "CTD CELE"
+		},
+		{
+			"code": "CTD5",
+			"name": "CTD FOURVIERE",
+			"shortname": "CTD FOUR"
+		},
+		{
+			"code": "CTD2",
+			"name": "CTD FOUSSERET",
+			"shortname": "CTD FOUS"
+		},
+		{
+			"code": "CTD6",
+			"name": "CTD JEAN MOULIN",
+			"shortname": "CTD MOUL"
+		},
+		{
+			"code": "CTD1",
+			"name": "CTD ST JEAN",
+			"shortname": "CTD STJA"
+		},
+		{
+			"code": "CTD10",
+			"name": "CTD TETE D'OR",
+			"shortname": "CTD TETE"
+		},
+		{
+			"code": "CTS41",
+			"name": "CTS ATTENTE VALIDATION CIC",
+			"shortname": "CTSCIC"
+		},
+		{
+			"code": "CTS14",
+			"name": "CTS SECTEUR ARNAS",
+			"shortname": "CTS ARNA"
+		},
+		{
+			"code": "CTS29",
+			"name": "CTS SECTEUR BELLEVILLE",
+			"shortname": "CTS BELL"
+		},
+		{
+			"code": "CTS30",
+			"name": "CTS SECTEUR BRIGNAIS",
+			"shortname": "CTS BRIG"
+		},
+		{
+			"code": "CTS5",
+			"name": "CTS SECTEUR BRON",
+			"shortname": "CTS BRON"
+		},
+		{
+			"code": "CTS13",
+			"name": "CTS SECTEUR CALUIRE",
+			"shortname": "CTS CALU"
+		},
+		{
+			"code": "CTS31",
+			"name": "CTS SECTEUR CHAPONOST",
+			"shortname": "CTS CHAP"
+		},
+		{
+			"code": "CTS15",
+			"name": "CTS SECTEUR CHASSIEU",
+			"shortname": "CTS CHAS"
+		},
+		{
+			"code": "CTS16",
+			"name": "CTS SECTEUR DECINES",
+			"shortname": "CTS DECI"
+		},
+		{
+			"code": "CTS2",
+			"name": "CTS SECTEUR DUCHERE",
+			"shortname": "CTS DUCH"
+		},
+		{
+			"code": "CTS17",
+			"name": "CTS SECTEUR ECULLY",
+			"shortname": "CTS ECUL"
+		},
+		{
+			"code": "CTS10",
+			"name": "CTS SECTEUR FEYZIN",
+			"shortname": "CTS FEYZ"
+		},
+		{
+			"code": "CTS32",
+			"name": "CTS SECTEUR FONTAINE",
+			"shortname": "CTS FONT"
+		},
+		{
+			"code": "CTS7",
+			"name": "CTS SECTEUR GIVORS",
+			"shortname": "CTS GIVO"
+		},
+		{
+			"code": "CTS18",
+			"name": "CTS SECTEUR GLEIZE",
+			"shortname": "CTS GLEI"
+		},
+		{
+			"code": "CTS19",
+			"name": "CTS SECTEUR GRIGNY",
+			"shortname": "CTS GRIG"
+		},
+		{
+			"code": "CTS20",
+			"name": "CTS SECTEUR LA MULATIERE",
+			"shortname": "CTS MULA"
+		},
+		{
+			"code": "CTS21",
+			"name": "CTS SECTEUR LIMAS",
+			"shortname": "CTS LIMA"
+		},
+		{
+			"code": "CTS36",
+			"name": "CTS SECTEUR LYON 01",
+			"shortname": "CTS 1ER"
+		},
+		{
+			"code": "CTS37",
+			"name": "CTS SECTEUR LYON 02",
+			"shortname": "CTS 2EME"
+		},
+		{
+			"code": "CTS38",
+			"name": "CTS SECTEUR LYON 03",
+			"shortname": "CTS 3EME"
+		},
+		{
+			"code": "CTS39",
+			"name": "CTS SECTEUR LYON 04",
+			"shortname": "CTS 4EME"
+		},
+		{
+			"code": "CTS22",
+			"name": "CTS SECTEUR LYON 05",
+			"shortname": "CTS 5EME"
+		},
+		{
+			"code": "CTS40",
+			"name": "CTS SECTEUR LYON 06",
+			"shortname": "CTS 6EME"
+		},
+		{
+			"code": "CTS11",
+			"name": "CTS SECTEUR LYON 07",
+			"shortname": "CTS 7EME"
+		},
+		{
+			"code": "CTS12",
+			"name": "CTS SECTEUR LYON 08",
+			"shortname": "CTS 8EME"
+		},
+		{
+			"code": "CTS23",
+			"name": "CTS SECTEUR LYON 09",
+			"shortname": "CTS 9EME"
+		},
+		{
+			"code": "CTS4",
+			"name": "CTS SECTEUR MEYZIEU",
+			"shortname": "CTS MEYZ"
+		},
+		{
+			"code": "CTS33",
+			"name": "CTS SECTEUR NEUVILLE",
+			"shortname": "CTS NEUV"
+		},
+		{
+			"code": "CTS24",
+			"name": "CTS SECTEUR OULLINS",
+			"shortname": "CTS OULL"
+		},
+		{
+			"code": "CTS25",
+			"name": "CTS SECTEUR PIERRE-BENITE",
+			"shortname": "CTS P B"
+		},
+		{
+			"code": "CTS1",
+			"name": "CTS SECTEUR RILLIEUX",
+			"shortname": "CTS RILL"
+		},
+		{
+			"code": "CTS9",
+			"name": "CTS SECTEUR SAINT-FONS",
+			"shortname": "CTS FONS"
+		},
+		{
+			"code": "CTS26",
+			"name": "CTS SECTEUR SAINT-PRIEST",
+			"shortname": "CTS STPR"
+		},
+		{
+			"code": "CTS34",
+			"name": "CTS SECTEUR ST GENIS LAVAL",
+			"shortname": "CTS GLAV"
+		},
+		{
+			"code": "CTS27",
+			"name": "CTS SECTEUR ST-FOY-LES-LYON",
+			"shortname": "CTS FOY"
+		},
+		{
+			"code": "CTS35",
+			"name": "CTS SECTEUR TARARE",
+			"shortname": "CTS TARA"
+		},
+		{
+			"code": "CTS3",
+			"name": "CTS SECTEUR VAULX-EN-VELIN",
+			"shortname": "CTS VAUL"
+		},
+		{
+			"code": "CTS6",
+			"name": "CTS SECTEUR VENISSIEUX",
+			"shortname": "CTS VENI"
+		},
+		{
+			"code": "CTS28",
+			"name": "CTS SECTEUR VILLEFRANCHE",
+			"shortname": "CTS VILF"
+		},
+		{
+			"code": "CTS8",
+			"name": "CTS SECTEUR VILLEURBANNE",
+			"shortname": "CTS VILL"
+		},
+		{
+			"code": "CTS99",
+			"name": "CTS TEST",
+			"shortname": "CTS TEST"
+		},
+		{
+			"code": "070",
+			"name": "CUBLIZE",
+			"shortname": "CUBLIZE"
+		},
+		{
+			"code": "135",
+			"name": "DEUX GROSNES",
+			"shortname": "DEUGRONE"
+		},
+		{
+			"code": "DSPOP",
+			"name": "DISPOSITIFS OPERATIONNELS",
+			"shortname": "DSPOP"
+		},
+		{
+			"code": "080",
+			"name": "ECHALAS",
+			"shortname": "ECHALAS"
+		},
+		{
+			"code": "081",
+			"name": "ECULLY",
+			"shortname": "ECULLY"
+		},
+		{
+			"code": "999",
+			"name": "EVENEMENTIEL",
+			"shortname": "EVENT"
+		},
+		{
+			"code": "010",
+			"name": "EVEUX",
+			"shortname": "EVEUX"
+		},
+		{
+			"code": "276",
+			"name": "FEYZIN",
+			"shortname": "FEYZIN"
+		},
+		{
+			"code": "084",
+			"name": "FLEURIE",
+			"shortname": "FLEURIE"
+		},
+		{
+			"code": "088",
+			"name": "FONTAINES SUR SAONE",
+			"shortname": "FONTAINE"
+		},
+		{
+			"code": "CF41",
+			"name": "Formation Gerland 41",
+			"shortname": "CF-G41"
+		},
+		{
+			"code": "383_2",
+			"name": "GARDE DEPARTEMENTALE",
+			"shortname": "GARDEDEP"
+		},
+		{
+			"code": "271",
+			"name": "GENAS/CHASSIEU",
+			"shortname": "GENAS"
+		},
+		{
+			"code": "143",
+			"name": "GENAY/NEUVILLE",
+			"shortname": "GENAY"
+		},
+		{
+			"code": "091",
+			"name": "GIVORS",
+			"shortname": "GIVORS"
+		},
+		{
+			"code": "099",
+			"name": "HAUTE RIVOIRE",
+			"shortname": "HTERIVOI"
+		},
+		{
+			"code": "279",
+			"name": "JONAGE",
+			"shortname": "JONAGE"
+		},
+		{
+			"code": "106",
+			"name": "LACHASSAGNE/POMMIERS/MARCY SUR",
+			"shortname": "LACHASSA"
+		},
+		{
+			"code": "107",
+			"name": "LAMURE/CHAMBOST/GRANDRIS",
+			"shortname": "LAMURE"
+		},
+		{
+			"code": "110",
+			"name": "LARAJASSE",
+			"shortname": "LARAJASS"
+		},
+		{
+			"code": "082",
+			"name": "LE FIEF",
+			"shortname": "LEFIEF"
+		},
+		{
+			"code": "139",
+			"name": "LES AUBERGES",
+			"shortname": "LESAUBER"
+		},
+		{
+			"code": "197",
+			"name": "LES BRIADES",
+			"shortname": "LESBRIAD"
+		},
+		{
+			"code": "117",
+			"name": "LISSIEU/LESCHERES/MARCILLY D'A",
+			"shortname": "LISSIEU"
+		},
+		{
+			"code": "382_1",
+			"name": "LYON CONFLUENCE",
+			"shortname": "LYCONFLU"
+		},
+		{
+			"code": "383_1",
+			"name": "LYON CORNEILLE",
+			"shortname": "LYCORNEI"
+		},
+		{
+			"code": "384_1",
+			"name": "LYON CROIX ROUSSE",
+			"shortname": "LYCRXROU"
+		},
+		{
+			"code": "389_1",
+			"name": "LYON DUCHERE",
+			"shortname": "LYDUCHER"
+		},
+		{
+			"code": "387_1",
+			"name": "LYON GERLAND",
+			"shortname": "LYGERLAN"
+		},
+		{
+			"code": "387_2",
+			"name": "LYON ROCHAT",
+			"shortname": "LYROCHAT"
+		},
+		{
+			"code": "127",
+			"name": "MARCY/CHARBONNIERES",
+			"shortname": "MARCY"
+		},
+		{
+			"code": "131",
+			"name": "MESSIMY",
+			"shortname": "MESSIMY"
+		},
+		{
+			"code": "282",
+			"name": "MEYZIEU/DECINES",
+			"shortname": "MEYZIEU"
+		},
+		{
+			"code": "133",
+			"name": "MILLERY",
+			"shortname": "MILLERY"
+		},
+		{
+			"code": "283",
+			"name": "MIONS",
+			"shortname": "MIONS"
+		},
+		{
+			"code": "141",
+			"name": "MORNANT",
+			"shortname": "MORNANT"
+		},
+		{
+			"code": "291",
+			"name": "OZON",
+			"shortname": "OZON"
+		},
+		{
+			"code": "PS1",
+			"name": "PC STADE",
+			"shortname": "PCSTADE"
+		},
+		{
+			"code": "PCO",
+			"name": "PCO PIZAY",
+			"shortname": "PCOPIZAY"
+		},
+		{
+			"code": "152",
+			"name": "PIERRE BENITE",
+			"shortname": "PIERREBE"
+		},
+		{
+			"code": "153",
+			"name": "POLEYMIEUX AU MONT D'OR",
+			"shortname": "POLEMIEU"
+		},
+		{
+			"code": "114",
+			"name": "PORTE DES PIERRES DOREES",
+			"shortname": "PIERDORE"
+		},
+		{
+			"code": "PC1",
+			"name": "Poste de commandement 1",
+			"shortname": "PC 1"
+		},
+		{
+			"code": "PC2",
+			"name": "Poste de commandement 2",
+			"shortname": "PC 2"
+		},
+		{
+			"code": "PC3",
+			"name": "Poste de commandement 3",
+			"shortname": "PC 3"
+		},
+		{
+			"code": "160",
+			"name": "POULE LES E / PROPIERES",
+			"shortname": "POULPROP"
+		},
+		{
+			"code": "285",
+			"name": "PUSIGNAN",
+			"shortname": "PUSIGNAN"
+		},
+		{
+			"code": "163",
+			"name": "QUINCIEUX",
+			"shortname": "QUINCIEU"
+		},
+		{
+			"code": "AVEIZ",
+			"name": "RDA AVEIZE",
+			"shortname": "RDA AVEI"
+		},
+		{
+			"code": "BEAUJ",
+			"name": "RDA BEAUJOLAIS",
+			"shortname": "RDA BEAU"
+		},
+		{
+			"code": "BESSE",
+			"name": "RDA BESSENAY",
+			"shortname": "RDA BESS"
+		},
+		{
+			"code": "BROUI",
+			"name": "RDA BROUILLY",
+			"shortname": "RDA BROU"
+		},
+		{
+			"code": "LAMUR",
+			"name": "RDA CLOCHER LAMURE",
+			"shortname": "RDA LAMU"
+		},
+		{
+			"code": "TRAMB",
+			"name": "RDA CLOCHER PONT TRAMBOUZE",
+			"shortname": "RDA TRAM"
+		},
+		{
+			"code": "COURZ",
+			"name": "RDA COURZIEU",
+			"shortname": "RDA COUR"
+		},
+		{
+			"code": "DARDI",
+			"name": "RDA DARDILLY",
+			"shortname": "RDA DARD"
+		},
+		{
+			"code": "EMERI",
+			"name": "RDA EMERINGUES",
+			"shortname": "RDA EMER"
+		},
+		{
+			"code": "AVN",
+			"name": "RDA FUT D AVENAS",
+			"shortname": "RDA AVN"
+		},
+		{
+			"code": "MONTA",
+			"name": "RDA GENAY",
+			"shortname": "RDA GENA"
+		},
+		{
+			"code": "RIVOI",
+			"name": "RDA HAUTE RIVOIRE",
+			"shortname": "RDA RIVE"
+		},
+		{
+			"code": "HPVIE",
+			"name": "RDA HP VIENNE",
+			"shortname": "RDA HPVI"
+		},
+		{
+			"code": "HPVIF",
+			"name": "RDA HP VILLEFRANCHE",
+			"shortname": "RDA VILF"
+		},
+		{
+			"code": "STVIN",
+			"name": "RDA LA CHAPELLE SAINT VINCENT",
+			"shortname": "RDA STVI"
+		},
+		{
+			"code": "LUERE",
+			"name": "RDA LA LUERE",
+			"shortname": "RDA LUER"
+		},
+		{
+			"code": "PYRAM",
+			"name": "RDA LA PYRAMIDE",
+			"shortname": "RDA PYRA"
+		},
+		{
+			"code": "LACHA",
+			"name": "RDA LACHASSAGNE",
+			"shortname": "RDA LACH"
+		},
+		{
+			"code": "DREVE",
+			"name": "RDA LE DREVET",
+			"shortname": "RDA DREV"
+		},
+		{
+			"code": "SVG",
+			"name": "RDA LES SAUVAGES",
+			"shortname": "RDA SVG"
+		},
+		{
+			"code": "LIERG",
+			"name": "RDA LIERGUES",
+			"shortname": "RDA LIER"
+		},
+		{
+			"code": "SARRA",
+			"name": "RDA LYON PART DIEU (EX SARRA)",
+			"shortname": "RDA TCL"
+		},
+		{
+			"code": "MATAG",
+			"name": "RDA MATAGRIN",
+			"shortname": "RDA MATA"
+		},
+		{
+			"code": "RIGAU",
+			"name": "RDA MONT SAINT RIGAUD",
+			"shortname": "RDA RIGA"
+		},
+		{
+			"code": "MONTR",
+			"name": "RDA MONTROTTIER",
+			"shortname": "RDA MONT"
+		},
+		{
+			"code": "POLEY",
+			"name": "RDA POLEYMIEUX ",
+			"shortname": "RDA POLE"
+		},
+		{
+			"code": "PROPI",
+			"name": "RDA PROPIERES",
+			"shortname": "RDA PROP"
+		},
+		{
+			"code": "QUINC",
+			"name": "RDA QUINCIE",
+			"shortname": "RDA QUIN"
+		},
+		{
+			"code": "RILLI",
+			"name": "RDA RILLIEUX",
+			"shortname": "RDA RILL"
+		},
+		{
+			"code": "ANDRE",
+			"name": "RDA SAINT ANDRE LA COTE",
+			"shortname": "RDA ANDR"
+		},
+		{
+			"code": "TRONC",
+			"name": "RDA SAINT BONNET LE TRONCY",
+			"shortname": "RDA TRON"
+		},
+		{
+			"code": "STFOY",
+			"name": "RDA SAINT FOY L'ARGENTIERE ",
+			"shortname": "RDA SFOY"
+		},
+		{
+			"code": "LAVAL",
+			"name": "RDA SAINT GENIS LAVAL",
+			"shortname": "RDA LAVA"
+		},
+		{
+			"code": "IGNY",
+			"name": "RDA SAINT IGNY DE VERS",
+			"shortname": "RDA IGNY"
+		},
+		{
+			"code": "STJUS",
+			"name": "RDA SAINT JUST D'AVRAY ",
+			"shortname": "RDA STJU"
+		},
+		{
+			"code": "MAURI",
+			"name": "RDA SAINT MAURICE SUR DARGOIRE",
+			"shortname": "RDA MAUR"
+		},
+		{
+			"code": "SATOL",
+			"name": "RDA SATOLAS (ISERE)",
+			"shortname": "RDA SATO"
+		},
+		{
+			"code": "SAVIG",
+			"name": "RDA SAVIGNY",
+			"shortname": "RDA SAVI"
+		},
+		{
+			"code": "VALSO",
+			"name": "RDA ST CLEMENT SOUS VALSONNE",
+			"shortname": "RDA VALS"
+		},
+		{
+			"code": "STGER",
+			"name": "RDA ST GERMAIN NUELLES",
+			"shortname": "RDA STGE"
+		},
+		{
+			"code": "REINS",
+			"name": "RDA ST VINCENT DE REINS",
+			"shortname": "RDA REIN"
+		},
+		{
+			"code": "DIEME",
+			"name": "RDA TDF DIEME",
+			"shortname": "RDA DIEM"
+		},
+		{
+			"code": "SVREI",
+			"name": "RDA TDF SAINT VINCENT REIMS",
+			"shortname": "RDA SVRE"
+		},
+		{
+			"code": "THEIZ",
+			"name": "RDA THEIZE",
+			"shortname": "RDA THEI"
+		},
+		{
+			"code": "TOUSS",
+			"name": "RDA TOUSSIEU",
+			"shortname": "RDA TOUS"
+		},
+		{
+			"code": "YZERO",
+			"name": "RDA YZERON",
+			"shortname": "RDA YZER"
+		},
+		{
+			"code": "165",
+			"name": "REGNIE DURETTE",
+			"shortname": "REGNIE"
+		},
+		{
+			"code": "290_7",
+			"name": "RESERVE OPERATIONNELLE",
+			"shortname": "RES OPER"
+		},
+		{
+			"code": "290_8",
+			"name": "RESERVE ROUGE",
+			"shortname": "RES ROUG"
+		},
+		{
+			"code": "286",
+			"name": "RILLIEUX LA PAPE",
+			"shortname": "RILLIEUX"
+		},
+		{
+			"code": "383_3",
+			"name": "SAMU",
+			"shortname": "SAMU"
+		},
+		{
+			"code": "290_3",
+			"name": "SDS",
+			"shortname": "SDS"
+		},
+		{
+			"code": "387_3",
+			"name": "SERVICE DE SECURITE",
+			"shortname": "SECURITE"
+		},
+		{
+			"code": "176",
+			"name": "SOUCIEU EN JARREST",
+			"shortname": "SOUCIEU"
+		},
+		{
+			"code": "287",
+			"name": "ST BONNET DE MURE",
+			"shortname": "STBOMURE"
+		},
+		{
+			"code": "189",
+			"name": "ST COLOMBE",
+			"shortname": "STCOLOMB"
+		},
+		{
+			"code": "190",
+			"name": "ST CONSORCE",
+			"shortname": "STCONSOR"
+		},
+		{
+			"code": "191",
+			"name": "ST CYR/ST DIDIER AU MONT D'OR",
+			"shortname": "STCYR"
+		},
+		{
+			"code": "201",
+			"name": "ST FOY L'ARGENTIERE",
+			"shortname": "STFOYARG"
+		},
+		{
+			"code": "202",
+			"name": "ST FOY/FRANCHEVILLE",
+			"shortname": "STFOYLYO"
+		},
+		{
+			"code": "208",
+			"name": "ST GERMAIN NUELLES",
+			"shortname": "STGERMAI"
+		},
+		{
+			"code": "209",
+			"name": "ST IGNY DE VERS",
+			"shortname": "STIGNY"
+		},
+		{
+			"code": "217",
+			"name": "ST JUST D'AVRAY",
+			"shortname": "STJUST"
+		},
+		{
+			"code": "218",
+			"name": "ST LAGER/CERCIE",
+			"shortname": "STLAGER"
+		},
+		{
+			"code": "220",
+			"name": "ST LAURENT DE CHAMOUSSET",
+			"shortname": "STLAUCHA"
+		},
+		{
+			"code": "288",
+			"name": "ST LAURENT DE MURE",
+			"shortname": "STLAUMUR"
+		},
+		{
+			"code": "227",
+			"name": "ST MARTIN EN HAUT",
+			"shortname": "STMARTIN"
+		},
+		{
+			"code": "289",
+			"name": "ST PIERRE DE CHANDIEU",
+			"shortname": "STPIERRE"
+		},
+		{
+			"code": "290_1",
+			"name": "ST PRIEST",
+			"shortname": "STPRIEST"
+		},
+		{
+			"code": "290_6",
+			"name": "ST PRIEST FORMATION",
+			"shortname": "STPRFOR"
+		},
+		{
+			"code": "290_2",
+			"name": "ST PRIEST LOGISTIQUE",
+			"shortname": "STPRLOG"
+		},
+		{
+			"code": "238",
+			"name": "ST SYMPHORIEN SUR COISE",
+			"shortname": "STSYMCOI"
+		},
+		{
+			"code": "240",
+			"name": "ST VINCENT DE REINS",
+			"shortname": "STVINCEN"
+		},
+		{
+			"code": "136",
+			"name": "TALUYERS/MONTAGNY/CHASSAGNY",
+			"shortname": "TALUYERS"
+		},
+		{
+			"code": "243",
+			"name": "TARARE",
+			"shortname": "TARARE"
+		},
+		{
+			"code": "244",
+			"name": "TASSIN LA DEMI LUNE",
+			"shortname": "TASSIN"
+		},
+		{
+			"code": "246",
+			"name": "THEIZE",
+			"shortname": "THEIZE"
+		},
+		{
+			"code": "248",
+			"name": "THIZY LES BOURGS",
+			"shortname": "THIZY"
+		},
+		{
+			"code": "249",
+			"name": "THURINS",
+			"shortname": "THURINS"
+		},
+		{
+			"code": "250",
+			"name": "TOUR/DOMMARTIN (LA)",
+			"shortname": "TOUR"
+		},
+		{
+			"code": "298",
+			"name": "TOUSSIEU",
+			"shortname": "TOUSSIEU"
+		},
+		{
+			"code": "024",
+			"name": "VAL D'OINGT",
+			"shortname": "VALDOIN"
+		},
+		{
+			"code": "188",
+			"name": "VALSOANAN",
+			"shortname": "VALSOANA"
+		},
+		{
+			"code": "255",
+			"name": "VAUGNERAY",
+			"shortname": "VAUGNERA"
+		},
+		{
+			"code": "260",
+			"name": "VERNAISON/CHARLY",
+			"shortname": "VERNAISO"
+		},
+		{
+			"code": "264",
+			"name": "VILLEFRANCHE SUR SAONE",
+			"shortname": "VILFRANC"
+		},
+		{
+			"code": "266_1",
+			"name": "VILLEURBANNE CUSSET",
+			"shortname": "VCUSSET"
+		},
+		{
+			"code": "266_2",
+			"name": "VILLEURBANNE LA DOUA",
+			"shortname": "VDOUA"
+		},
+		{
+			"code": "267",
+			"name": "VILLIE MORGON",
+			"shortname": "VILLIE"
+		},
+		{
+			"code": "157",
+			"name": "VINDRY SUR TURDINE",
+			"shortname": "VINDRY"
+		},
+		{
+			"code": "268",
+			"name": "VOURLES",
+			"shortname": "VOURLES"
+		},
+		{
+			"code": "269",
+			"name": "YZERON",
+			"shortname": "YZERON"
+		},
+		{
+			"code": "ZPATS",
+			"name": "Z caserne PATS",
+			"shortname": "ZPATS"
+		},
+		{
+			"code": "ECO01",
+			"name": "Z CI ECOLE 1",
+			"shortname": "Z_ECOLE1"
+		},
+		{
+			"code": "ECO02",
+			"name": "Z CI ECOLE 2",
+			"shortname": "Z_ECOLE2"
+		},
+		{
+			"code": "ECO03",
+			"name": "Z CI Ecole 3",
+			"shortname": "Z_ECOLE3"
+		},
+		{
+			"code": "INVIT",
+			"name": "Z INVITE",
+			"shortname": "Z_INVITE"
+		},
+		{
+			"code": "290_4",
+			"name": "Z TRANSMISSION",
+			"shortname": "Z_TRANS"
+		},
+		{
+			"code": "290_5",
+			"name": "Z TRANSMISSION PRO",
+			"shortname": "Z_TRANSP"
+		},
+		{
+			"code": "01004",
+			"name": "Z01-AMBERIEUX EN BUGEY",
+			"shortname": "Z01AMBER"
+		},
+		{
+			"code": "01005",
+			"name": "Z01-AMBERIEUX EN DOMBES",
+			"shortname": "Z01AMBD"
+		},
+		{
+			"code": "01053",
+			"name": "Z01-BOURG EN BRESSE",
+			"shortname": "Z01BOURG"
+		},
+		{
+			"code": "01194",
+			"name": "Z01-JASSANS RIOTTIER",
+			"shortname": "Z01JASSA"
+		},
+		{
+			"code": "01244",
+			"name": "Z01-MEXIMIEUX",
+			"shortname": "Z01MEXIM"
+		},
+		{
+			"code": "01249",
+			"name": "Z01-MIRIBEL",
+			"shortname": "Z01MIRIB"
+		},
+		{
+			"code": "01262",
+			"name": "Z01-MONTLUEL",
+			"shortname": "Z01MONTL"
+		},
+		{
+			"code": "01263",
+			"name": "Z01-MONTMERLE",
+			"shortname": "Z01MONTM"
+		},
+		{
+			"code": "01378",
+			"name": "Z01-PLAINE DE L'AIN",
+			"shortname": "Z01PLAIN"
+		},
+		{
+			"code": "01306",
+			"name": "Z01-PONT DE VEYLE",
+			"shortname": "Z01PTVEY"
+		},
+		{
+			"code": "01000",
+			"name": "Z01-SDIS 01",
+			"shortname": "Z_SDIS01"
+		},
+		{
+			"code": "01333",
+			"name": "Z01-ST ANDRE DE CORCY",
+			"shortname": "Z01STAND"
+		},
+		{
+			"code": "01389",
+			"name": "Z01-ST TRIVIER",
+			"shortname": "Z01STTRI"
+		},
+		{
+			"code": "01420",
+			"name": "Z01-THOISSEY",
+			"shortname": "Z01THOIS"
+		},
+		{
+			"code": "01427",
+			"name": "Z01-TREVOUX",
+			"shortname": "Z01TREVO"
+		},
+		{
+			"code": "03000",
+			"name": "Z03-SDIS 03",
+			"shortname": "Z_SDIS03"
+		},
+		{
+			"code": "07000",
+			"name": "Z07-SDIS 07",
+			"shortname": "Z_SDIS07"
+		},
+		{
+			"code": "15000",
+			"name": "Z15-SDIS 15",
+			"shortname": "Z_SDIS15"
+		},
+		{
+			"code": "26000",
+			"name": "Z26-SDIS 26",
+			"shortname": "Z_SDIS26"
+		},
+		{
+			"code": "38053",
+			"name": "Z38-BOURGOIN-JALLIEU",
+			"shortname": "Z38BOURG"
+		},
+		{
+			"code": "38072",
+			"name": "Z38-CHANAS",
+			"shortname": "Z38CHANA"
+		},
+		{
+			"code": "38077",
+			"name": "Z38-CHAPELLE DE SURIEU (LA)",
+			"shortname": "Z38CHSUR"
+		},
+		{
+			"code": "38087",
+			"name": "Z38-CHASSE SUR RHONE",
+			"shortname": "Z38CHASS"
+		},
+		{
+			"code": "38095",
+			"name": "Z38-CHATTE",
+			"shortname": "Z38CHATT"
+		},
+		{
+			"code": "38138",
+			"name": "Z38-CREMIEU",
+			"shortname": "Z38CREMI"
+		},
+		{
+			"code": "38176",
+			"name": "Z38-FRONTONAS",
+			"shortname": "Z38_FRON"
+		},
+		{
+			"code": "38189",
+			"name": "Z38-HEYRIEUX",
+			"shortname": "Z38HEYRI"
+		},
+		{
+			"code": "38215",
+			"name": "Z38-LUZINAY",
+			"shortname": "Z38LUZIN"
+		},
+		{
+			"code": "38229",
+			"name": "Z38-MEYLAN",
+			"shortname": "Z38MELAN"
+		},
+		{
+			"code": "38298",
+			"name": "Z38-PEAGE DE ROUSSILLON (LE)",
+			"shortname": "Z38PEAGE"
+		},
+		{
+			"code": "38316",
+			"name": "Z38-PONT DE CHERUY",
+			"shortname": "Z38PTCHE"
+		},
+		{
+			"code": "38475",
+			"name": "Z38-SATOLAS ET BONCE",
+			"shortname": "Z38SATOL"
+		},
+		{
+			"code": "38000",
+			"name": "Z38-SDIS 38",
+			"shortname": "Z_SDIS38"
+		},
+		{
+			"code": "38480",
+			"name": "Z38-SEPTEME",
+			"shortname": "Z38SEPTE"
+		},
+		{
+			"code": "38449",
+			"name": "Z38-ST QUENTIN FALLAVIER",
+			"shortname": "Z38STQUE"
+		},
+		{
+			"code": "38536",
+			"name": "Z38-VERNIOZ",
+			"shortname": "Z38VERNI"
+		},
+		{
+			"code": "38544",
+			"name": "Z38-VIENNE",
+			"shortname": "Z38VIENN"
+		},
+		{
+			"code": "38557",
+			"name": "Z38-VILLETTE D'ANTHON",
+			"shortname": "Z38VILLE"
+		},
+		{
+			"code": "42005",
+			"name": "Z42-ANDREZIEUX BOUTHEON",
+			"shortname": "Z42ANDRE"
+		},
+		{
+			"code": "42011",
+			"name": "Z42-BALBIGNY",
+			"shortname": "Z42BALBI"
+		},
+		{
+			"code": "42015",
+			"name": "Z42-BELMONT DE LA LOIRE",
+			"shortname": "Z42BELMO"
+		},
+		{
+			"code": "42029",
+			"name": "Z42-BUSSIERES",
+			"shortname": "Z42BUSSI"
+		},
+		{
+			"code": "42033",
+			"name": "Z42-CERGNE (LE)",
+			"shortname": "Z42CERGN"
+		},
+		{
+			"code": "42052",
+			"name": "Z42-CHARLIEU",
+			"shortname": "Z42CHARL"
+		},
+		{
+			"code": "42056",
+			"name": "Z42-CHAVANAY",
+			"shortname": "Z42CHAVA"
+		},
+		{
+			"code": "42059",
+			"name": "Z42-CHAZELLES SUR LYON",
+			"shortname": "Z42CHAZE"
+		},
+		{
+			"code": "42079",
+			"name": "Z42-CUINZIER",
+			"shortname": "Z42CUINZ"
+		},
+		{
+			"code": "42308",
+			"name": "Z42-DORLAY",
+			"shortname": "Z42DORLA"
+		},
+		{
+			"code": "42094",
+			"name": "Z42-FEURS",
+			"shortname": "Z42FEURS"
+		},
+		{
+			"code": "42102",
+			"name": "Z42-GRAMMOND",
+			"shortname": "Z42GRAMM"
+		},
+		{
+			"code": "42129",
+			"name": "Z42-MACLAS",
+			"shortname": "Z42MACLA"
+		},
+		{
+			"code": "42145",
+			"name": "Z42-MONTAGNY",
+			"shortname": "Z42MONT"
+		},
+		{
+			"code": "42149",
+			"name": "Z42-MONTROND LES BAINS",
+			"shortname": "Z42MONTR"
+		},
+		{
+			"code": "42156",
+			"name": "Z42-NEULISE",
+			"shortname": "Z42NEULI"
+		},
+		{
+			"code": "42165",
+			"name": "Z42-PANISSIERES",
+			"shortname": "Z42PANIS"
+		},
+		{
+			"code": "42168",
+			"name": "Z42-PELUSSIN",
+			"shortname": "Z42PELUS"
+		},
+		{
+			"code": "42177",
+			"name": "Z42-POUILLY SOUS CHARLIEU",
+			"shortname": "Z42POUIL"
+		},
+		{
+			"code": "42181",
+			"name": "Z42-REGNY",
+			"shortname": "Z42REGNY"
+		},
+		{
+			"code": "42186",
+			"name": "Z42-RIVE DE GIER",
+			"shortname": "Z42RIVEG"
+		},
+		{
+			"code": "42187",
+			"name": "Z42-ROANNE",
+			"shortname": "Z42ROAN"
+		},
+		{
+			"code": "42193",
+			"name": "Z42-ROZIER EN DONZY",
+			"shortname": "Z42ROZIE"
+		},
+		{
+			"code": "42000",
+			"name": "Z42-SDIS 42",
+			"shortname": "Z_SDIS42"
+		},
+		{
+			"code": "42207",
+			"name": "Z42-ST CHAMOND",
+			"shortname": "Z42STCHA"
+		},
+		{
+			"code": "42208",
+			"name": "Z42-ST CHRISTO EN JARREST",
+			"shortname": "Z42STCHR"
+		},
+		{
+			"code": "42213",
+			"name": "Z42-ST CYR DE VALORGES",
+			"shortname": "Z42STCYR"
+		},
+		{
+			"code": "42215",
+			"name": "Z42-ST DENIS DE CABANNE",
+			"shortname": "Z42STDEN"
+		},
+		{
+			"code": "42222",
+			"name": "Z42-ST GALMIER",
+			"shortname": "Z42STGAL"
+		},
+		{
+			"code": "42234",
+			"name": "Z42-ST HEAND",
+			"shortname": "Z72STHEA"
+		},
+		{
+			"code": "42249",
+			"name": "Z42-ST JUST LA PENDUE",
+			"shortname": "Z42STJPE"
+		},
+		{
+			"code": "42259",
+			"name": "Z42-ST MARTIN LA PLAINE",
+			"shortname": "Z42STMPL"
+		},
+		{
+			"code": "42261",
+			"name": "Z42-ST MARTIN LESTRA",
+			"shortname": "Z42STMLE"
+		},
+		{
+			"code": "42272",
+			"name": "Z42-ST PIERRE DE BOEUF",
+			"shortname": "Z42STPBO"
+		},
+		{
+			"code": "42289",
+			"name": "Z42-ST SYMPHORIEN DE LAY",
+			"shortname": "Z42STSYM"
+		},
+		{
+			"code": "42123",
+			"name": "Z42-VALLEE DU GIER",
+			"shortname": "Z42VALLG"
+		},
+		{
+			"code": "42334",
+			"name": "Z42-VIOLAY (POSTE AVANCE)",
+			"shortname": "Z42VIOLA"
+		},
+		{
+			"code": "43000",
+			"name": "Z43-SDIS 43",
+			"shortname": "Z_SDIS43"
+		},
+		{
+			"code": "63000",
+			"name": "Z63-SDIS 63",
+			"shortname": "Z_SDIS63"
+		},
+		{
+			"code": "71495",
+			"name": "Z71- SALORNAY SUR GUYES",
+			"shortname": "Z71SALOR"
+		},
+		{
+			"code": "71105",
+			"name": "Z71-CHARNAY LES MACON",
+			"shortname": "Z71CHARN"
+		},
+		{
+			"code": "71106",
+			"name": "Z71-CHAROLLES",
+			"shortname": "Z71CHARO"
+		},
+		{
+			"code": "71120",
+			"name": "Z71-CHAUFFAILLES",
+			"shortname": "Z71CHAUF"
+		},
+		{
+			"code": "71137",
+			"name": "Z71-CLUNY",
+			"shortname": "Z71CLUNY"
+		},
+		{
+			"code": "71178",
+			"name": "Z71-DOMPIERRE LES ORMES",
+			"shortname": "Z71DOMPI"
+		},
+		{
+			"code": "71090",
+			"name": "Z71-LA CHAPELLE DE GUINCHAY",
+			"shortname": "Z71GUINC"
+		},
+		{
+			"code": "71133",
+			"name": "Z71-LA CLAYETTE",
+			"shortname": "Z71CLAYE"
+		},
+		{
+			"code": "71270",
+			"name": "Z71-MACON",
+			"shortname": "Z71MACON"
+		},
+		{
+			"code": "71275",
+			"name": "Z71-MARCIGNY",
+			"shortname": "Z71MARCI"
+		},
+		{
+			"code": "71289",
+			"name": "Z71-MATOUR",
+			"shortname": "Z71MATOU"
+		},
+		{
+			"code": "71306",
+			"name": "Z71-MONTCEAU LES MINES",
+			"shortname": "Z71MONTC"
+		},
+		{
+			"code": "71342",
+			"name": "Z71-PARAY LE MONIAL",
+			"shortname": "Z71PARAY"
+		},
+		{
+			"code": "71394",
+			"name": "Z71-SAINT BONNET DE JOUX",
+			"shortname": "Z71BONNE"
+		},
+		{
+			"code": "71000",
+			"name": "Z71-SDIS 71",
+			"shortname": "Z_SDIS71"
+		},
+		{
+			"code": "71543",
+			"name": "Z71-TOURNUS",
+			"shortname": "Z71TOURN"
+		},
+		{
+			"code": "71545",
+			"name": "Z71-TRAMAYES",
+			"shortname": "Z71TRAMA"
+		},
+		{
+			"code": "73000",
+			"name": "Z73-SDIS 73",
+			"shortname": "Z_SDIS73"
+		},
+		{
+			"code": "74000",
+			"name": "Z74-SDIS 74",
+			"shortname": "Z_SDIS74"
+		},
+		{
+			"code": "3834",
+			"name": "Z_AASC",
+			"shortname": "Z_AASC"
+		},
+		{
+			"code": "ZATEL",
+			"name": "Z_ATELIER",
+			"shortname": "Z_ATELIE"
+		},
+		{
+			"code": "276_2",
+			"name": "Z_Raffinerie",
+			"shortname": "Z_RAFF"
+		},
+		{
+			"code": "2992",
+			"name": "Z_Saint Exupery",
+			"shortname": "Z_STEX"
+		},
+		{
+			"code": "290_9",
+			"name": "Z_TRANSMISSION 2",
+			"shortname": "Z_TRANS2"
+		}
+	]
+}
