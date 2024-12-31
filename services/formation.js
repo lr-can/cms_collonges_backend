@@ -45,7 +45,7 @@ function getClosestFeature(geoJson, point) {
 }
 
 async function getClosestFireHydrants(lon, lat) {
-    const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
+    const OVERPASS_API_URL = 'https://overpass.kumi.systems/api/interpreter';
     if (!fetch) {
         fetch = (await import('node-fetch')).default;
     }
@@ -62,29 +62,8 @@ async function getClosestFireHydrants(lon, lat) {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
 
-        const responseData = await response.json();
-        if (!response.ok || responseData.message.includes("failed")) {
-            const OVERPASS_API_URLS = [
-            'https://overpass.kumi.systems/api/interpreter',
-            'https://lz4.overpass-api.de/api/interpreter'
-            ];
-            let success = false;
-            for (const url of OVERPASS_API_URLS) {
-            const retryResponse = await fetch(url, {
-                method: 'POST',
-                body: query,
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-            });
-            let responseMsg = await retryResponse.json();
-            if (retryResponse.ok && responseMsg.message.includes("failed")) {
-                response = retryResponse;
-                success = true;
-                break;
-            }
-            }
-            if (!success) {
-            throw new Error('Failed to fetch fire hydrants from all OpenStreetMap APIs');
-            }
+        if (!response.ok) {
+            throw new Error('Failed to fetch fire hydrants from OpenStreetMap');
         }
 
         const data = await response.json();
@@ -177,13 +156,11 @@ async function getMapCoordinates(lon, lat) {
     const firstPartString = firstPart && firstPart.est ? "est. " + (firstPart.data && firstPart.data.properties ? firstPart.data.properties.assigned_data : '') : firstPart && firstPart.properties ? firstPart.properties.assigned_data : '';
     const secondPart = await getSecondPartGeoJson(lon, lat);
     const secondPartString = secondPart && secondPart.properties ? secondPart.properties.assigned_data : '';
-    const fireHydrants = await getClosestFireHydrants(lon, lat);
-    const erp = await getERP(lon, lat);
     return {
         coordinates: { lon, lat },
         mapCoordinates: `${firstPartString} ${secondPartString}`.replace("est.  ", "inconnu"),
-        fireHydrants: fireHydrants.length > 0 ? fireHydrants : null,
-        erp: erp.length > 0 ? erp : null
+        fireHydrants: await getClosestFireHydrants(lon, lat),
+        erp: await getERP(lon, lat)
     };
 }
 
