@@ -63,7 +63,26 @@ async function getClosestFireHydrants(lon, lat) {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch fire hydrants from OpenStreetMap');
+            const OVERPASS_API_URLS = [
+            'https://overpass.kumi.systems/api/interpreter',
+            'https://lz4.overpass-api.de/api/interpreter'
+            ];
+            let success = false;
+            for (const url of OVERPASS_API_URLS) {
+            const retryResponse = await fetch(url, {
+                method: 'POST',
+                body: query,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            });
+            if (retryResponse.ok) {
+                response = retryResponse;
+                success = true;
+                break;
+            }
+            }
+            if (!success) {
+            throw new Error('Failed to fetch fire hydrants from all OpenStreetMap APIs');
+            }
         }
 
         const data = await response.json();
@@ -379,7 +398,7 @@ const grades = {
   "Caporal" : "CAP",
   "Caporal-Chef": "CCH",
   "Sergent": "SGT",
-  "Sergent-Chef": "SCHE",
+  "Sergent-Chef": "SCH",
   "Adjudant": "ADJ",
   "Adjudant-Chef": "ADC",
   "Lieutenant": "LTN",
@@ -387,6 +406,7 @@ const grades = {
   "Commandant": "CDT",
   "Colonel": "COL",
   "Lieutenant-Colonel": "LCL",
+  "Expert": "EXP",
   "Infirmière": "INF",
 }
 return grades[grade];
