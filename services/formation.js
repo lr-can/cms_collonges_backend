@@ -62,7 +62,8 @@ async function getClosestFireHydrants(lon, lat) {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
 
-        if (!response.ok) {
+        const responseData = await response.json();
+        if (!response.ok || "failed".test(responseData.message)) {
             const OVERPASS_API_URLS = [
             'https://overpass.kumi.systems/api/interpreter',
             'https://lz4.overpass-api.de/api/interpreter'
@@ -74,7 +75,8 @@ async function getClosestFireHydrants(lon, lat) {
                 body: query,
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
-            if (retryResponse.ok) {
+            let responseMsg = await retryResponse.json();
+            if (retryResponse.ok && "failed".test(responseMsg.message)) {
                 response = retryResponse;
                 success = true;
                 break;
