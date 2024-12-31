@@ -175,11 +175,13 @@ async function getMapCoordinates(lon, lat) {
     const firstPartString = firstPart && firstPart.est ? "est. " + (firstPart.data && firstPart.data.properties ? firstPart.data.properties.assigned_data : '') : firstPart && firstPart.properties ? firstPart.properties.assigned_data : '';
     const secondPart = await getSecondPartGeoJson(lon, lat);
     const secondPartString = secondPart && secondPart.properties ? secondPart.properties.assigned_data : '';
+    const fireHydrants = await getClosestFireHydrants(lon, lat);
+    const erp = await getERP(lon, lat);
     return {
         coordinates: { lon, lat },
         mapCoordinates: `${firstPartString} ${secondPartString}`.replace("est.  ", "inconnu"),
-        fireHydrants: await getClosestFireHydrants(lon, lat),
-        erp: await getERP(lon, lat)
+        fireHydrants: fireHydrants.length > 0 ? fireHydrants : null,
+        erp: erp.length > 0 ? erp : null
     };
 }
 
