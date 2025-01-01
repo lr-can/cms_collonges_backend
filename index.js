@@ -53,6 +53,7 @@ const clearInterPeople = require("./routes/clearInterPeople");
 const getVehiculesandPeople = require("./routes/getVehiculesandPeople");
 const vehiculesAffectation = require("./routes/vehiculesAffectation");
 const getVehiculesAndCaserne = require("./routes/getCaserneAndVehicules");
+const generateTelex = require("./routes/generateTelex");
 
 app.use(express.json());
 app.use(cors());
@@ -116,6 +117,7 @@ app.use("/clearInterPeople", clearInterPeople);
 app.use("/getVehiculesandPeople", getVehiculesandPeople);
 app.use("/vehiculesAffectation", vehiculesAffectation);
 app.use("/getVehiculesAndCaserne", getVehiculesAndCaserne);
+app.use("/generateTelex", generateTelex);
 
 
 

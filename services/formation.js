@@ -428,9 +428,533 @@ async function getVehiculesAndCaserne (){
 )
 */
 
+async function generateTelex(data){
+    let numInter = 'M063_2024_';
+    let currentDate = new Date();
+    let numberOfMinutesFromBeginningOfYear = Math.floor((currentDate - new Date(currentDate.getFullYear(), 0, 0)) / 60000);
+    numInter += numberOfMinutesFromBeginningOfYear;
+    let htmlRender = '';
+    const htmlHeader = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordre de départ</title>
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .TNR{
+            font-family: "Times New Roman", Times, serif;
+        }
+        .Arial{
+            font-family: Arial, sans-serif;
+        } 
+        .F10{
+            font-size: 10px;
+        }
+        .F12{
+            font-size: 12px;
+        }
+        .F14{
+            font-size: 14px;
+        }
+        .F16{
+            font-size: 16px;
+        }
+        .F18{
+            font-size: 18px;
+        }
+        .F20{
+            font-size: 20px;
+        }
+        .F12{
+            font-size: 12px;
+        }
+        .bold{
+            font-weight: bold;
+        }
+        .center{
+            text-align: center;
+        }
+        .left{
+            text-align: left;
+        }
+        .right{
+            text-align: right;
+        }
+        .italic{
+            font-style: italic;
+        }
+        .sinistre{
+            border-top: black 3px solid;
+            border-bottom: black 3px solid;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            padding: 0.5rem;
+        }
+        .dotted{
+            padding-bottom: 0.3rem;
+            border-bottom: dimgray 0.5px dotted !important;
+        }
+        .upper{
+            text-transform: uppercase;
+        }
+        .bordered{
+            padding: 1%;
+            margin-top: 1rem;
+            border: black 3px solid;
+            width: 97%;
+            margin-bottom: 1rem;
+        }
+        .underline{
+            text-decoration: underline;
+            text-decoration-thickness: 0.5px;
+        }
+        @media print {
+            section {page-break-before: always;}
+            @page {
+                size: portrait;
+                margin: normal;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+        #dateAlerte{
+            margin-left: 2rem;
+        }
+        .T5{
+            width: 5%;
+        }
+        .T10{
+            width: 10%;
+        }
+        .T15{
+            width: 15%;
+        }
+        .T20{
+            width: 20%;
+        }
+        .T25{
+            width: 25%;
+        }
+        .T30{
+            width: 30%;
+        }
+        .T35{
+            width: 35%;
+        }
+        .T40{
+            width: 40%;
+        }
+        .T50{
+            width: 50%;
+        }
+        .T75{
+            width: 75%;
+        }
+        .T80{
+            width: 80%;
+        }
+        .T90{
+            width: 90%;
+        }
+        .T100{
+            width: 100%;
+        }
+        .T10{
+            width: 10%;
+        }
+        .gray{
+            background-color: lightgray;
+        }
+        table{
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        .noMargin{
+            margin-bottom: 0;
+        }
+        p{
+            margin-top: 0;
+        }
+        .top{
+            vertical-align: top;
+        }
+        .partTitle{
+            margin-top: 0.5rem;
+        }
+        .lineHeight{
+            line-height: 1;
+        }
+        .lineHeight1{
+            line-height: 1.5;
+        }
+
+        .lineHeight2{
+            line-height: 2;
+        }
+    </style>
+    <script>
+        window.onload = function(){
+            window.print();
+        }
+    </script>
+</head>
+<body>`;
+    const htmlFooter = `</body>
+</html>`;
+    htmlRender += htmlHeader;
+    for (const OD of data.ordresDeparts){
+        let odEngins = '';
+        let listOfEngins = [];
+        for (const engin of OD.engins){
+            listOfEngins.push(engin);
+        }
+        let groupedByCaserne = listOfEngins.reduce((acc, obj) => {
+            let key = obj.caserne;
+            if (!acc[key]) {
+                acc[key] = [];
+            }
+            acc[key].push(obj);
+            return acc;
+        }, {});
+        odEngins += `    <div class="dotted upper noMargin">
+        <table class="T100 partTitle">
+            <tr>
+                <td class="T75 center">
+                    <span class="bold italic underline center partTitle">Moyens alertés pour cet ordre de départ</span>
+                </td>
+                <td class="T25 right">
+                    <span class="bold italic underline center partTitle">Echelon : 0</span>
+                </td>
+            </tr>
+        </table>
+        <table class="T100 lineHeight2">
+            <tr class="F10 italic">
+                <td class="T20 center">CT</td>
+                <td class="T80">ENGIN (GFO)</td>
+            </tr>
+            `;
+        for (const caserne in groupedByCaserne){
+            odEngins += `            <tr class="F14 TNR">
+                <td class="upper center">${caserne}</td>
+                <td class="upper">`;
+            for (const engin of groupedByCaserne[caserne]){
+                odEngins += `<span>${engin.engin}</span> (<span>${engin.gfo}</span>)&nbsp;`;
+            }
+            odEngins += `</td>
+            </tr>`;
+        }
+        odEngins += `        </table>
+    </div>`;
+
+        let previousodEngins = '';
+        let previousListOfEngins = [];
+        let filteredOD = data.ordresDeparts.filter(od => od.timeDate < OD.timeDate);
+        if (filteredOD.length > 0){
+            let previousOD = filteredOD[filteredOD.length - 1];
+            for (const engin of previousOD.engins){
+                previousListOfEngins.push(engin);
+            }
+            let previousGroupedByCaserne = previousListOfEngins.reduce((acc, obj) => {
+                let key = obj.caserne;
+                if (!acc[key]) {
+                    acc[key] = [];
+                }
+                acc[key].push(obj);
+                return acc;
+            }, {});
+            previousodEngins += `
+            <div class="dotted upper noMargin">
+        <table class="T100 partTitle">
+            <tr>
+                <td class="center">
+                    <span class="bold italic underline center partTitle">Moyens déjà engagés pour cette opération de secours</span>
+                </td>
+            </tr>
+        </table>
+        <table class="T100 lineHeight2">
+            <tr class="F10 italic">
+                <td class="T20 center">CT</td>
+                <td class="T60">ENGIN (GFO)</td>
+                <td class="T20 center lineHeight">DATE HEURE <br>D'ALERTE</td>
+            </tr>
+            `;
+            for (const caserne in previousGroupedByCaserne){
+                previousodEngins += `            <tr class="F14 TNR">
+                <td class="upper center">${caserne}</td>
+                <td class="upper">`;
+                for (const engin of previousGroupedByCaserne[caserne]){
+                    previousodEngins += `<span>${engin.engin}</span> (<span>${engin.gfo}</span>)&nbsp;`;
+                }
+                previousodEngins += `</td>
+                <td class="upper center lineHeight">${previousOD.timeDate.replace(" ", "<br>")}</td>
+            </tr>`;
+            } 
+            previousodEngins += `
+        </table>
+            `
+        }
+
+        for (const engin of OD.engins){
+            htmlRender += ` <section>
+        <div id="header" class="F14 TNR">
+            <table class="T100">
+                <tr>
+                    <td class="T50">
+                        Déclenchement de l'alerte
+                        <span id="dateAlerte">${OD.timeDate}</span>
+                    </td>
+                    <td class="T40 center">
+                        <span id="caserneAlerte" class="">${engin.caserne}</span>
+                    </td>
+                    <td class="T10 right">
+                        <span id="vehiculeAlerte" class="">${engin.engin}</span>
+                    </td>
+                </tr>
+            </table>`;
+        if(engin.codeAppairage && engin.codeAppairage != ""){
+            htmlRender += `            <table class="T100">
+                <tr>
+                    <td class="T100 bold right upper">
+                        Code appairage : 
+                        <span id="codeApparaige" class="F18">${engin.codeAppairage}</span>
+                    </td>
+                </tr>
+            </table>`;
+        };
+        htmlRender += `            <table class="T100 Arial F12">
+                <tr>
+                    <td class="T50 upper center">
+                        N° d'intervention
+                        <span id="numIntervention" class="bold F14">${numInter}</span>                        
+                    </td>
+                    <td class="T50 upper center">
+                        Ordre de départ
+                        <span id="telIntervention" class="bold F14">${numInter}-${OD.ordreDepart}</span>
+                    </td>
+                </tr>
+            </table>
+        </div>`;
+        htmlRender += `<div class="sinistre">
+            ${OD.sinistre.libelleComplet}
+        </div>`
+        let consigne = OD.consigneGenerale && OD.consigneGenerale != "" ? OD.consigneGenerale : "";
+        if (engin.consigneParticuliere && engin.consigneParticuliere != ""){
+            consigne += "<br>" + engin.consigneParticuliere.replace(/\n/g, "<br>");
+        }
+        consigne = consigne.replace(/\n/g, "<br>");
+        if (consigne != ""){
+            htmlRender += `<div class="bold T100 dotted">
+            <p class="bold italic underline upper center partTitle">Consignes</p>
+            <p id="consignes">${consigne}</p>
+        </div>`
+        }
+        let adresseParticuliere = "";
+        if (engin.affectationPRI && engin.affectationPRI != ""){
+            adresseParticuliere = "pri";
+        } else if (engin.affectationPRV && engin.affectationPRV != ""){
+            adresseParticuliere = "prv";
+        } else if (engin.affectationPRM && engin.affectationPRM != ""){
+            adresseParticuliere = "prm";
+        }
+        if (adresseParticuliere != ""){
+            let specialAddress = data.adresses[`adresse${adresseParticuliere.toLocaleUpperCase()}`];
+            htmlRender += `<div class="bordered">
+            <p class="bold italic underline upper center">${adresseParticuliere.toUpperCase().replace("PR", "CR")} / ${adresseParticuliere.toLocaleUpperCase()} - ECHELON 0</p>
+            <p class="bold italic upper F16">SE RENDRE AU ${adresseParticuliere.toLocaleUpperCase()}</p>
+            <table class="T100 F14 noMargin">
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Commune</span>
+                    </td>
+                    <td class="T30">
+                        <span>:</span>
+                        <span class="bold upper">${specialAddress.commune}</span>
+                    </td>
+                    <td class="T15 center">
+                        <span class="upper italic F12">Livre : </span>
+                        <span class="bold">${specialAddress.livre}</span>
+                    </td>
+                    <td class="T35 right">
+                        <span class="upper italic F12">Coordonnées : </span>
+                        <span class="bold">${specialAddress.coordonnees}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Voie</span>
+                    </td>
+                    <td class="T30">
+                        <span>:</span>
+                        <span class="bold upper">${specialAddress.voie}</span>
+                    </td>
+                </tr>
+            </table>`
+            if(specialAddress.erp && specialAddress.erp != ""){
+                htmlRender += `
+                            <table class="T100 F14 noMargin">
+                            <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Pt remarq.</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">${specialAddress.erp}</span>
+                    </td>
+                </tr>
+            </table>`
+            }
+            htmlRender += `</div>`
+            }
+            htmlRender += `<div class="T100 dotted">
+            <p class="bold italic underline upper center partTitle">Localisation du sinistre</p>
+            <table class="T100 F14 noMargin">
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Commune</span>
+                    </td>
+                    <td class="T30">
+                        <span>:</span>
+                        <span class="bold upper">${adresses.adresseCommune.commune}</span>
+                    </td>
+                    <td class="T15 center">
+                        <span class="upper italic F12">Livre : </span>
+                        <span class="bold">${adresses.adresseCommune.livre}</span>
+                    </td>
+                    <td class="T35 right">
+                        <span class="upper italic F12">Coordonnées : </span>
+                        <span class="bold">${adresses.adresseCommune.coordonnees}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Voie</span>
+                    </td>
+                    <td class="T30">
+                        <span>:</span>
+                        <span class="bold upper">${adresses.adresseCommune.voie}</span>
+                    </td>
+                </tr>
+            </table>
+            <table class="T100 F14 noMargin">`;
+            if(adresses.adresseCommune.erp && adresses.adresseCommune.erp != ""){
+                htmlRender += `
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Pt remarq.</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">${adresses.adresseCommune.erp}</span>
+                    </td>
+                </tr>`;
+            }
+            if (adresses.adresseCommune.etage && adresses.adresseCommune.etage != ""){
+                htmlRender += `
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Etage</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">${adresseParticuliere.adresseCommune.etage}</span>
+                    </td>
+                </tr>
+                `;
+            };
+               htmlRender += `
+                <tr>
+                    <td class="T15 top">
+                        <span class="italic upper F12">Observations</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">${observation.replace(/\n/g), "<br>"}`
+                if (engin.observationParticuliere && engin.observationParticuliere != ""){
+                    htmlRender += `<br>${engin.observationParticuliere.replace(/\n/g), "<br>"}`
+                }
+                htmlRender += `</span>
+                    </td>
+                </tr>
+            </table>            
+        </div>`
+            if (data.adresses.hydrants && data.adresses.hydrants.length > 0){
+                if (!data.sinistre.code.startsWith("1") || (engin.gfo && !["SAP", "PSSAP", "INFAMU", "MED"].includes(engin.gfo))) {
+                htmlRender += `<div class="dotted bold">
+            <p class="bold italic underline center partTitle"><span class="upper">PEI</span> / colonnes incendie <span class="upper">à proximité</span></p>
+        <table class="T100 F12">`
+                for (const hydrant of data.adresses.hydrants){
+                    htmlRender += `<tr>
+                <td class="T5">
+                    PEI
+                </td>
+                <td class="T10">
+                    n° ${hydrant.numero}
+                </td>
+                <td class="T10 center ">
+                    id_${hydrant.id}
+                </td>
+                <td class="T15 right">
+                    situé à ${hydrant.distance} m
+                </td>
+                <td class="T60">
+                </td>
+            </tr>
+            `;
+                };
+                htmlRender += `</table>
+                </div>`;
+        }};
+        htmlRender += `<div class="dotted">
+        <p class="bold italic underline center partTitle"><span class="upper">Armement du véhicule</span></p>
+        <table class="T100 lineHeight1">
+            <tr class="F10 italic left">
+                <td class="T10 upper">Engin</td>
+                <td class="T10 upper">Remorque</td>
+                <td class="T5 upper">GFO</td>
+                <td class="T5 upper">FCT</td>
+                <td class="T5 upper">GRD</td>
+                <td class="T30 upper">Nom</td>
+                <td class="T25 upper">Matr</td>
+            </tr>`;
+        for (let i = 0; i < engin.affectation.length; i++){
+            const agent = engin.affectation[i];
+            htmlRender += `
+            <tr class="F14 TNR">
+                <td class="upper">${i == 0 ? agent.engin : ""}</td>
+                <td class="upper">${i == 0 && engin.remorque != '' ? engin.remorque : ''}</td>
+                <td class="upper">${agent.emploi.split('_')[0]}</td>
+                <td class="upper">${agent.emploi.split('_')[1].toUpperCase()}</td>
+                <td>${agent.grade}</td>
+                <td>${agent.label.replace(`${agent.grade} `, '')}</td>
+                <td>${agent.matricule}</td>
+            </tr>`;
+        }
+        htmlRender += `</table>
+    </div>`;
+        htmlRender += odEngins;
+        htmlRender += previousodEngins;
+        htmlRender += `</section>`;
+        }
+        
+    }
+    htmlRender += htmlFooter;
+    return htmlRender;
+    }
+
+
 module.exports = {
     getMapCoordinates,
     autoCompleteAddress,
     assignAgentsToVehicles,
-    getVehiculesAndCaserne
+    getVehiculesAndCaserne,
+    generateTelex
 };

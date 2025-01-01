@@ -17,6 +17,9 @@
         .Arial{
             font-family: Arial, sans-serif;
         } 
+        .F10{
+            font-size: 10px;
+        }
         .F12{
             font-size: 12px;
         }
@@ -78,6 +81,14 @@
         }
         @media print {
             section {page-break-before: always;}
+            @page {
+                size: portrait;
+                margin: normal;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
         #dateAlerte{
             margin-left: 2rem;
@@ -143,8 +154,22 @@
         .partTitle{
             margin-top: 0.5rem;
         }
+        .lineHeight{
+            line-height: 1;
+        }
+        .lineHeight1{
+            line-height: 1.5;
+        }
 
+        .lineHeight2{
+            line-height: 2;
+        }
     </style>
+    <script>
+        window.onload = function(){
+            window.print();
+        }
+    </script>
 </head>
 <body>
     <section>
@@ -155,10 +180,10 @@
                         Déclenchement de l'alerte
                         <span id="dateAlerte">22/12/2024 23:35:03</span>
                     </td>
-                    <td class="T40 center gray">
+                    <td class="T40 center">
                         <span id="caserneAlerte" class="">COLLONGE</span>
                     </td>
-                    <td class="T10 right gray">
+                    <td class="T10 right">
                         <span id="vehiculeAlerte" class="">VSAV-1</span>
                     </td>
                 </tr>
@@ -372,11 +397,57 @@
             </tr>
         </table>
     </div>
-    <div class="dotted bold">
+    <div class="dotted">
         <p class="bold italic underline center partTitle"><span class="upper">Armement du véhicule</span></p>
-  
+        <table class="T100 lineHeight1">
+            <tr class="F10 italic left">
+                <td class="T10 upper">Engin</td>
+                <td class="T10 upper">Remorque</td>
+                <td class="T5 upper">GFO</td>
+                <td class="T5 upper">FCT</td>
+                <td class="T5 upper">GRD</td>
+                <td class="T30 upper">Nom</td>
+                <td class="T25 upper">Matr</td>
+            </tr>
+            <tr class="F14 TNR">
+                <td class="upper">VSAV-1</td>
+                <td class="upper">LECLE</td>
+                <td class="upper">SAP</td>
+                <td class="upper">CA</td>
+                <td>SAP</td>
+                <td>NOM Prénom</td>
+                <td>V99999</td>
+            </tr>
+            <tr class="F14 TNR">
+                <td class="upper"></td>
+                <td class="upper"></td>
+                <td class="upper">SAP</td>
+                <td class="upper">CD</td>
+                <td>SAP</td>
+                <td>NOM Prénom</td>
+                <td>V99999</td>
+            </tr>
+            <tr class="F14 TNR">
+                <td class="upper"></td>
+                <td class="upper"></td>
+                <td class="upper">SAP</td>
+                <td class="upper">EQ</td>
+                <td>SAP</td>
+                <td>NOM Prénom</td>
+                <td>V99999</td>
+            </tr>
+            <tr class="F14 TNR">
+                <td class="upper"></td>
+                <td class="upper"></td>
+                <td class="upper">SAP</td>
+                <td class="upper">EQC</td>
+                <td>SAP</td>
+                <td>NOM Prénom</td>
+                <td>V99999</td>
+            </tr>
+        </table>
         </div>
-    <div class="dotted upper bold noMargin">
+    <div class="dotted upper noMargin">
         <table class="T100 partTitle">
             <tr>
                 <td class="T75 center">
@@ -387,8 +458,41 @@
                 </td>
             </tr>
         </table>
-
+        <table class="T100 lineHeight2">
+            <tr class="F10 italic">
+                <td class="T20 center">CT</td>
+                <td class="T80">ENGIN (GFO)</td>
+            </tr>
+            <tr class="F14 TNR">
+                <td class="upper center">COLLONGE</td>
+                <td class="upper"><span>VSAV-1</span> (<span>SAP</span>)</td>
+        </table>
     </div>
+    <div class="dotted upper noMargin">
+        <table class="T100 partTitle">
+            <tr>
+                <td class="center">
+                    <span class="bold italic underline center partTitle">Moyens déjà engagés pour cette opération de secours</span>
+                </td>
+            </tr>
+        </table>
+        <table class="T100 lineHeight2">
+            <tr class="F10 italic">
+                <td class="T20 center">CT</td>
+                <td class="T60">ENGIN (GFO)</td>
+                <td class="T20 center lineHeight">DATE HEURE <br>D'ALERTE</td>
+            </tr>
+            <tr class="F14 TNR">
+                <td class="upper center">COLLONGE</td>
+                <td class="upper"><span>VSAV-2</span> (<span>SAP</span>)</td>
+                <td class="upper center lineHeight">22/12/2024<br>23:35:03</td>
+            </tr>
+            <tr class="F14 TNR">
+                <td class="upper center">COLLONGE</td>
+                <td class="upper"><span>FPTL-1</span> (<span>INC</span>)</td>
+                <td class="upper center lineHeight">22/12/2024<br>23:35:03</td>
+            </tr>
+
     </section>
     
 </body>
