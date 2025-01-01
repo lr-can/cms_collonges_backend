@@ -744,11 +744,11 @@ async function generateTelex(data){
             </table>
         </div>`;
         htmlRender += `<div class="sinistre">
-            ${OD.sinistre.libelleComplet}
+            ${data.sinistre.libelleComplet}
         </div>`
-        let consigne = OD.consigneGenerale && OD.consigneGenerale != "" ? OD.consigneGenerale : "";
+        let consigne = data.consigneGenerale && data.consigneGenerale != "" ? data.consigneGenerale : "";
         if (engin.consigneParticuliere && engin.consigneParticuliere != ""){
-            consigne += "<br>" + engin.consigneParticuliere.replace(/\n/g, "<br>");
+            consigne += "<br>**" + engin.consigneParticuliere.replace(/\n/g, "<br>");
         }
         consigne = consigne.replace(/\n/g, "<br>");
         if (consigne != ""){
