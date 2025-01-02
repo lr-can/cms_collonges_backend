@@ -671,8 +671,8 @@ async function generateTelex(data){
                     previousListOfEngins.push({caserne: engin.caserne, engin: engin.engin, gfo: engin.gfo, "timeDate": timeDate});
                 }
             }
-            let previousGroupedByCaserne = previousListOfEngins.reduce((acc, obj) => {
-                let key = obj.caserne;
+            let previousGroupedByTimeAndCaserne = previousListOfEngins.reduce((acc, obj) => {
+                let key = obj.timeDate + obj.caserne;
                 if (!acc[key]) {
                     acc[key] = [];
                 }
@@ -695,19 +695,19 @@ async function generateTelex(data){
                 <td class="T20 center lineHeight">DATE HEURE <br>D'ALERTE</td>
             </tr>
             `;
-            for (const caserne in previousGroupedByCaserne){
+            for (const key in previousGroupedByTimeAndCaserne) {
+                const caserne = key.slice(14);
+                const timeDate = key.slice(0, 14);
                 previousodEngins += `            <tr class="F14 TNR">
                 <td class="upper center">${caserne}</td>
                 <td class="upper">`;
-                let timeDate = '';
-                for (const engin of previousGroupedByCaserne[caserne]){
+                for (const engin of previousGroupedByTimeAndCaserne[key]) {
                     previousodEngins += `<span class="margin-right">${engin.engin}(<span>${engin.gfo}</span>)</span> `;
-                    timeDate = engin.timeDate;
                 }
                 previousodEngins += `</td>
                 <td class="upper center lineHeight">${timeDate.replace(" ", "<br>")}</td>
             </tr>`;
-            } 
+            }
             previousodEngins += `
         </table>
     </div>`;
