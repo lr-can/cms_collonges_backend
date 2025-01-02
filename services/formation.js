@@ -661,8 +661,8 @@ async function generateTelex(data){
         let previousListOfEngins = [];
         let filteredOD = data.ordresDeparts.filter(od => od.timeDate < OD.timeDate);
         if (filteredOD.length > 0){
-            let previousOD = filteredOD;
-            for (const engin of previousOD.engins){
+            let previousODs = filteredOD.sort((a, b) => b.timeDate - a.timeDate);
+            for (const engin of previousODs.engins){
                 previousListOfEngins.push(engin);
             }
             let previousGroupedByCaserne = previousListOfEngins.reduce((acc, obj) => {
