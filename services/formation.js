@@ -652,7 +652,7 @@ async function generateTelex(data){
                 <td class="upper center">${caserne}</td>
                 <td class="upper">`;
             for (const engin of groupedByCaserne[caserne]){
-                odEngins += `<span>${engin.engin}</span> (<span>${engin.gfo}</span>)<pre>\t\t</pre>;`;
+                odEngins += `<span class="margin-right">${engin.engin}(<span>${engin.gfo}</span>)</span>`;
             }
             odEngins += `</td>
             </tr>`;
