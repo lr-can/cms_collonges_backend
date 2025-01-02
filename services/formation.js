@@ -659,7 +659,7 @@ async function generateTelex(data){
                 <td class="upper center">${caserne}</td>
                 <td class="upper">`;
             for (const engin of groupedByCaserne[caserne]){
-                odEngins += `<span class="margin-right">${engin.engin}(<span>${engin.gfo}</span>)</span>`;
+                odEngins += `<span class="margin-right">${engin.engin}<span class="smallMarginLeft">(${engin.gfo})</span></span>`;
             }
             odEngins += `</td>
             </tr>`;
@@ -709,7 +709,7 @@ async function generateTelex(data){
                 <td class="upper center">${caserne}</td>
                 <td class="upper">`;
                 for (const engin of previousGroupedByTimeAndCaserne[key]) {
-                    previousodEngins += `<span class="margin-right">${engin.engin}(<span>${engin.gfo}</span>)</span> `;
+                    previousodEngins += `<span class="margin-right">${engin.engin}<span class="smallMarginLeft">(${engin.gfo})</span></span> `;
                 }
                 previousodEngins += `</td>
                 <td class="upper center lineHeight">${timeDate.replace(" ", "<br>")}</td>
@@ -794,7 +794,7 @@ async function generateTelex(data){
                         <span class="italic upper F12">Commune</span>
                     </td>
                     <td class="T30">
-                        <span>:</span>
+                        <span>:</span>i
                         <span class="bold upper">${specialAddress.commune}</span>
                     </td>
                     <td class="T20 center">
