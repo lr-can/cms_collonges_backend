@@ -431,7 +431,7 @@ async function getVehiculesAndCaserne (){
 async function generateTelex(data){
     let adresses = data.adresses;
     let observation = data.observation;
-    let numInter = 'M063_2024_';
+    let numInter = 'M063_';
     let currentDate = new Date();
     let numberOfMinutesFromBeginningOfYear = Math.floor((currentDate - new Date(currentDate.getFullYear(), 0, 0)) / 60000);
     numInter += numberOfMinutesFromBeginningOfYear;
@@ -665,6 +665,7 @@ async function generateTelex(data){
             for (const previousOD of previousODs) {
                 for (const engin of previousOD.engins) {
                 previousListOfEngins.push(engin);
+            }
             }
             let previousGroupedByCaserne = previousListOfEngins.reduce((acc, obj) => {
                 let key = obj.caserne;
