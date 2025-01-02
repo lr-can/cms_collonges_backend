@@ -724,10 +724,10 @@ async function generateTelex(data){
                         <span id="dateAlerte">${OD.timeDate}</span>
                     </td>
                     <td class="T40 center">
-                        <span id="caserneAlerte" class="F14">${engin.caserne}</span>
+                        <span id="caserneAlerte" class="F16">${engin.caserne}</span>
                     </td>
                     <td class="T10 right">
-                        <span id="vehiculeAlerte" class="F14">${engin.engin}</span>
+                        <span id="vehiculeAlerte" class="F16">${engin.engin}</span>
                     </td>
                 </tr>
             </table>`;
