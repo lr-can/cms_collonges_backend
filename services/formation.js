@@ -649,7 +649,7 @@ async function generateTelex(data){
                 <td class="upper center">${caserne}</td>
                 <td class="upper">`;
             for (const engin of groupedByCaserne[caserne]){
-                odEngins += `<span>${engin.engin}</span> (<span>${engin.gfo}</span>)&nbsp;`;
+                odEngins += `<span>${engin.engin}</span> (<span>${engin.gfo}</span>)<pre>\t\t</pre>;`;
             }
             odEngins += `</td>
             </tr>`;
@@ -661,7 +661,7 @@ async function generateTelex(data){
         let previousListOfEngins = [];
         let filteredOD = data.ordresDeparts.filter(od => od.timeDate < OD.timeDate);
         if (filteredOD.length > 0){
-            let previousOD = filteredOD[filteredOD.length - 1];
+            let previousOD = filteredOD;
             for (const engin of previousOD.engins){
                 previousListOfEngins.push(engin);
             }
@@ -694,7 +694,7 @@ async function generateTelex(data){
                 <td class="upper center">${caserne}</td>
                 <td class="upper">`;
                 for (const engin of previousGroupedByCaserne[caserne]){
-                    previousodEngins += `<span>${engin.engin}</span> (<span>${engin.gfo}</span>)&nbsp;`;
+                    previousodEngins += `<span>${engin.engin}</span> (<span>${engin.gfo}</span>)<pre>\t\t</pre>;`;
                 }
                 previousodEngins += `</td>
                 <td class="upper center lineHeight">${previousOD.timeDate.replace(" ", "<br>")}</td>
@@ -702,7 +702,8 @@ async function generateTelex(data){
             } 
             previousodEngins += `
         </table>
-            `
+    </div>`;
+
         }
 
         for (const engin of OD.engins){
@@ -740,7 +741,7 @@ async function generateTelex(data){
                     </td>
                     <td class="T50 upper center">
                         Ordre de départ
-                        <span id="telIntervention" class="bold F14">${numInter}-${OD.ordreDepart}</span>
+                        <span id="telIntervention" class="F12">${numInter}-</span><span class="F14 bold">${OD.ordreDepart}</span>
                     </td>
                 </tr>
             </table>
@@ -781,11 +782,11 @@ async function generateTelex(data){
                         <span>:</span>
                         <span class="bold upper">${specialAddress.commune}</span>
                     </td>
-                    <td class="T15 center">
+                    <td class="T20 center">
                         <span class="upper italic F12">Livre : </span>
                         <span class="bold">${specialAddress.livre}</span>
                     </td>
-                    <td class="T35 right">
+                    <td class="T30 right">
                         <span class="upper italic F12">Coordonnées : </span>
                         <span class="bold">${specialAddress.coordonnees}</span>
                     </td>
