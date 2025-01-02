@@ -430,6 +430,7 @@ async function getVehiculesAndCaserne (){
 
 async function generateTelex(data){
     let adresses = data.adresses;
+    let observation = data.observation;
     let numInter = 'M063_2024_';
     let currentDate = new Date();
     let numberOfMinutesFromBeginningOfYear = Math.floor((currentDate - new Date(currentDate.getFullYear(), 0, 0)) / 60000);
