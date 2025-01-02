@@ -867,7 +867,7 @@ async function generateTelex(data){
                     </td>
                     <td class="T80">
                         <span>:</span>
-                        <span class="bold upper">${adresseParticuliere.adresseCommune.etage}</span>
+                        <span class="bold upper">${adresses.adresseCommune.etage}</span>
                     </td>
                 </tr>
                 `;
