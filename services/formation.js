@@ -716,10 +716,10 @@ async function generateTelex(data){
                         <span id="dateAlerte">${OD.timeDate}</span>
                     </td>
                     <td class="T40 center">
-                        <span id="caserneAlerte" class="">${engin.caserne}</span>
+                        <span id="caserneAlerte" class="F14">${engin.caserne}</span>
                     </td>
                     <td class="T10 right">
-                        <span id="vehiculeAlerte" class="">${engin.engin}</span>
+                        <span id="vehiculeAlerte" class="F14">${engin.engin}</span>
                     </td>
                 </tr>
             </table>`;
@@ -751,7 +751,7 @@ async function generateTelex(data){
         </div>`
         let consigne = data.consigneGenerale && data.consigneGenerale != "" ? data.consigneGenerale : "";
         if (engin.consigneParticuliere && engin.consigneParticuliere != ""){
-            consigne += "<br>**" + engin.consigneParticuliere.replace(/\n/g, "<br>");
+            consigne += "<br>&ast;&ast;" + engin.consigneParticuliere.replace(/\n/g, "<br>");
         }
         consigne = consigne.replace(/\n/g, "<br>");
         if (consigne != ""){
