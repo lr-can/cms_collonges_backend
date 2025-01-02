@@ -701,7 +701,7 @@ async function generateTelex(data){
                 <td class="upper">`;
                 let timeDate = '';
                 for (const engin of previousGroupedByCaserne[caserne]){
-                    previousodEngins += `<span class="margin-right">${engin.engin}</span> (<span>${engin.gfo}</span>)`;
+                    previousodEngins += `<span class="margin-right">${engin.engin}(<span>${engin.gfo}</span>)</span> `;
                     timeDate = engin.timeDate;
                 }
                 previousodEngins += `</td>
