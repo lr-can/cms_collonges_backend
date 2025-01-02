@@ -605,6 +605,13 @@ async function generateTelex(data){
         .lineHeight2{
             line-height: 2;
         }
+        .flexx{
+            display: flex;
+            flex-direction: row;
+        }
+        .smallMarginLeft{
+            margin-left: 0.3rem;
+        }
     </style>
     <script>
         window.onload = function(){
@@ -821,7 +828,35 @@ async function generateTelex(data){
                         <span class="bold upper">${specialAddress.erp}</span>
                     </td>
                 </tr>
-            </table>`
+            </table>`;
+            }
+            if (specialAddress.etage && specialAddress.etage != ""){
+                htmlRender += `
+                <table class="T100 F14 noMargin">
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Etage</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">${specialAddress.etage}</span>
+                    </td>
+                </tr>
+            </table>`;
+            }
+            if (specialAddress.batiment && specialAddress.batiment != ""){
+                htmlRender += `
+                <table class="T100 F14 noMargin">
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Batiment</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">${specialAddress.batiment}</span>
+                    </td>
+                </tr>
+            </table>`;
             }
             htmlRender += `</div>`
             }
@@ -881,18 +916,35 @@ async function generateTelex(data){
                 </tr>
                 `;
             };
+            if (adresses.adresseCommune.batiment && adresses.adresseCommune.batiment != ""){
+                htmlRender += `
+                <tr>
+                    <td class="T15">
+                        <span class="italic upper F12">Batiment</span>
+                    </td>
+                    <td class="T80">
+                        <span>:</span>
+                        <span class="bold upper">${adresses.adresseCommune.batiment}</span>
+                    </td>
+                </tr>
+                `;
+            }
                htmlRender += `
                 <tr>
                     <td class="T15 top">
                         <span class="italic upper F12">Observations</span>
                     </td>
-                    <td class="T80">
-                        <span>:</span>
+                    <td class="T80 flexx">
+                        <div>
+                            <span>:</span>
+                        </div>
+                        <div class="smallMarginLeft">
                         <span class="bold upper">${observation.replace(/\n/g, "<br>")}`;
                 if (engin.observationParticuliere && engin.observationParticuliere != ""){
                     htmlRender += `<br>&#42;&#42;${engin.observationParticuliere.replace(/\n/g, "<br>")}`
                 }
                 htmlRender += `</span>
+                    </div>
                     </td>
                 </tr>
             </table>            

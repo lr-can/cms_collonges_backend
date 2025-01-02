@@ -164,6 +164,10 @@
         .lineHeight2{
             line-height: 2;
         }
+        .flexx{
+            display: flex;
+            flex-direction: row;
+        }
     </style>
     <script>
         window.onload = function(){
@@ -321,9 +325,13 @@
                     <td class="T15 top">
                         <span class="italic upper F12">Observations</span>
                     </td>
-                    <td class="T80">
-                        <span>:</span>
-                        <span class="bold upper">A la demande du SAMU qui se déplace <br>rcp en cours par med sll <br><br>Victime : X (X A)<br>Type de lieu: Domicile</span>
+                    <td class="T80 flexx">
+                        <div>
+                            <span>:</span>
+                        </div>
+                        <div style="margin-left: 0.3rem;">
+                            <span class="bold upper">A la demande du SAMU qui se déplace <br>rcp en cours par med sll <br><br>Victime : X (X A)<br>Type de lieu: Domicile</span>
+                        </div>
                     </td>
                 </tr>
             </table>            
