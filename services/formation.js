@@ -827,11 +827,11 @@ async function generateTelex(data){
                         <span>:</span>
                         <span class="bold upper">${adresses.adresseCommune.commune}</span>
                     </td>
-                    <td class="T15 center">
+                    <td class="T20 center">
                         <span class="upper italic F12">Livre : </span>
                         <span class="bold">${adresses.adresseCommune.livre}</span>
                     </td>
-                    <td class="T35 right">
+                    <td class="T30 right">
                         <span class="upper italic F12">Coordonnées : </span>
                         <span class="bold">${adresses.adresseCommune.coordonnees}</span>
                     </td>
@@ -879,9 +879,9 @@ async function generateTelex(data){
                     </td>
                     <td class="T80">
                         <span>:</span>
-                        <span class="bold upper">${observation.replace(/\n/g), "<br>"}`
+                        <span class="bold upper">${observation.replace(/\n/g, "<br>")}`;
                 if (engin.observationParticuliere && engin.observationParticuliere != ""){
-                    htmlRender += `<br>${engin.observationParticuliere.replace(/\n/g), "<br>"}`
+                    htmlRender += `<br>${engin.observationParticuliere.replace(/\n/g, "<br>")}`
                 }
                 htmlRender += `</span>
                     </td>
