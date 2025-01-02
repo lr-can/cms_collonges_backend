@@ -45,7 +45,7 @@ function getClosestFeature(geoJson, point) {
 }
 
 async function getClosestFireHydrants(lon, lat) {
-    const OVERPASS_API_URL = 'https://overpass.kumi.systems/api/interpreter';
+    const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
     if (!fetch) {
         fetch = (await import('node-fetch')).default;
     }
