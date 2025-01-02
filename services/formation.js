@@ -576,6 +576,9 @@ async function generateTelex(data){
         .gray{
             background-color: lightgray;
         }
+        .margin-right{
+            margin-right: 2rem;
+        }
         table{
             border-collapse: collapse;
             margin-bottom: 1rem;
@@ -698,7 +701,7 @@ async function generateTelex(data){
                 <td class="upper">`;
                 let timeDate = '';
                 for (const engin of previousGroupedByCaserne[caserne]){
-                    previousodEngins += `<span>${engin.engin}</span> (<span>${engin.gfo}</span>)<pre>\t\t</pre>;`;
+                    previousodEngins += `<span class="margin-right">${engin.engin}</span> (<span>${engin.gfo}</span>)`;
                     timeDate = engin.timeDate;
                 }
                 previousodEngins += `</td>
@@ -887,7 +890,7 @@ async function generateTelex(data){
                         <span>:</span>
                         <span class="bold upper">${observation.replace(/\n/g, "<br>")}`;
                 if (engin.observationParticuliere && engin.observationParticuliere != ""){
-                    htmlRender += `<br>${engin.observationParticuliere.replace(/\n/g, "<br>")}`
+                    htmlRender += `<br>&#42;&#42;${engin.observationParticuliere.replace(/\n/g, "<br>")}`
                 }
                 htmlRender += `</span>
                     </td>
