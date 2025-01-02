@@ -696,8 +696,8 @@ async function generateTelex(data){
             </tr>
             `;
             for (const key in previousGroupedByTimeAndCaserne) {
-                const caserne = key.slice(14);
-                const timeDate = key.slice(0, 14);
+                const timeDate = key.slice(0, 19);
+                const caserne = key.slice(19);
                 previousodEngins += `            <tr class="F14 TNR">
                 <td class="upper center">${caserne}</td>
                 <td class="upper">`;
