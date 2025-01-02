@@ -768,10 +768,10 @@ async function generateTelex(data){
             adresseParticuliere = "prm";
         }
         if (adresseParticuliere != ""){
-            let specialAddress = data.adresses[`adresse${adresseParticuliere.toLocaleUpperCase()}`];
+            let specialAddress = data.adresses[`adresse${adresseParticuliere.toUpperCase()}`];
             htmlRender += `<div class="bordered">
-            <p class="bold italic underline upper center">${adresseParticuliere.toUpperCase().replace("PR", "CR")} / ${adresseParticuliere.toLocaleUpperCase()} - ECHELON 0</p>
-            <p class="bold italic upper F16">SE RENDRE AU ${adresseParticuliere.toLocaleUpperCase()}</p>
+            <p class="bold italic underline upper center">${adresseParticuliere.toUpperCase().replace("PR", "CR")} / ${adresseParticuliere.toUpperCase()} - ECHELON 0</p>
+            <p class="bold italic upper F16">SE RENDRE AU ${adresseParticuliere.toUpperCase()}</p>
             <table class="T100 F14 noMargin">
                 <tr>
                     <td class="T15">
