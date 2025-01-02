@@ -663,9 +663,10 @@ async function generateTelex(data){
         if (filteredOD.length > 0){
             let previousODs = filteredOD.sort((a, b) => b.timeDate - a.timeDate);
             for (const previousOD of previousODs) {
+                let timeDate = previousOD.timeDate;
                 for (const engin of previousOD.engins) {
-                previousListOfEngins.push(engin);
-            }
+                    previousListOfEngins.push({caserne: engin.caserne, engin: engin.engin, gfo: engin.gfo, "timeDate": timeDate});
+                }
             }
             let previousGroupedByCaserne = previousListOfEngins.reduce((acc, obj) => {
                 let key = obj.caserne;
@@ -699,7 +700,7 @@ async function generateTelex(data){
                     previousodEngins += `<span>${engin.engin}</span> (<span>${engin.gfo}</span>)<pre>\t\t</pre>;`;
                 }
                 previousodEngins += `</td>
-                <td class="upper center lineHeight">${previousOD.timeDate.replace(" ", "<br>")}</td>
+                <td class="upper center lineHeight">${engin.timeDate.replace(" ", "<br>")}</td>
             </tr>`;
             } 
             previousodEngins += `
