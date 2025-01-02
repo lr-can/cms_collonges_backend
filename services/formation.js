@@ -696,11 +696,13 @@ async function generateTelex(data){
                 previousodEngins += `            <tr class="F14 TNR">
                 <td class="upper center">${caserne}</td>
                 <td class="upper">`;
+                let timeDate = '';
                 for (const engin of previousGroupedByCaserne[caserne]){
                     previousodEngins += `<span>${engin.engin}</span> (<span>${engin.gfo}</span>)<pre>\t\t</pre>;`;
+                    timeDate = engin.timeDate;
                 }
                 previousodEngins += `</td>
-                <td class="upper center lineHeight">${engin.timeDate.replace(" ", "<br>")}</td>
+                <td class="upper center lineHeight">${timeDate.replace(" ", "<br>")}</td>
             </tr>`;
             } 
             previousodEngins += `
