@@ -41,6 +41,18 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
     let incidentInter = "";
 
     if (rowData.startsWith('🚧')) {
+        let notifPhoneOptions = {
+            method: "post",
+            headers: {
+                "Content-Type": "text/plain" 
+            },
+            body: rowData,
+            redirect: "follow"
+        };
+    const notifPhoneResponse = await fetch(process.env.MACRO_TRIGGER2, notifPhoneOptions);
+    if (!notifPhoneResponse.ok) {
+        console.error('Error in phone notification:', notifPhoneResponse.statusText);
+    }
     let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/(\|.*? -)/g, '-').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee');
     numInter = cleanedEntry.match(/N°(\d+)/);
 
@@ -179,43 +191,50 @@ async function findInterventionCoordinates(adress){
         throw new Error('Unable to find coordinates for the given address');
     }
 }
+function unidecode(str) {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+}
+
 async function giveInterventionType(titre) {
-    let interTypeDictionnary = {};
     if (!fetch) {
         fetch = (await import('node-fetch')).default;
     };
     try {
-        const response = await fetch('https://opensheet.elk.sh/19kgbE-Z4kIbM49-rVE0hv9ihMBv_a5hOzP9DAa1CHt8/1');
+        let normalizedTitle = unidecode(titre.toUpperCase().replace(/-/g, "").replace(/|/g, "").replace(/  /g, " ").replace(/,/g, " "));
+        const response = await fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/libelleSinistres');
         const data = await response.json();
-
-        data.forEach(row => {
-            const interventionCode = row['codeSinistre']; // Correction ici
-            const libelleMajSinistre = row['libelleMajSinistre'];
-            let value = "";
-
-            if (interventionCode.startsWith('1')) {
-                value = "SSUAP";
-            } else if (interventionCode.startsWith('2')) {
-                if (/^2[AB]\d{2}$/.test(interventionCode)) {
-                    value = "Violences_Urbaines";
-                } else {
-                    value = "Accident";
-                }
-            } else if (interventionCode.startsWith('3')) {
-                if (interventionCode.length === 3) {
-                    value = "Violences_Urbaines_Graves";
-                } else {
-                    value = "Incendie";
-                }
-            } else if (interventionCode.startsWith('4') || interventionCode.startsWith('5')) {
-                value = "PPBE";
-            }
-
-            interTypeDictionnary[libelleMajSinistre] = value;
+        let remappedData = data.map(row => {
+            return {
+                codeSinistre: row['sinistreCode'],
+                libelleMajSinistre: unidecode(row['sinistreLib'].toUpperCase().replace(/-/g, "").replace(/  /g, " ").replace(/,/g, " ")),
+                categorie: row["sinistreCat"]
+            };
         });
 
-        const type = interTypeDictionnary[titre];
-        return { type: type };
+        typeFromTitre = remappedData.find(row => row['libelleMajSinistre'] === normalizedTitle);
+        if (typeFromTitre) {
+            const categorie = typeFromTitre.categorie;
+            console.log(categorie)
+            if (categorie === "INC") {
+                return { type: "Incendie" };
+            } else if (categorie === "SSUAP") {
+                return { type: "SSUAP" };
+            } else if (categorie === "ACC") {
+                return { type: "Accident" };
+            } else if (categorie === "Niv. Sup") {
+                if (typeFromTitre.codeSinistre.startsWith('2A') || typeFromTitre.codeSinistre.startsWith('2B')) {
+                    return { type: "Violences_Urbaines" };
+                } else {
+                return { type: "Violences_Urbaines_Graves" };
+                }
+            } else if (categorie === "PPBE") {
+                return { type: "PPBE" };
+            } else {
+                return { type: "Unknown" };
+            }
+        } else {
+            return { type: "Unknown" };
+        }
 
     } catch (err) {
         console.error('Error fetching data:', err);
