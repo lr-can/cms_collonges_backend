@@ -51,7 +51,7 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
         };
     const notifPhoneResponse = await fetch(process.env.MACRO_TRIGGER2, notifPhoneOptions);
     if (!notifPhoneResponse.ok) {
-        console.error('Error in phone notification:', notifPhoneResponse.statusText);
+        console.log('Error in phone notification:', notifPhoneResponse.statusText);
     }
     let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/(\|.*? -)/g, '-').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee');
     numInter = cleanedEntry.match(/N°(\d+)/);
