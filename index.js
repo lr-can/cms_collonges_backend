@@ -63,9 +63,10 @@ app.use(
   })
 );
 
-app.get("/", (req, res) => {
-  res.json({ message: "ok" });
+app.get('/', (req, res) => {
+  res.send('API is running 🚀');
 });
+
 app.use("/peremptions", peremptions);
 app.use("/peremptionsids", peremptionsids);
 app.use("/peremptionscount", peremptionscount);
@@ -128,6 +129,13 @@ app.use((err, req, res, next) => {
     return;
   });
 
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
+  app.use((req, res, next) => {
+    res.status(404).json({ message: 'Route not found' });
 });
+
+
+
+  app.listen(port, '0.0.0.0', () => {
+      console.log(`Server is running at http://localhost:${port}`);
+  });
+  
