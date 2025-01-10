@@ -163,7 +163,7 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
         };
             const postResponse = await fetch(process.env.MACRO_TRIGGER, postOptions);
             if (!postResponse.ok) {
-                console.error('Error in post request:', postResponse.statusText);
+                console.log('Error in post request:', postResponse.statusText);
             } else {
                 console.log('Post request successful!');
             }
