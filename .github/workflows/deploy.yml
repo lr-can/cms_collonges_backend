@@ -60,7 +60,7 @@ jobs:
         GG_universe_domain=$GG_UNIVERSE_DOMAIN GG_script_id=$GG_SCRIPT_ID GG_script_function=$GG_SCRIPT_FUNCTION \
         GG_spreadsheetId=$GG_SPREADSHEET_ID GG_spreadsheetId2=$GG_SPREADSHEET_ID2 \
         MAPBOX_API_KEY=$MAPBOX_API_KEY GMAPS_API=$GMAPS_API MACRO_TRIGGER=$MACRO_TRIGGER MACRO_TRIGGER2=$MACRO_TRIGGER2 \
-        --app your-heroku-app-name
+        --app cms-collonges-api
 
     # Étape 5 : Déployer sur Heroku
     - name: Deploy to Heroku
