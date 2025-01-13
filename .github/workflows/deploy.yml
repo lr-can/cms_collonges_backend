@@ -65,4 +65,4 @@ jobs:
     # Étape 5 : Déployer sur Heroku
     - name: Deploy to Heroku
       run: |
-        git push https://heroku:$HEROKU_API_KEY@git.heroku.com/your-heroku-app-name.git main
+        git push https://heroku:$HEROKU_API_KEY@git.heroku.com/cms-collonges-api.git main
