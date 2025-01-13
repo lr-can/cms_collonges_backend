@@ -10,9 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Étape 1 : Récupérer le code
+    # Étape 1 : Récupérer le code avec un clone complet
     - name: Checkout code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Clone complet pour éviter l'erreur Heroku
 
     # Étape 2 : Configurer Node.js
     - name: Setup Node.js
@@ -71,5 +73,4 @@ jobs:
     # Étape 6 : Pousser sur Heroku
     - name: Deploy to Heroku
       run: git push heroku main
-      env:
-        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+  
