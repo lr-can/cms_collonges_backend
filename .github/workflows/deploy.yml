@@ -1,0 +1,68 @@
+name: Deploy to Heroku
+
+on:
+  push:
+    branches:
+      - main  # Déclenche l'action sur les pushs dans la branche "main"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Étape 1 : Récupérer le code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Étape 2 : Configurer Node.js (si applicable à ton projet)
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16' # Utilise la version de Node.js requise par ton projet
+
+    # Étape 3 : Installer les dépendances
+    - name: Install dependencies
+      run: npm install
+
+    # Étape 4 : Déployer les variables d'environnement sur Heroku
+    - name: Set Heroku Config Vars
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PWD: ${{ secrets.DB_PWD }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        GG_type: ${{ secrets.GG_type }}
+        GG_project_id: ${{ secrets.GG_project_id }}
+        GG_private_key_id: ${{ secrets.GG_private_key_id }}
+        GG_private_key: ${{ secrets.GG_private_key }}
+        GG_client_email: ${{ secrets.GG_client_email }}
+        GG_client_id: ${{ secrets.GG_client_id }}
+        GG_auth_uri: ${{ secrets.GG_auth_uri }}
+        GG_token_uri: ${{ secrets.GG_token_uri }}
+        GG_auth_provider_x509_cert_url: ${{ secrets.GG_auth_provider_x509_cert_url }}
+        GG_client_x509_cert_url: ${{ secrets.GG_client_x509_cert_url }}
+        GG_universe_domain: ${{ secrets.GG_universe_domain }}
+        GG_script_id: ${{ secrets.GG_script_id }}
+        GG_script_function: ${{ secrets.GG_script_function }}
+        GG_spreadsheetId: ${{ secrets.GG_spreadsheetId }}
+        GG_spreadsheetId2: ${{ secrets.GG_spreadsheetId2 }}
+        MAPBOX_API_KEY: ${{ secrets.MAPBOX_API_KEY }}
+        GMAPS_API: ${{ secrets.GMAPS_API }}
+        MACRO_TRIGGER: ${{ secrets.MACRO_TRIGGER }}
+        MACRO_TRIGGER2: ${{ secrets.MACRO_TRIGGER2 }}
+      run: |
+        heroku config:set DB_HOST=$DB_HOST DB_USER=$DB_USER DB_PWD=$DB_PWD DB_NAME=$DB_NAME \
+        GG_type=$GG_type GG_project_id=$GG_project_id GG_private_key_id=$GG_private_key_id \
+        GG_private_key="$GG_private_key" GG_client_email=$GG_client_email GG_client_id=$GG_client_id \
+        GG_auth_uri=$GG_auth_uri GG_token_uri=$GG_token_uri \
+        GG_auth_provider_x509_cert_url=$GG_auth_provider_x509_cert_url GG_client_x509_cert_url=$GG_client_x509_cert_url \
+        GG_universe_domain=$GG_universe_domain GG_script_id=$GG_script_id GG_script_function=$GG_script_function \
+        GG_spreadsheetId=$GG_spreadsheetId GG_spreadsheetId2=$GG_spreadsheetId2 \
+        MAPBOX_API_KEY=$MAPBOX_API_KEY GMAPS_API=$GMAPS_API MACRO_TRIGGER=$MACRO_TRIGGER MACRO_TRIGGER2=$MACRO_TRIGGER2 \
+        --app your-heroku-app-name
+
+    # Étape 5 : Déployer sur Heroku
+    - name: Deploy to Heroku
+      run: |
+        git push https://heroku:$HEROKU_API_KEY@git.heroku.com/your-heroku-app-name.git main
