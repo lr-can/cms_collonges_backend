@@ -14,17 +14,23 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Étape 2 : Configurer Node.js (si applicable à ton projet)
+    # Étape 2 : Configurer Node.js
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '16' # Utilise la version de Node.js requise par ton projet
+        node-version: '16'
 
     # Étape 3 : Installer les dépendances
     - name: Install dependencies
       run: npm install
 
-    # Étape 4 : Déployer les variables d'environnement sur Heroku
+    # Étape 4 : Ajouter le remote Heroku
+    - name: Add Heroku remote
+      run: git remote add heroku https://heroku:$HEROKU_API_KEY@git.heroku.com/cms-collonges-api.git
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+
+    # Étape 5 : Déployer les variables d'environnement sur Heroku
     - name: Set Heroku Config Vars
       env:
         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
@@ -62,7 +68,8 @@ jobs:
         MAPBOX_API_KEY=$MAPBOX_API_KEY GMAPS_API=$GMAPS_API MACRO_TRIGGER=$MACRO_TRIGGER MACRO_TRIGGER2=$MACRO_TRIGGER2 \
         --app cms-collonges-api
 
-    # Étape 5 : Déployer sur Heroku
+    # Étape 6 : Pousser sur Heroku
     - name: Deploy to Heroku
-      run: |
-        git push https://heroku:$HEROKU_API_KEY@git.heroku.com/cms-collonges-api.git main
+      run: git push heroku main
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
