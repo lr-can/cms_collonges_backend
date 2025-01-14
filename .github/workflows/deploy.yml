@@ -53,8 +53,8 @@ jobs:
         GG_UNIVERSE_DOMAIN: ${{ secrets.GG_UNIVERSE_DOMAIN }}
         GG_SCRIPT_ID: ${{ secrets.GG_SCRIPT_ID }}
         GG_SCRIPT_FUNCTION: ${{ secrets.GG_SCRIPT_FUNCTION }}
-        GG_SPREADSHEET_ID: ${{ secrets.GG_SPREADSHEET_ID }}
-        GG_SPREADSHEET_ID2: ${{ secrets.GG_SPREADSHEET_ID2 }}
+        GG_SPREADSHEET_ID: ${{ secrets.GG_SPREADSHEETID }}
+        GG_SPREADSHEET_ID2: ${{ secrets.GG_SPREADSHEETID2 }}
         MAPBOX_API_KEY: ${{ secrets.MAPBOX_API_KEY }}
         GMAPS_API: ${{ secrets.GMAPS_API }}
         MACRO_TRIGGER: ${{ secrets.MACRO_TRIGGER }}
