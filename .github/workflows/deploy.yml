@@ -68,7 +68,7 @@ jobs:
       run: |
         heroku config:set DB_HOST=$DB_HOST DB_USER=$DB_USER DB_PWD=$DB_PWD DB_NAME=$DB_NAME \
         GG_type=$GG_TYPE GG_project_id=$GG_PROJECT_ID GG_private_key_id=$GG_PRIVATE_KEY_ID \
-        GG_private_key=$GG_PRIVATE_KEY GG_client_email=$GG_CLIENT_EMAIL GG_client_id=$GG_CLIENT_ID \
+        GG_private_key="$GG_PRIVATE_KEY" GG_client_email=$GG_CLIENT_EMAIL GG_client_id=$GG_CLIENT_ID \
         GG_auth_uri=$GG_AUTH_URI GG_token_uri=$GG_TOKEN_URI \
         GG_auth_provider_x509_cert_url=$GG_AUTH_PROVIDER_X509_CERT_URL GG_client_x509_cert_url=$GG_CLIENT_X509_CERT_URL \
         GG_universe_domain=$GG_UNIVERSE_DOMAIN GG_script_id=$GG_SCRIPT_ID GG_script_function=$GG_SCRIPT_FUNCTION \
