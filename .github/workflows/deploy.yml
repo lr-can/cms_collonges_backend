@@ -1,0 +1,81 @@
+name: Deploy to Heroku
+
+on:
+  push:
+    branches:
+      - main  # Déclenche l'action sur les pushs dans la branche "main"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Étape 1 : Récupérer le code
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    # Étape 2 : Configurer Node.js
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+
+    # Étape 3 : Installer le CLI Heroku
+    - name: Install Heroku CLI
+      run: curl https://cli-assets.heroku.com/install.sh | sh
+
+    # Étape 4 : Authentification avec Heroku
+    - name: Authenticate Heroku
+      run: heroku auth:token
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+
+    # Étape 5 : Ajouter le remote Heroku
+    - name: Add Heroku remote
+      run: git remote add heroku https://heroku:$HEROKU_API_KEY@git.heroku.com/cms-collonges-api.git
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+
+    # Étape 6 : Déployer les variables d'environnement sur Heroku
+    - name: Set Heroku Config Vars
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PWD: ${{ secrets.DB_PWD }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        GG_TYPE: ${{ secrets.GG_TYPE }}
+        GG_PROJECT_ID: ${{ secrets.GG_PROJECT_ID }}
+        GG_PRIVATE_KEY_ID: ${{ secrets.GG_PRIVATE_KEY_ID }}
+        GG_PRIVATE_KEY: ${{ secrets.GG_PRIVATE_KEY }}
+        GG_CLIENT_EMAIL: ${{ secrets.GG_CLIENT_EMAIL }}
+        GG_CLIENT_ID: ${{ secrets.GG_CLIENT_ID }}
+        GG_AUTH_URI: ${{ secrets.GG_AUTH_URI }}
+        GG_TOKEN_URI: ${{ secrets.GG_TOKEN_URI }}
+        GG_AUTH_PROVIDER_X509_CERT_URL: ${{ secrets.GG_AUTH_PROVIDER_X509_CERT_URL }}
+        GG_CLIENT_X509_CERT_URL: ${{ secrets.GG_CLIENT_X509_CERT_URL }}
+        GG_UNIVERSE_DOMAIN: ${{ secrets.GG_UNIVERSE_DOMAIN }}
+        GG_SCRIPT_ID: ${{ secrets.GG_SCRIPT_ID }}
+        GG_SCRIPT_FUNCTION: ${{ secrets.GG_SCRIPT_FUNCTION }}
+        GG_SPREADSHEET_ID: ${{ secrets.GG_SPREADSHEETID }}
+        GG_SPREADSHEET_ID2: ${{ secrets.GG_SPREADSHEETID2 }}
+        MAPBOX_API_KEY: ${{ secrets.MAPBOX_API_KEY }}
+        GMAPS_API: ${{ secrets.GMAPS_API }}
+        MACRO_TRIGGER: ${{ secrets.MACRO_TRIGGER }}
+        MACRO_TRIGGER2: ${{ secrets.MACRO_TRIGGER2 }}
+      run: |
+        heroku config:set DB_HOST=$DB_HOST DB_USER=$DB_USER DB_PWD=$DB_PWD DB_NAME=$DB_NAME \
+        GG_type=$GG_TYPE GG_project_id=$GG_PROJECT_ID GG_private_key_id=$GG_PRIVATE_KEY_ID \
+        GG_private_key="$GG_PRIVATE_KEY" GG_client_email=$GG_CLIENT_EMAIL GG_client_id=$GG_CLIENT_ID \
+        GG_auth_uri=$GG_AUTH_URI GG_token_uri=$GG_TOKEN_URI \
+        GG_auth_provider_x509_cert_url=$GG_AUTH_PROVIDER_X509_CERT_URL GG_client_x509_cert_url=$GG_CLIENT_X509_CERT_URL \
+        GG_universe_domain=$GG_UNIVERSE_DOMAIN GG_script_id=$GG_SCRIPT_ID GG_script_function=$GG_SCRIPT_FUNCTION \
+        GG_spreadsheetId=$GG_SPREADSHEET_ID GG_spreadsheetId2=$GG_SPREADSHEET_ID2 \
+        MAPBOX_API_KEY=$MAPBOX_API_KEY GMAPS_API=$GMAPS_API MACRO_TRIGGER=$MACRO_TRIGGER MACRO_TRIGGER2=$MACRO_TRIGGER2 \
+        --app cms-collonges-api
+
+    # Étape 7 : Déployer sur Heroku
+    - name: Deploy to Heroku
+      run: git push heroku main
