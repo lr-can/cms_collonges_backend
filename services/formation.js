@@ -428,6 +428,8 @@ async function getVehiculesAndCaserne (){
 )
 */
 
+
+
 async function generateTelex(data){
     let adresses = data.adresses;
     let observation = data.observation;

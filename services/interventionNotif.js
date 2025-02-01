@@ -428,7 +428,8 @@ async function getPlanning(){
         const response = await fetch('https://opensheet.elk.sh/1zFKFK_tlFQD3_Y6JkgRYm_E0THA6AVkYGYJjMpM8DPY/Feuille%201');
         const data = await response.json();
         data.forEach(row => {
-            row.Date = new Date(row.Date);
+            const [day, month, year] = row.Date.split('/');
+            row.Date = new Date(`${year}-${month}-${day}`);
         });
         const today = new Date();
         const planning = data.filter(row => row.Date > today).sort((a, b) => a.Date - b.Date);
