@@ -420,6 +420,50 @@ async function verifyIfInter(){
     }
 }
 
+async function getPlanning(){
+    if (!fetch){
+        fetch = (await import('node-fetch')).default;
+    }
+    try {
+        const response = await fetch('https://opensheet.elk.sh/1zFKFK_tlFQD3_Y6JkgRYm_E0THA6AVkYGYJjMpM8DPY/Feuille%201');
+        const data = await response.json();
+        data.forEach(row => {
+            row.Date = new Date(row.Date);
+        });
+        const today = new Date();
+        const planning = data.filter(row => row.Date > today).sort((a, b) => a.Date - b.Date);
+        let currentTeam = 'X';
+        currentTeam = planning[0].equipeGarde;
+        let nextTeam = 'X';
+        let nextTwoEvents = [];
+        let nextTwoBirthdays = [];
+        let nextReunion = "";
+        for (let i = 1; i < planning.length; i++) {
+            if (planning[i].equipeGarde !== currentTeam) {
+                nextTeam = planning[i].equipeGarde;
+                break;
+            }
+        }
+        const events = planning.filter(row => row.evenementNom && row.evenementNom != '').sort((a, b) => a.Date - b.Date);
+        if (events.length > 0) {
+            nextTwoEvents = events.slice(0, 2);
+        }
+        const birthdays = planning.filter(row => row.anniversaire && row.anniversaire != '').sort((a, b) => a.Date - b.Date);
+        if (birthdays.length > 0) {
+            nextTwoBirthdays = birthdays.slice(0, 2);
+        }
+        const reunions = planning.filter(row => row.réunion && row.réunion == 'oui').sort((a, b) => a.Date - b.Date);
+        if (reunions.length > 0) {
+            nextReunion = reunions[0].Date;
+        }
+
+        return { currentTeam, nextTeam, nextTwoEvents, nextTwoBirthdays, nextReunion };
+    } catch (err) {
+        console.error('Error fetching data:', err);
+        throw err;
+    }
+}
+
 async function giveAgentsAndVehicules(){
     if (!fetch){
         fetch = (await import('node-fetch')).default;
@@ -440,4 +484,4 @@ async function giveAgentsAndVehicules(){
     }
 }
 
-module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules };
+module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, getPlanning };
