@@ -432,7 +432,8 @@ async function getPlanning(){
             row.Date = new Date(`${year}-${month}-${day}`);
         });
         const today = new Date();
-        const planning = data.filter(row => row.Date > today).sort((a, b) => a.Date - b.Date);
+        today.setDate(today.getDate() - 1);
+        const planning = data.filter(row => row.Date >= today).sort((a, b) => a.Date - b.Date);
         let currentTeam = 'X';
         currentTeam = planning[0].equipeGarde;
         let nextTeam = 'X';
