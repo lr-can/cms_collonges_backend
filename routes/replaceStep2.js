@@ -1,7 +1,7 @@
 const express = require('express');
 const router5 = express.Router();
 const stock = require('../services/asup');
-
+/* This is a comment
 /* GET info. */
 router5.post('/', async function(req, res, next) {
   try {
