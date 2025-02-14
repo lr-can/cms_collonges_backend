@@ -437,12 +437,19 @@ async function getPlanning(){
         let currentTeam = 'X';
         currentTeam = planning[0].equipeGarde;
         let nextTeam = 'X';
+        let teamAfter = 'X';
         let nextTwoEvents = [];
         let nextTwoBirthdays = [];
         let nextReunion = "";
         for (let i = 1; i < planning.length; i++) {
             if (planning[i].equipeGarde !== currentTeam) {
                 nextTeam = planning[i].equipeGarde;
+                break;
+            }
+        }
+        for (let i = 1; i < planning.length; i++) {
+            if (planning[i].equipeGarde !== currentTeam && planning[i].equipeGarde !== nextTeam) {
+                teamAfter = planning[i].equipeGarde;
                 break;
             }
         }
@@ -459,7 +466,7 @@ async function getPlanning(){
             nextReunion = reunions[0].Date;
         }
 
-        return { currentTeam, nextTeam, nextTwoEvents, nextTwoBirthdays, nextReunion };
+        return { currentTeam, nextTeam, teamAfter, nextTwoEvents, nextTwoBirthdays, nextReunion };
     } catch (err) {
         console.error('Error fetching data:', err);
         throw err;
