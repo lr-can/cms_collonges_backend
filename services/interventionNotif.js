@@ -420,6 +420,18 @@ async function verifyIfInter(){
     }
 }
 
+function giveDateComment(dateObj_in){
+    let dateObj = new Date(dateObj_in);
+    let dateWeekDay = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    if (dateWeekDay === "Friday" || dateWeekDay === "Saturday" || dateWeekDay === "Sunday") {
+        return ["WEEK-END"];
+    } else if (dateWeekDay === "Monday" || dateWeekDay === "Tuesday") {
+        return ["LUN", "MAR"];
+    } else if (dateWeekDay === "Wednesday" || dateWeekDay === "Thursday") {
+        return ["MER", "JEU"];
+    }
+}
+
 async function getPlanning(){
     if (!fetch){
         fetch = (await import('node-fetch')).default;
@@ -433,23 +445,35 @@ async function getPlanning(){
         });
         const today = new Date();
         today.setDate(today.getDate() - 1);
-        const planning = data.filter(row => row.Date >= today).sort((a, b) => a.Date - b.Date);
-        let currentTeam = 'X';
-        currentTeam = planning[0].equipeGarde;
-        let nextTeam = 'X';
-        let teamAfter = 'X';
+        const planning = await data.filter(row => row.Date >= today).sort((a, b) => a.Date - b.Date);
+        let currentTeam = {};
+        currentTeam = {
+           equipe : planning[0].equipeGarde,
+           dateComment : giveDateComment(planning[0].Date),
+           date: planning[0].Date
+        }
+        let nextTeam = {};
+        let teamAfter = {};
         let nextTwoEvents = [];
         let nextTwoBirthdays = [];
         let nextReunion = "";
         for (let i = 1; i < planning.length; i++) {
-            if (planning[i].equipeGarde !== currentTeam) {
-                nextTeam = planning[i].equipeGarde;
+            if (planning[i].equipeGarde !== currentTeam.equipe) {
+                nextTeam = {
+                    equipe: planning[i].equipeGarde,
+                    dateComment: giveDateComment(planning[i].Date),
+                    date: planning[i].Date
+                };
                 break;
             }
         }
         for (let i = 1; i < planning.length; i++) {
-            if (planning[i].equipeGarde !== currentTeam && planning[i].equipeGarde !== nextTeam) {
-                teamAfter = planning[i].equipeGarde;
+            if (planning[i].equipeGarde !== currentTeam.equipe && planning[i].equipeGarde !== nextTeam.equipe) {
+                teamAfter = {
+                    equipe: planning[i].equipeGarde,
+                    dateComment: giveDateComment(planning[i].Date),
+                    date: planning[i].Date
+                };
                 break;
             }
         }
