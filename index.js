@@ -56,6 +56,7 @@ const getVehiculesAndCaserne = require("./routes/getCaserneAndVehicules");
 const generateTelex = require("./routes/generateTelex");
 const getWeatherLabelForCode = require("./routes/getWeatherLabel");
 const getPlanning = require("./routes/getPlanning");
+const getPeremptionAndCount = require("./routes/getPeremptionAndCount");
 
 app.use(express.json());
 app.use(cors());
@@ -123,6 +124,7 @@ app.use("/getVehiculesAndCaserne", getVehiculesAndCaserne);
 app.use("/generateTelex", generateTelex);
 app.use("/getWeatherLabel", getWeatherLabelForCode);
 app.use("/getPlanning", getPlanning);
+app.use("/getPeremptionAndCount", getPeremptionAndCount);
 
 
 

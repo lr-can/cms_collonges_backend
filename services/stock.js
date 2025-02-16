@@ -26,6 +26,34 @@ async function getPeremption(page = 1){
   }
 }
 
+async function getPeremptionAndCount(){
+  const datePeremptionOneMonth = new Date();
+  datePeremptionOneMonth.setMonth(datePeremptionOneMonth.getMonth() + 2);
+  datePeremptionOneMonth.setDate(1);
+  let datePeremptionOneMonthString = datePeremptionOneMonth.toISOString().slice(0, 19).replace('T', ' ');
+  const rows = await db.query(
+    `SELECT COUNT(s.idStock) as Nombre, m.nomMateriel, s2.nomStatut, s2.idStatut, s.numLot, s.datePeremption
+FROM stock s
+INNER JOIN materiels m ON s.idMateriel = m.idMateriel
+INNER JOIN statuts s2 ON s2.idStatut = s.idStatut
+WHERE s.datePeremption < '${datePeremptionOneMonthString}' AND s.idStatut != 3
+GROUP BY s.idMateriel, s2.idStatut, s.numLot, s.datePeremption
+ORDER BY s.datePeremption;
+`
+  );
+  const rowsDate = rows.map((row) => {
+    const date = new Date(row.datePeremption);
+    date.setHours(date.getHours() + 1);
+    return {
+      ...row,
+      datePeremption: date.toLocaleDateString("fr-FR")
+    };
+  });
+  const data = helper.emptyOrRows(rowsDate);
+  return data;
+
+}
+
   async function getPeremptionids(page = 1, idMateriel){
     const offset = helper.getOffset(page, config.listPerPage);
     const datePeremptionSixMois = new Date();
@@ -448,5 +476,6 @@ async function getPeremption(page = 1){
     getReserveItems,
     dispoReserve,
     reinitialiserRetourInter,
-    exportDataBase
+    exportDataBase,
+    getPeremptionAndCount
   }
