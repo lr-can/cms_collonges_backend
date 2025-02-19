@@ -468,7 +468,7 @@ async function getPlanning(){
             }
         }
         for (let i = 1; i < planning.length; i++) {
-            if (planning[i].equipeGarde !== nextTeam.equipe) {
+            if (planning[i].equipeGarde !== nextTeam.equipe && planning[i].Date > nextTeam.date) {
                 teamAfter = {
                     equipe: planning[i].equipeGarde,
                     dateComment: giveDateComment(planning[i].Date),
