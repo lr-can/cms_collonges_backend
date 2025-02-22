@@ -206,7 +206,7 @@ async function giveInterventionType(titre) {
         let remappedData = data.map(row => {
             return {
                 codeSinistre: row['sinistreCode'],
-                libelleMajSinistre: unidecode(row['sinistreLib'].toUpperCase().replace(/-/g, "").replace(/  /g, " ").replace(/,/g, " ")),
+                libelleMajSinistre: unidecode(row['sinistreLib'].toUpperCase().replace(/-/g, "").replace(/  /g, " ").replace(/,/g, " ").replace(/|/g, "")),
                 categorie: row["sinistreCat"]
             };
         });
