@@ -200,13 +200,13 @@ async function giveInterventionType(titre) {
         fetch = (await import('node-fetch')).default;
     };
     try {
-        let normalizedTitle = unidecode(titre.toUpperCase().replace(/-/g, "").replace(/|/g, "").replace(/  /g, " ").replace(/,/g, " "));
+        let normalizedTitle = unidecode(titre.toUpperCase().replace(/-/g, "").replace(/\|/g, "").replace(/  /g, " ").replace(/,/g, " "));
         const response = await fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/libelleSinistres');
         const data = await response.json();
         let remappedData = data.map(row => {
             return {
                 codeSinistre: row['sinistreCode'],
-                libelleMajSinistre: unidecode(row['sinistreLib'].toUpperCase().replace(/-/g, "").replace(/  /g, " ").replace(/,/g, " ").replace(/|/g, "")),
+                libelleMajSinistre: unidecode(row['sinistreLib'].toUpperCase().replace(/-/g, "").replace(/  /g, " ").replace(/,/g, " ").replace(/\|/g, "")),
                 categorie: row["sinistreCat"]
             };
         });
