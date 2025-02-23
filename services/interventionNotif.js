@@ -53,7 +53,7 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
     if (!notifPhoneResponse.ok) {
         console.log('Error in phone notification:', notifPhoneResponse.statusText);
     }
-    let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/(\|.*? -)/g, '-').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee');
+    let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/(\|.*? -)/g, '-').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee').replace(/RECO - AVIS/g, 'RECO | AVIS');
     numInter = cleanedEntry.match(/N°(\d+)/);
 
     if (numInter) {
