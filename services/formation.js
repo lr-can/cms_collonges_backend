@@ -1005,7 +1005,7 @@ async function generateTelex(data){
             "Colonel": "COL",
             "Lieutenant-Colonel": "LCL",
             "Expert": "EXP",
-            "Infirmière": "ISP",
+            "Infirmière": "INF",
         };
         for (let i = 0; i < engin.affectation.length; i++){
             const agent = engin.affectation[i];
@@ -1017,7 +1017,7 @@ async function generateTelex(data){
                 <td class="upper">${agent.emploi.split('_')[0]}</td>
                 <td class="upper">${agent.emploi.split('_')[1].toUpperCase()}</td>
                 <td>${agent_grade}</td>
-                <td>${agent.label.replace(`${agent.matricule} - `, '').replace(`${agent_grade}`)}</td>
+                <td>${agent.label.replace(`${agent.matricule} - `, '').replace(`${agent_grade}`, "")}</td>
                 <td>${agent.matricule}</td>
             </tr>`;
         }
