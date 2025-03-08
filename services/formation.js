@@ -990,16 +990,34 @@ async function generateTelex(data){
                 <td class="T30 upper">Nom</td>
                 <td class="T25 upper">Matr</td>
             </tr>`;
+        const grades_list = {
+            "Sap 2CL": "SAP",
+            "Sap 1CL": "SAP",
+            "Caporal" : "CAP",
+            "Caporal-Chef": "CCH",
+            "Sergent": "SGT",
+            "Sergent-Chef": "SCH",
+            "Adjudant": "ADJ",
+            "Adjudant-Chef": "ADC",
+            "Lieutenant": "LTN",
+            "Capitaine": "CNE",
+            "Commandant": "CDT",
+            "Colonel": "COL",
+            "Lieutenant-Colonel": "LCL",
+            "Expert": "EXP",
+            "Infirmière": "ISP",
+        };
         for (let i = 0; i < engin.affectation.length; i++){
             const agent = engin.affectation[i];
+            const agent_grade = grades_list[agent.grade] ? grades_list[agent.grade] : agent.grade;
             htmlRender += `
             <tr class="F14 TNR">
                 <td class="upper">${i == 0 ? agent.engin : ""}</td>
                 <td class="upper">${i == 0 && engin.remorque != '' ? engin.remorque : ''}</td>
                 <td class="upper">${agent.emploi.split('_')[0]}</td>
                 <td class="upper">${agent.emploi.split('_')[1].toUpperCase()}</td>
-                <td>${agent.grade}</td>
-                <td>${agent.label.replace(`${agent.grade} `, '')}</td>
+                <td>${agent_grade}</td>
+                <td>${agent.label.replace(`${agent.matricule} - `, '').replace(`${agent_grade}`)}</td>
                 <td>${agent.matricule}</td>
             </tr>`;
         }
