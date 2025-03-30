@@ -457,6 +457,7 @@ async function getPlanning(){
         let nextTwoEvents = [];
         let nextTwoBirthdays = [];
         let nextReunion = "";
+        let nextReunionTeam = "";
         for (let i = 1; i < planning.length; i++) {
             if (planning[i].equipeGarde !== currentTeam.equipe) {
                 nextTeam = {
@@ -488,9 +489,10 @@ async function getPlanning(){
         const reunions = planning.filter(row => row.réunion && row.réunion == 'oui').sort((a, b) => a.Date - b.Date);
         if (reunions.length > 0) {
             nextReunion = reunions[0].Date;
+            nextReunionTeam = reunions[0].equipeGarde;
         }
 
-        return { currentTeam, nextTeam, teamAfter, nextTwoEvents, nextTwoBirthdays, nextReunion };
+        return { currentTeam, nextTeam, teamAfter, nextTwoEvents, nextTwoBirthdays, nextReunion, nextReunionTeam };
     } catch (err) {
         console.error('Error fetching data:', err);
         throw err;
