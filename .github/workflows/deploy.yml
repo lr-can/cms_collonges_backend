@@ -80,15 +80,22 @@ jobs:
         GG_spreadsheetId=$GG_SPREADSHEET_ID GG_spreadsheetId2=$GG_SPREADSHEET_ID2 \
         MAPBOX_API_KEY=$MAPBOX_API_KEY GMAPS_API=$GMAPS_API MACRO_TRIGGER=$MACRO_TRIGGER MACRO_TRIGGER2=$MACRO_TRIGGER2 \
         --app cms-collonges-api
-    # Étape 9 : Nettoyer le dépôt local
+
+      # Étape 9 : Configurer l'identité Git
+    - name: Configure Git identity
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+
+    # Étape 10 : Nettoyer le dépôt local
     - name: Clean local changes
       run: git reset --hard
 
-    # Étape 10 : Pull des dernières modifications depuis Heroku
+    # Étape 11 : Pull des dernières modifications depuis Heroku
     - name: Pull latest changes from Heroku
       run: git pull --rebase --strategy-option=theirs heroku main
 
-    # Étape 11 : Déployer sur Heroku
+    # Étape 12 : Déployer sur Heroku
     - name: Deploy to Heroku
       run: git push heroku main --force
 
