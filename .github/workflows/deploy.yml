@@ -36,6 +36,10 @@ jobs:
       env:
         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
 
+    # Étape 6 : Définir la stack Heroku
+    - name: Set Heroku stack
+      run: heroku stack:set heroku-22 --app cms-collonges-api
+
     # Étape 6 : Ajouter le buildpack Puppeteer
     - name: Add Puppeteer buildpack
       run: heroku buildpacks:add https://github.com/jontewks/puppeteer-heroku-buildpack --app cms-collonges-api
