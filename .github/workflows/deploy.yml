@@ -38,7 +38,7 @@ jobs:
 
     # Étape 6 : Définir la stack Heroku
     - name: Set Heroku stack
-      run: heroku stack:set heroku-22 --app cms-collonges-api
+      run: heroku stack:set heroku-20 --app cms-collonges-api
 
     # Étape 6 : Ajouter le buildpack Puppeteer
     - name: Add Puppeteer buildpack
