@@ -3,7 +3,7 @@ const helper = require('../helper');
 const config = require('../config');
 const { google } = require('googleapis');
 const fs = require('fs');
-const puppeteer = require('puppeteer');
+const pdf = require('html-pdf');
 let fetch
 
 
@@ -1146,7 +1146,7 @@ async function generatePDF(){
                             <div class="status3-content-item"  style="text-align: left">${row.numLot}</div>
                             <div class="status3-content-item">${new Date(row.datePeremption).toLocaleDateString('fr-FR')}</div>
                             <div class="status3-content-item"  style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
-                            <div class="status3-content-item">${row.matriculeRemplaceur !== null? row.matriculeRemplaceur : "à remplacer" }</div>
+                            <div class="status3-content-item">${row.matriculeRemplaceur}</div>
                         </div>`;
                 });
                 htmlBody += `</div>`;
@@ -1174,7 +1174,7 @@ async function generatePDF(){
                             <div class="status5-content-item" style="text-align: left">${row.numLot}</div>
                             <div class="status5-content-item">${new Date(row.datePeremption).toLocaleDateString('fr-FR')}</div>
                             <div class="status5-content-item" style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
-                            <div class="status5-content-item">${row.matriculeRemplaceur}</div>
+                            <div class="status3-content-item">${row.matriculeRemplaceur !== null? row.matriculeRemplaceur : "à traiter" }</div>
                         </div>`;
                 });
                 htmlBody += `</div>`;
@@ -1182,44 +1182,36 @@ async function generatePDF(){
                 htmlBody += `<p class="status5-message">Aucun médicament trouvé.</p>`;
             }
             htmlBody += `</div></body></html>`;
-            const finalHTML = htmlHeader + htmlBody;
 
                     
-     
-    try {
-        // Lancez Puppeteer
-        const browser = await puppeteer.launch({
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
-                '--no-first-run',
-                '--no-zygote',
-                '--single-process', // Ajoutez cette ligne si nécessaire
-                '--disable-gpu'
-            ],
-            headless: true,
+        // Combinaison de l'en-tête et du corps pour générer le PDF
+        const finalHTML = htmlHeader + htmlBody;
+        return new Promise((resolve, reject) => {
+            const options = {
+                format: 'A4',
+                orientation: 'landscape',
+                border: '1.5cm',
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--single-process',
+                    '--disable-gpu'
+                ],
+            };
+
+            pdf.create(finalHTML, options).toBuffer((err, buffer) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(buffer);
+                }
+            });
         });
-        const page = await browser.newPage();
-
-        // Chargez le contenu HTML dans la page
-        await page.setContent(finalHTML, { waitUntil: 'load' });
-
-        // Génération du PDF
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            landscape: true,
-            printBackground: true,
-        });
-
-        await browser.close();
-        return pdfBuffer;
-    } catch (error) {
-        console.error('Erreur lors de la génération du PDF :', error);
-        throw error;
     }
-}
     
 
 
