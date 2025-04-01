@@ -1203,7 +1203,7 @@ async function generatePDF(){
                 ],
             };
 
-            pdf.generatePdf(finalHTML, options).toBuffer((err, buffer) => {
+            pdf.generatePdf({content:finalHTML}, options).toBuffer((err, buffer) => {
                 if (err) {
                     reject(err);
                 } else {
