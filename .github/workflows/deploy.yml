@@ -86,7 +86,7 @@ jobs:
 
     # Étape 10 : Pull des dernières modifications depuis Heroku
     - name: Pull latest changes from Heroku
-      run: git pull --strategy-option=theirs heroku main
+      run: git pull --rebase --strategy-option=theirs heroku main
 
     # Étape 11 : Déployer sur Heroku
     - name: Deploy to Heroku
