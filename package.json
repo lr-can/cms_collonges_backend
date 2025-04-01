@@ -19,11 +19,8 @@
     "express": "^4.21.1",
     "fs": "^0.0.1-security",
     "googleapis": "^140.0.0",
-    "html-pdf": "^3.0.1",
-    "html-pdf-node": "^1.0.8",
     "mysql2": "^3.9.3",
     "node-fetch": "^3.3.2",
-    "phantomjs-prebuilt": "^2.1.16",
-    "puppeteer": "^22.15.0"
+    "phantomjs-prebuilt": "^2.1.16"
   }
 }
