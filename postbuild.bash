@@ -1,5 +1,9 @@
 echo -e "Store puppeteer executable in cache\n"
 
-mkdir ./.cache
+mkdir -p ./.cache
 
-mv /app/.cache/puppeteer ./.cache
+if [ -d "/app/.cache/puppeteer" ]; then
+	mv /app/.cache/puppeteer ./.cache
+else
+	echo "Source directory '/app/.cache/puppeteer' does not exist."
+fi

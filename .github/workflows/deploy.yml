@@ -90,9 +90,6 @@ jobs:
     - name: Deploy to Heroku
       run: git push heroku main
 
-    # Étape 10 : Installer Chrome pour Puppeteer
-    - name: Install Chrome for Puppeteer
-      run: npx puppeteer install --unsafe-perm=true
 
     # Étape 11 : Tester la génération du PDF
     - name: Test PDF Generation
