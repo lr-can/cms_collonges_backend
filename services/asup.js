@@ -1173,7 +1173,7 @@ async function generatePDF(){
                             <div class="status5-content-item" style="text-align: left">${row.numLot}</div>
                             <div class="status5-content-item">${new Date(row.datePeremption).toLocaleDateString('fr-FR')}</div>
                             <div class="status5-content-item" style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
-                            <div class="status3-content-item">${row.matriculeRemplaceur !== null ? row.matriculeRemplaceur : "à traiter" }</div>
+                            <div class="status3-content-item">${row.matriculeRemplaceur.replace("null", "à traiter") }</div>
                         </div>`;
                 });
                 htmlBody += `</div>`;
