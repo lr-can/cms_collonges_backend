@@ -82,8 +82,11 @@ jobs:
         --app cms-collonges-api
 
     # Étape 9 : Déployer sur Heroku
+    - name: Pull latest changes from Heroku
+      run: git pull --rebase heroku main
+
     - name: Deploy to Heroku
-      run: git push heroku main
+      run: git push heroku main --force
 
 
     # Étape 11 : Vérifier les logs en cas d'erreur
