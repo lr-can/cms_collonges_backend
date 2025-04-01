@@ -20,7 +20,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18'
+        node-version: '18' # Puppeteer nécessite Node.js >= 18
 
     # Étape 3 : Installer les dépendances Node.js
     - name: Install dependencies
@@ -73,6 +73,7 @@ jobs:
         GMAPS_API: ${{ secrets.GMAPS_API }}
         MACRO_TRIGGER: ${{ secrets.MACRO_TRIGGER }}
         MACRO_TRIGGER2: ${{ secrets.MACRO_TRIGGER2 }}
+        PUPPETEER_CACHE_DIR: /tmp/puppeteer
       run: |
         heroku config:set DB_HOST=$DB_HOST DB_USER=$DB_USER DB_PWD=$DB_PWD DB_NAME=$DB_NAME \
         GG_type=$GG_TYPE GG_project_id=$GG_PROJECT_ID GG_private_key_id=$GG_PRIVATE_KEY_ID \
@@ -82,13 +83,25 @@ jobs:
         GG_universe_domain=$GG_UNIVERSE_DOMAIN GG_script_id=$GG_SCRIPT_ID GG_script_function=$GG_SCRIPT_FUNCTION \
         GG_spreadsheetId=$GG_SPREADSHEET_ID GG_spreadsheetId2=$GG_SPREADSHEET_ID2 \
         MAPBOX_API_KEY=$MAPBOX_API_KEY GMAPS_API=$GMAPS_API MACRO_TRIGGER=$MACRO_TRIGGER MACRO_TRIGGER2=$MACRO_TRIGGER2 \
+        PUPPETEER_CACHE_DIR=/tmp/puppeteer \
         --app cms-collonges-api
 
     # Étape 9 : Déployer sur Heroku
     - name: Deploy to Heroku
       run: git push heroku main
 
-    # Étape 10 : Vérifier les logs en cas d'erreur
+    # Étape 10 : Installer Chrome pour Puppeteer
+    - name: Install Chrome for Puppeteer
+      run: npx puppeteer install
+
+    # Étape 11 : Tester la génération du PDF
+    - name: Test PDF Generation
+      run: |
+        curl -o rapport.pdf https://cms-collonges-api.herokuapp.com/asupPDF
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+
+    # Étape 12 : Vérifier les logs en cas d'erreur
     - name: Check Heroku logs
       if: failure()
       run: heroku logs --app cms-collonges-api --tail
