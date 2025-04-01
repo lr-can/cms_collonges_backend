@@ -3,7 +3,7 @@ const helper = require('../helper');
 const config = require('../config');
 const { google } = require('googleapis');
 const fs = require('fs');
-const pdf = require('html-pdf');
+const pdf = require('html-pdf-node');
 let fetch
 
 
@@ -1203,7 +1203,7 @@ async function generatePDF(){
                 ],
             };
 
-            pdf.create(finalHTML, options).toBuffer((err, buffer) => {
+            pdf.generatePdf(finalHTML, options).toBuffer((err, buffer) => {
                 if (err) {
                     reject(err);
                 } else {
