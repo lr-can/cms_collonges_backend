@@ -1173,7 +1173,7 @@ async function generatePDF(){
                             <div class="status5-content-item" style="text-align: left">${row.numLot}</div>
                             <div class="status5-content-item">${new Date(row.datePeremption).toLocaleDateString('fr-FR')}</div>
                             <div class="status5-content-item" style="text-align: left">${row.createur.nomAgent} ${row.createur.prenomAgent}</div>
-                            <div class="status3-content-item">${row.matriculeRemplaceur }</div>
+                            <div class="status3-content-item">${ row.matriculeRemplaceur }</div>
                         </div>`;
                 });
                 htmlBody += `</div>`;
@@ -1185,7 +1185,7 @@ async function generatePDF(){
                     
         // Combinaison de l'en-tête et du corps pour générer le PDF
         const finalHTML = htmlHeader + htmlBody;
-        return finalHTML.replace("null", "à traiter");
+        return finalHTML.replace('null', 'A prévoir ou en cours');
     }
     
 
