@@ -705,6 +705,9 @@ async function generatePDF(){
         <html>
         <head>
         <style>
+                @page {
+          size: A4 landscape;
+        }
             html{
                 font-family: Arial, sans-serif;
                 font-size: 12px;
