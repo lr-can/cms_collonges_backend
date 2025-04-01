@@ -91,14 +91,14 @@ jobs:
       run: git push heroku main
 
 
-    # Étape 11 : Tester la génération du PDF
+    # Étape 10 : Tester la génération du PDF
     - name: Test PDF Generation
       run: |
         curl -o rapport.pdf https://cms-collonges-api.herokuapp.com/asupPDF
       env:
         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
 
-    # Étape 12 : Vérifier les logs en cas d'erreur
+    # Étape 11 : Vérifier les logs en cas d'erreur
     - name: Check Heroku logs
       if: failure()
       run: heroku logs --app cms-collonges-api --tail
