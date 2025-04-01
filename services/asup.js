@@ -3,7 +3,6 @@ const helper = require('../helper');
 const config = require('../config');
 const { google } = require('googleapis');
 const fs = require('fs');
-var html_to_pdf = require('html-pdf-node');
 let fetch
 
 
@@ -1186,25 +1185,7 @@ async function generatePDF(){
                     
         // Combinaison de l'en-tête et du corps pour générer le PDF
         const finalHTML = htmlHeader + htmlBody;
-        return new Promise((resolve, reject) => {
-            const options = {
-                format: 'A4',
-                orientation: 'landscape',
-                border: '1.5cm',
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--no-first-run',
-                    '--no-zygote',
-                    '--single-process',
-                    '--disable-gpu'
-                ],
-            };
-
-  html_to_pdf.generatePdf({content:finalHTML}, options).then(pdfBuffer => {resolve(buffer)});
-});
+        return finalHTML;
     }
     
 
