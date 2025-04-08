@@ -539,10 +539,11 @@ async function insertRIIntoGSHEET(data){
           OR idMateriel = 'gantS' OR idMateriel = 'gantXL' OR idMateriel = 'masqueChir'
           OR idMateriel = 'gelHydroAlcolo'`);
 
+    if (data.matToCheck && data.matToCheck.length > 0) {
     await db.query(
         `UPDATE retourIntervention SET statutRI = 1
         WHERE nomRetourInter IN (${data.matToCheck.map(item => `'${item.replace(/'/g, " ")}'`).join(', ')})`);
-
+    }
     try {
         const response = await sheets.spreadsheets.values.append({
             spreadsheetId,
