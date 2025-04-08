@@ -1,5 +1,6 @@
 const { google } = require('googleapis');
 const config = require('../config');
+const db = require('./db');
 let fetch
 
 
@@ -519,4 +520,71 @@ async function giveAgentsAndVehicules(){
     }
 }
 
-module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, getPlanning };
+async function insertRIIntoGSHEET(data){
+    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+    const auth = new google.auth.JWT(
+        config.google.client_email,
+        null,
+        privateKey,
+        ['https://www.googleapis.com/auth/spreadsheets']
+    );
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = "17f60tzWQ_ZZnzZ1tP2Y0YEHkwQ54lN5mnlqGVm84kLc";
+    const range = 'Feuille 2!A2:E';
+
+    await db.query(
+          `UPDATE retourIntervention SET statutRI = 1
+          WHERE idMateriel = 'controleGluco' OR idMateriel = 'gantL' OR idMateriel = 'gantM' 
+          OR idMateriel = 'gantS' OR idMateriel = 'gantXL' OR idMateriel = 'masqueChir'
+          OR idMateriel = 'gelHydroAlcolo'`);
+
+    await db.query(
+        `UPDATE retourIntervention SET statutRI = 1
+        WHERE nomRetourInter IN (${data.matToCheck.map(item => `'${item}'`).join(', ')})`);
+
+    try {
+        const response = await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+            values: [[
+                data.interNum || '',
+                data.interCommune || '',
+                data.interLib || '',
+                data.interDate || '',
+                data.interLon || '',
+                data.interLat || '',
+                data.CAGrade || '',
+                data.CANom || '',
+                data.CALib || '',
+                data.CAMail || '',
+                data.EQGrade || '',
+                data.EQNom || '',
+                data.EQLib || '',
+                data.EQMail || '',
+                data.matUtilise || '',
+                data.onlyMatBilan || '',
+                data.MatBilan || '',
+                data.MatOxy || '',
+                data.MatRea || '',
+                data.MatPlaie || '',
+                data.MatTrauma || '',
+                data.MatKits || '',
+                data.vehiculeRI || '',
+                data.ReconditionnementRI || '',
+                data.CommentaireRI || '',
+                'Pending' // StatusRI
+            ]],
+            },
+        });
+        console.log('Row appended successfully!');
+        return response;
+    } catch (err) {
+        console.error('Error appending row:', err);
+        throw err; // Renvoie l'erreur pour être gérée par l'appelant
+    }
+}
+
+module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, getPlanning, insertRIIntoGSHEET };

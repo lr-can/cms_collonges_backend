@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html charset=UTF-8" />
+    <title>Retour Intervention</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header img {
+            margin-right: 20px;
+        }
+        .intervention {
+            background-color: #f6f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;            
+        }
+        .intervention > .img_container {
+            max-width: 300px;
+            height: 150px;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.3s ease-in-out;
+        }
+        .img_container img {
+            transform: scale(0.8);
+        }
+        .img_container:hover{
+            cursor: pointer;
+            transform: scale(1.05);
+        }
+        .details {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            word-wrap: break-word;
+            max-width: 400px;
+        }
+        .flex-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: left;
+            align-items: center;
+        }
+        .flex-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+        .smallTitle {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+            font-style: italic;
+        }
+        .grade {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .info{
+            margin-top: 1rem;
+            margin-left: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 1rem;
+        }
+        .noWrap {
+            flex-wrap: nowrap;
+            gap: 1rem;
+            padding: 0;
+            margin-left: 0;
+        }
+        .vehicule {
+            height: 30px;
+            width: auto;
+            margin-right: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .margin {
+            margin-top: 10px;
+        }
+        .grey {
+            background-color: #f6f5f5;
+            font-size: 14px;
+            padding: 1rem;
+            border-radius: 10px;
+            color: #555;
+        }
+        .materiel{
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            min-height: 5rem;
+            border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            padding: 1rem;
+        }
+        .bold {
+            font-weight: bold;
+        }
+        .centered {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .bubble {
+            background-color: #e0e0e0;
+            border-radius: 20px;
+            padding: 10px 15px;
+            margin: 5px;
+            display: inline-block;
+            font-size: 12px;
+        }
+        .wrap {
+            flex-wrap: wrap;
+            justify-content:flex-start;
+            margin-left: 1rem;
+        }
+        .oxy > .bubble {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        .rea > .bubble {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .plaies > .bubble {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .trauma > .bubble {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .kits > .bubble {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        .warning_message {
+            background-color: #fff4f3;
+            color: #d64d00;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: justify;
+        }
+        @media screen and (max-width: 600px) {
+            .intervention {
+                flex-direction: column;
+                align-items: center;
+            }
+            .img_container {
+                max-width: 100%;
+                height: auto;
+            }
+            .details {
+                max-width: 100%;
+            }
+            .flex-row {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            .info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .noWrap {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .materiel {
+                padding: 0.5rem;
+            }
+            .bubble {
+                margin: 2px;
+                padding: 5px 10px;
+                font-size: 10px;
+            }
+            .warning_message {
+                font-size: 12px;
+            }
+            .grey {
+                font-size: 12px;
+                padding: 0.5rem;
+            }
+            .smallTitle {
+                font-size: 12px;
+            }
+            .header img {
+                width: 150px;
+                height: auto;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .header {
+                flex-direction: column;
+                align-items: center;
+            }
+            .header h1 {
+                margin-top: 10px;
+            }
+            .canChange {
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+            }
+            .canChange > .flex-row {
+                flex-direction: column;
+                align-items: center;
+            }
+            .canChange > span {
+                text-align: center;
+                margin-left: 0;
+            }
+
+            
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/logoTitle.png?raw=true" alt="Logo CMS Collonges" width="auto" height="70">
+            <h1>Retour d'Intervention</h1>
+        </div>
+        <div class="info">
+            <div class="flex-col">
+                <span class="smallTitle">Véhicule</span>
+                <div class="flex-row">
+                    <div class="vehicule">
+                        <img src="https://github.com/lr-can/affichageCT2/blob/master/src/assets/vehicules/engins/Dl-VSAV.png?raw=true" alt="VSAV" srcset="" height="30" width="auto">
+                    </div>
+                    <div>VSAV 01</div>
+                </div>
+            </div>
+            <div class="flex-col">
+                <span class="smallTitle">Chef d'agrès</span>
+                <div class="flex-row">
+                    <div class="grade">
+                        <img src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/Adjudant.png?raw=true" alt="ADC" srcset="" width="30" height="30">
+                    </div>
+                    <div>
+                        BORDJI Azzedine
+                    </div>
+                </div>
+            </div>
+            <div class="flex-col">
+                <span class="smallTitle">Equipier</span>
+                <div class="flex-row">
+                    <div class="grade">
+                        <img src="https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/Caporal.png?raw=true" alt="CAP" srcset="" width="30" height="30">
+                    </div>
+                    <div>
+                        BRENDERS Lorcan
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="intervention">
+            <script>
+                function openMap(coord) {
+                    let coordinates = coord.split(',');
+                    let lat = coordinates[1].trim();
+                    let lon = coordinates[0].trim();
+                    let coord_ = `${lat},${lon}`;
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${coord_}`, '_blank');
+                }
+            </script>
+            <div class="img_container" onclick="openMap('4.8331534, 45.7943949')">
+                <img src="https://maps.geoapify.com/v1/staticmap?style=osm-liberty&width=400&height=400&center=lonlat:4.8331534,45.7943949&zoom=14&marker=lonlat:4.8331534,45.7943949;type:circle;color:%23ff0000;size:x-large;icon:sos;icontype:material;iconsize:small;strokecolor:%23ff0000&scaleFactor=1&apiKey=75c6e5ac06e84d3a95473195e7af529d" alt="Map">
+            </div>
+            <div class="details">
+                <h3>Accident routier (Pieton, 2 roues, VL sans incarcere)</h3>
+                <div class="flex-row margin canChange">
+                    <div class="flex-col">
+                        <span class="smallTitle">Numéro</span>
+                        <span>n°222222</span>
+                    </div>
+                    <div class="flex-col">
+                        <span class="smallTitle">Date</span>
+                        <span>07/04/2025</span>
+                    </div>
+                    <div class="flex-col">
+                        <span class="smallTitle">Commune</span>
+                        <span>CALUIRE-ET-CUIRE</span>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        <div class="info noWrap">
+            <div class="flex-col">
+                <p class="grey"><span class="smallTitle bold">Recondition.</span><br>Désinfection du matériel et de la cellule</p>
+            </div>
+            <div class="flex-col">
+                <p class="grey"><span class="smallTitle bold">Commentaire</span><br>Lorem, ipsum dolor sit amet consectetur adipisicing elit. Consequatur odio ipsam earum modi dicta iste incidunt minima debitis maxime et nulla perspiciatis magni obcaecati, unde corporis ducimus accusamus ad deserunt.</p>
+            </div>
+        </div>
+        <div class="materiel">
+            <div class="centered">
+                <h2>Matériel utilisé</h2>
+            </div>
+            <div class="centered smallTitle">CAP BRENDERS Lorcan a déclaré qu'aucun matériel n'a été utilisé au cours de l'intervention.</div>
+            <div>
+                <div class="smallTitle">Matériel utilisé lors d'un bilan seul</div>
+                <div class="flex-row wrap">
+                    <span class="bubble">Compresses</span>
+                    <span class="bubble">Aiguilles auto-piquantes</span>
+                    <span class="bubble">Gants</span>
+                    <span class="bubble">Protection thermomètre</span>
+                    <span class="bubble">Sac vomitoire</span>
+                    <span class="bubble">Drap</span>
+                </div>
+            </div>
+            <div>
+                <div class="warning_message">
+                    <b>ATTENTION : </b><br>
+                    CAP BRENDERS Lorcan a déclaré qu'au moins une bouteille d'Oxygène a été remplacée suite à l'intervention.
+                    <br>Avez-vous pensé à faire la demande de remplacement auprès du guichet unique ?
+                </div>
+                <div class="warning_message">
+                    <b>ATTENTION : </b><br>
+                    CAP BRENDERS Lorcan a déclaré que la ceinture trochantérienne a été utilisée au cours de l'intervention.
+                    <br>Avez-vous pensé à faire la demande de remplacement auprès du guichet unique, en précisant le numéro de l'intervention (XXXXXX) ?
+                </div>
+                <div class="smallTitle">Bilan</div>
+                <div class="flex-row wrap">
+                    <span class="bubble">Compresses</span>
+                    <span class="bubble">Aiguilles auto-piquantes</span>
+                    <span class="bubble">Gants</span>
+                    <span class="bubble">Protection thermomètre</span>
+                    <span class="bubble">Sac vomitoire</span>
+                    <span class="bubble">Drap</span>
+                </div>
+
+                <div class="smallTitle">Oxygénothérapie</div>
+                <div class="flex-row wrap oxy">
+                    <span class="bubble">Oxygène</span>
+                    <span class="bubble">Masque HC Adulte</span>
+                    <span class="bubble">Masque HC Enfant</span>
+                </div>
+
+                <div class="smallTitle">Réanimation/aspiration</div>
+                <div class="flex-row wrap rea">
+                    <span class="bubble">Insufflateur manuel</span>
+                    <span class="bubble">Filtre anti-bactérien</span>
+                    <span class="bubble">Sonde buccopharyngée CH26</span>
+                    <span class="bubble">Kit jetable pour l'aspirateur à mucosité</span>
+                    <span class="bubble">Aspirateur à mucosité pédiatrique</span>
+                    <span class="bubble">Electrodes DSA</span>
+                    <span class="bubble">Canule</span>
+                </div>
+
+                <div class="smallTitle">Plaies/Affections cutanées</div>
+                <div class="flex-row wrap plaies">
+                    <span class="bubble">Bande extensible 5 cm</span>
+                    <span class="bubble">Bande extensible 10 cm</span>
+                    <span class="bubble">(Mini)Versol</span>
+                    <span class="bubble">Pansement compressif d'urgence</span>
+                    <span class="bubble">Pansement hémostatique (QuickClot®)</span>
+                    <span class="bubble">Garrot (coton ou tourniquet)</span>
+                    <span class="bubble">Champ de soin stérile</span>
+                    <span class="bubble">Désinfectant dosette</span>
+                    <span class="bubble">Pansement absorbant</span>
+                    <span class="bubble">Sparadrap</span>
+                    <span class="bubble">Sparaplaie</span>
+                    <span class="bubble">Brulstop</span>
+                </div>
+
+                <div class="smallTitle">Traumatologie/divers</div>
+                <div class="flex-row wrap trauma">
+                    <span class="bubble">Poches de froid</span>
+                    <span class="bubble">Couverture de survie</span>
+                    <span class="bubble">Ceinture trochantérienne</span>
+                    <span class="bubble">Echarpes triangulaires</span>
+                    <span class="bubble">Glucopulse</span>
+                </div>
+
+                <div class="smallTitle">Kits</div>
+                <div class="flex-row wrap kits">
+                    <span class="bubble">Lot COVID/EPI SUAP NIVEAU 2</span>
+                    <span class="bubble">Kit accouchement</span>
+                    <span class="bubble">Kit membre sectionné</span>
+                    <span class="bubble">Kit AEV/AES</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -57,6 +57,7 @@ const generateTelex = require("./routes/generateTelex");
 const getWeatherLabelForCode = require("./routes/getWeatherLabel");
 const getPlanning = require("./routes/getPlanning");
 const getPeremptionAndCount = require("./routes/getPeremptionAndCount");
+const sendRIResults = require("./routes/sendRIResults");
 
 app.use(express.json());
 app.use(cors());
@@ -125,6 +126,8 @@ app.use("/generateTelex", generateTelex);
 app.use("/getWeatherLabel", getWeatherLabelForCode);
 app.use("/getPlanning", getPlanning);
 app.use("/getPeremptionAndCount", getPeremptionAndCount);
+app.use("/sendRIResults", sendRIResults);
+
 
 
 
