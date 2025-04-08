@@ -541,7 +541,7 @@ async function insertRIIntoGSHEET(data){
 
     await db.query(
         `UPDATE retourIntervention SET statutRI = 1
-        WHERE nomRetourInter IN (${data.matToCheck.map(item => `'${item}'`).join(', ')})`);
+        WHERE nomRetourInter IN (${data.matToCheck.map(item => `'${item.replace(/'/g, " ")}'`).join(', ')})`);
 
     try {
         const response = await sheets.spreadsheets.values.append({
