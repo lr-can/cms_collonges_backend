@@ -284,6 +284,19 @@ async function insertSmartemisResponse(data) {
             console.error('Error inserting data:', error);
         }
     }
+    if(data.histItvList && data.histItvList.length == 0){
+        let rangeHist = 'Feuille 10!A2:C100';
+        try {
+            await sheets.spreadsheets.values.clear({
+                spreadsheetId,
+                range: rangeHist,
+            });
+            console.log('Data cleared successfully!');
+        }
+        catch (error) {
+            console.error('Error clearing data:', error);
+        }
+    }
     if (data.histItvList && data.histItvList.length > 0) {
         const values = data.histItvList.map(item => [
             item.histDate?.date || '',
