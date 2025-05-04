@@ -257,8 +257,8 @@ async function insertSmartemisResponse(data) {
     const range = 'Feuille 4!A2:N';
 
     if (data.itvDetail && data.itvDetail.depItvCsList && data.itvDetail.depItvCsList.length > 0) {
-        const depItvCsList = data.itvDetail.depItvCsList;
-        const srvExtList = data.itvDetail.srvExtList;
+        const depItvCsList = toString(data.itvDetail.depItvCsList);
+        const srvExtList = toString(data.itvDetail.srvExtList);
         const now = new Date();
         const formattedDate = now.toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
         let range10 = 'Feuille 9!A2:C5';
