@@ -256,6 +256,54 @@ async function insertSmartemisResponse(data) {
     const spreadsheetId = config.google.spreadsheetId;
     const range = 'Feuille 4!A2:N';
 
+    if (data.itvDetail && data.itvDetail.depItvCsList && data.itvDetail.depItvCsList.length > 0) {
+        const depItvCsList = data.itvDetail.depItvCsList;
+        const srvExtList = data.itvDetail.srvExtList;
+        const now = new Date();
+        const formattedDate = now.toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
+        let range10 = 'Feuille 9!A2:C5';
+        try {
+            await sheets.spreadsheets.values.clear({
+                spreadsheetId,
+                range: range10,
+            });
+            console.log('Data cleared successfully!');
+            let values = [depItvCsList, srvExtList, formattedDate];
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: range10,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: values,
+                },
+            });
+            console.log('Data inserted successfully:', values);
+        } catch (error) {
+            console.error('Error inserting data:', error);
+        }
+    }
+    if (data.histItvList && data.histItvList.length > 0) {
+        const values = data.histItvList.map(item => [
+            item.histDate?.date || '',
+            item.histTxt || '',
+        ]);
+
+        const rangeHist = 'Feuille 10!A2:C100';
+        try {
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: rangeHist,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: values,
+                },
+            });
+            console.log('Historical intervention data inserted successfully:', values);
+        } catch (error) {
+            console.error('Error inserting historical intervention data:', error);
+        }
+    }
+
     if (data.engList) {
         try {
             const values = data.engList.map(eng => [
