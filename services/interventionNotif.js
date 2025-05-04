@@ -268,7 +268,9 @@ async function insertSmartemisResponse(data) {
                 range: range10,
             });
             console.log('Data cleared successfully!');
-            let values = [depItvCsList, srvExtList, formattedDate];
+            let values = [
+                [ depItvCsList, srvExtList, formattedDate ]
+              ];
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: range10,
