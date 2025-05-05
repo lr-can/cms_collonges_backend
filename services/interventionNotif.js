@@ -284,7 +284,12 @@ async function insertSmartemisResponse(data) {
             console.error('Error inserting data:', error);
         }
     }
-    if(data.histItvList && data.histItvList.length == 0){
+    if (data.histItvList && data.histItvList.length > 0) {
+        const values = data.histItvList.map(item => [
+            item.histDate?.date || '',
+            item.histTxt || '',
+        ]);
+
         let rangeHist = 'Feuille 10!A2:C100';
         try {
             await sheets.spreadsheets.values.clear({
@@ -296,14 +301,6 @@ async function insertSmartemisResponse(data) {
         catch (error) {
             console.error('Error clearing data:', error);
         }
-    }
-    if (data.histItvList && data.histItvList.length > 0) {
-        const values = data.histItvList.map(item => [
-            item.histDate?.date || '',
-            item.histTxt || '',
-        ]);
-
-        const rangeHist = 'Feuille 10!A2:C100';
         try {
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
@@ -463,6 +460,18 @@ async function clearSmartemisResponse() {
     } catch (error) {
         console.error('Error clearing data:', error);
     }
+
+    let rangeHist = 'Feuille 10!A2:C100';
+        try {
+            await sheets.spreadsheets.values.clear({
+                spreadsheetId,
+                range: rangeHist,
+            });
+            console.log('Data cleared successfully!');
+        }
+        catch (error) {
+            console.error('Error clearing data:', error);
+        }
 }
 
 async function verifyIfInter(){
