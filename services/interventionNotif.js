@@ -604,6 +604,12 @@ async function insertRIIntoGSHEET(data){
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = "17f60tzWQ_ZZnzZ1tP2Y0YEHkwQ54lN5mnlqGVm84kLc";
     const range = 'Feuille 2!A2:E';
+    let vehiculeRI = data.vehiculeRI || '';
+
+    if (vehiculeRI.includes("+")){
+      vehiculeRI = vehiculeRI.replace("+", "") + "(remplacement)"
+    }
+
 
     await db.query(
           `UPDATE retourIntervention SET statutRI = 1
@@ -645,7 +651,7 @@ async function insertRIIntoGSHEET(data){
                 data.MatPlaie || '',
                 data.MatTrauma || '',
                 data.MatKits || '',
-                data.vehiculeRI || '',
+                vehiculeRI || '',
                 data.ReconditionnementRI || '',
                 data.CommentaireRI || '',
                 'Pending' // StatusRI
