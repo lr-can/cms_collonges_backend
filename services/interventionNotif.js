@@ -607,7 +607,8 @@ async function insertRIIntoGSHEET(data){
     let vehiculeRI = data.vehiculeRI || '';
 
     if (vehiculeRI.includes("+")){
-      vehiculeRI = vehiculeRI.replace("+", "") + "(remplacement)"
+      let vehicule = vehiculeRI.replace("+", "").split(" ")
+      vehiculeRI = vehicule[0] + " de remplacement (+" + vehicule[1] + ")"
     }
 
 
