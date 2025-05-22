@@ -50,10 +50,16 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
             body: rowData,
             redirect: "follow"
         };
-    const notifPhoneResponse = await fetch(process.env.MACRO_TRIGGER2, notifPhoneOptions);
-    if (!notifPhoneResponse.ok) {
-        console.log('Error in phone notification:', notifPhoneResponse.statusText);
-    }
+    // Send phone notification, but don't block main flow if it fails
+    fetch(process.env.MACRO_TRIGGER2, notifPhoneOptions)
+        .then(notifPhoneResponse => {
+            if (!notifPhoneResponse.ok) {
+                console.log('Error in phone notification:', notifPhoneResponse.statusText);
+            }
+        })
+        .catch(err => {
+            console.log('Error sending phone notification:', err);
+        });
     let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/(\|.*? -)/g, '-').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee').replace(/RECO - AVIS/g, 'RECO | AVIS');
     numInter = cleanedEntry.match(/N°(\d+)/);
 
