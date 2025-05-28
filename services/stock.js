@@ -437,6 +437,14 @@ ORDER BY s.datePeremption;
       return {message};
     }
 
+    async function materielRIChecked(idMateriel){
+      await db.query(
+        `UPDATE retourIntervention SET statutRI = 0 WHERE idMateriel = '${idMateriel}'`
+      );
+      let message = "fait."
+      return {message};
+    }
+
       async function exportDataBase(page = 1) {
         const stockData = await db.query('SELECT * FROM stock');
         const retourInterventionData = await db.query('SELECT * FROM retourIntervention');
@@ -477,5 +485,6 @@ ORDER BY s.datePeremption;
     dispoReserve,
     reinitialiserRetourInter,
     exportDataBase,
-    getPeremptionAndCount
+    getPeremptionAndCount,
+    materielRIChecked
   }

@@ -58,6 +58,7 @@ const getWeatherLabelForCode = require("./routes/getWeatherLabel");
 const getPlanning = require("./routes/getPlanning");
 const getPeremptionAndCount = require("./routes/getPeremptionAndCount");
 const sendRIResults = require("./routes/sendRIResults");
+const RI_checked = require("./routes/RI_checked");
 
 app.use(express.json());
 app.use(cors());
@@ -127,6 +128,7 @@ app.use("/getWeatherLabel", getWeatherLabelForCode);
 app.use("/getPlanning", getPlanning);
 app.use("/getPeremptionAndCount", getPeremptionAndCount);
 app.use("/sendRIResults", sendRIResults);
+app.use("/RI_checked", RI_checked);
 
 
 
