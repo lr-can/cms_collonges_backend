@@ -689,8 +689,9 @@ async function resetRICounter(type, matricule){
         `SELECT * FROM agents WHERE idAgent LIKE "${matricule}"`,
     );
     let agent_label = agent[0].gradeAbbrAgent + " " + agent[0].nomAgent;
-    type == "partiel" ? range = 'Feuille 3!B2' : range = 'Feuille 3!A2';
-    await sheets.spreadsheets.values.update({
+    if (type == "partiel"){
+        range = 'Feuille 3!B2';
+        await sheets.spreadsheets.values.update({
         spreadsheetId,
         range,
         valueInputOption: 'USER_ENTERED',
@@ -698,6 +699,17 @@ async function resetRICounter(type, matricule){
             values: [[0]],
         },
     });
+    } else { 
+        range = 'Feuille 3!A2:B2';
+        await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: [[0, 0]],
+            },
+        });
+    }
     console.log(`Counter reset to 0 by ${agent_label}`);
     let message = `CMS Collonges :
     ${agent_label} vient de réaliser un inventaire ${type}. Les compteurs ont été réinitialisés.`;
