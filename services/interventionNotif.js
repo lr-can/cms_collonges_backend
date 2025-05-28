@@ -50,10 +50,16 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
             body: rowData,
             redirect: "follow"
         };
-    const notifPhoneResponse = await fetch(process.env.MACRO_TRIGGER2, notifPhoneOptions);
-    if (!notifPhoneResponse.ok) {
-        console.log('Error in phone notification:', notifPhoneResponse.statusText);
-    }
+    // Send phone notification, but don't block main flow if it fails
+    fetch(process.env.MACRO_TRIGGER2, notifPhoneOptions)
+        .then(notifPhoneResponse => {
+            if (!notifPhoneResponse.ok) {
+                console.log('Error in phone notification:', notifPhoneResponse.statusText);
+            }
+        })
+        .catch(err => {
+            console.log('Error sending phone notification:', err);
+        });
     let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/(\|.*? -)/g, '-').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee').replace(/RECO - AVIS/g, 'RECO | AVIS');
     numInter = cleanedEntry.match(/N°(\d+)/);
 
@@ -604,6 +610,13 @@ async function insertRIIntoGSHEET(data){
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = "17f60tzWQ_ZZnzZ1tP2Y0YEHkwQ54lN5mnlqGVm84kLc";
     const range = 'Feuille 2!A2:E';
+    let vehiculeRI = data.vehiculeRI || '';
+
+    if (vehiculeRI.includes("+")){
+      let vehicule = vehiculeRI.replace("+", "").split(" ")
+      vehiculeRI = vehicule[0] + " de remplacement (+" + vehicule[1] + ")"
+    }
+
 
     await db.query(
           `UPDATE retourIntervention SET statutRI = 1
@@ -645,7 +658,7 @@ async function insertRIIntoGSHEET(data){
                 data.MatPlaie || '',
                 data.MatTrauma || '',
                 data.MatKits || '',
-                data.vehiculeRI || '',
+                vehiculeRI || '',
                 data.ReconditionnementRI || '',
                 data.CommentaireRI || '',
                 'Pending' // StatusRI
