@@ -673,4 +673,56 @@ async function insertRIIntoGSHEET(data){
     }
 }
 
-module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, getPlanning, insertRIIntoGSHEET };
+async function resetRICounter(type, matricule){
+    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+    const auth = new google.auth.JWT(
+        config.google.client_email,
+        null,
+        privateKey,
+        ['https://www.googleapis.com/auth/spreadsheets']
+    );
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = "17f60tzWQ_ZZnzZ1tP2Y0YEHkwQ54lN5mnlqGVm84kLc";
+    let range = '';
+    let agent = await db.query(
+        `SELECT * FROM agents WHERE idAgent = ${matricule}`,
+    );
+    let agent_label = agent[0].gradeAbbrAgent + " " + agent[0].nomAgent;
+    type == "partial" ? range = 'Feuille 3!B2' : range = 'Feuille 3!A2';
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        valueInputOption: 'USER_ENTERED',
+        resource: {
+            values: [[0]],
+        },
+    });
+    console.log(`Counter reset to 0 by ${agent_label}`);
+    let message = `CMS Collonges :
+    ${agent_label} vient de réaliser un inventaire ${type}. Les compteurs ont été réinitialisés.`;
+    let notifPhoneOptions = {
+        method: "post",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            newEngin: "null",
+            newMessage: "null",
+            pharmacie: message
+        }),
+        redirect: "follow"
+    };
+    // Send phone notification, but don't block main flow if it fails
+    fetch(process.env.MACRO_TRIGGER.replace("/smartemis", "/enginsSmartemis"), notifPhoneOptions)
+        .then(notifPhoneResponse => {
+            if (!notifPhoneResponse.ok) {
+                console.log('Error in phone notification:', notifPhoneResponse.statusText);
+            }
+        })
+        .catch(err => {
+            console.log('Error sending phone notification:', err);
+        });
+}
+
+module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, getPlanning, insertRIIntoGSHEET, resetRICounter };
