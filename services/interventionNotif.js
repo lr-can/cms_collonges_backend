@@ -686,7 +686,7 @@ async function resetRICounter(type, matricule){
     const spreadsheetId = "17f60tzWQ_ZZnzZ1tP2Y0YEHkwQ54lN5mnlqGVm84kLc";
     let range = '';
     let agent = await db.query(
-        `SELECT * FROM agents WHERE idAgent = ${matricule}`,
+        `SELECT * FROM agents WHERE idAgent LIKE "${matricule}"`,
     );
     let agent_label = agent[0].gradeAbbrAgent + " " + agent[0].nomAgent;
     type == "partiel" ? range = 'Feuille 3!B2' : range = 'Feuille 3!A2';
