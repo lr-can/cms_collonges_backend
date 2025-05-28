@@ -689,7 +689,7 @@ async function resetRICounter(type, matricule){
         `SELECT * FROM agents WHERE idAgent = ${matricule}`,
     );
     let agent_label = agent[0].gradeAbbrAgent + " " + agent[0].nomAgent;
-    type == "partial" ? range = 'Feuille 3!B2' : range = 'Feuille 3!A2';
+    type == "partiel" ? range = 'Feuille 3!B2' : range = 'Feuille 3!A2';
     await sheets.spreadsheets.values.update({
         spreadsheetId,
         range,
