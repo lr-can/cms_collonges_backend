@@ -42,6 +42,7 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
     let incidentInter = "";
 
     if (rowData.startsWith('🚧')) {
+await clearSmartemisResponse();
         let notifPhoneOptions = {
             method: "post",
             headers: {
