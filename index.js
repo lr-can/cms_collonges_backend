@@ -60,6 +60,7 @@ const getPeremptionAndCount = require("./routes/getPeremptionAndCount");
 const sendRIResults = require("./routes/sendRIResults");
 const RI_checked = require("./routes/RI_checked");
 const resetRICount = require("./routes/resetRICount");
+const switchArah = require("./routes/switchArah");
 
 app.use(express.json());
 app.use(cors());
@@ -131,6 +132,7 @@ app.use("/getPeremptionAndCount", getPeremptionAndCount);
 app.use("/sendRIResults", sendRIResults);
 app.use("/RI_checked", RI_checked);
 app.use("/resetRICount", resetRICount);
+app.use("/switchArah", switchArah);
 
 
 
