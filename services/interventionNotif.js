@@ -512,6 +512,43 @@ function giveDateComment(dateObj_in){
     }
 }
 
+async function switchArah(){
+    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+    const auth = new google.auth.JWT(
+        config.google.client_email,
+        null,
+        privateKey,
+        ['https://www.googleapis.com/auth/spreadsheets']
+    );
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = config.google.spreadsheetId;
+    const range = 'Feuille 8!A2:A2';
+    try {
+        // Get the current value
+        const getRes = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range,
+        });
+        let currentValue = (getRes.data.values && getRes.data.values[0] && getRes.data.values[0][0]) || '';
+        let newValue = currentValue === 'OUI' ? 'NON' : 'OUI';
+
+        // Update the value
+        await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: [[newValue]],
+            },
+        });
+        console.log(`Value switched from ${currentValue} to ${newValue}`);
+        return newValue;
+    } catch (err) {
+        console.error('Error switching value:', err);
+    }
+}
+
 async function getPlanning(){
     if (!fetch){
         fetch = (await import('node-fetch')).default;
@@ -738,4 +775,4 @@ async function resetRICounter(type, matricule){
         });
 }
 
-module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, getPlanning, insertRIIntoGSHEET, resetRICounter };
+module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, getPlanning, insertRIIntoGSHEET, resetRICounter, switchArah };
