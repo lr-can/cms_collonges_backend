@@ -628,8 +628,51 @@ async function giveAgentsAndVehicules(){
         const vehiculeList = vehiculeData
             .filter(vehicule => vehicule.engStatusCod === "AL" || vehicule.engStatusCod === "RE" || vehicule.engStatusCod === "PA")
             .map(vehicule => vehicule.engLib);
+        const gradeDict = {
+            "sap 2cl": "2CL",
+            "sap 1cl": "1CL",
+            "caporal": "CAP",
+            "caporal-chef": "CCH",
+            "sergent": "SGT",
+            "sergent-chef": "SCHE",
+            "adjudant": "ADJ",
+            "adjudant-chef": "ADC",
+            "lieutenant": "LTN",
+            "capitaine": "CNE",
+            "commandant": "CDT",
+            "lieutenant-colonel": "LCL",
+            "colonel": "COL"
+        };
+        const gradePriority = {
+            "2CL": 1,
+            "1CL": 2,
+            "CAP": 3,
+            "CCH": 4,
+            "SGT": 5,
+            "SCHE": 6,
+            "ADJ": 7,
+            "ADC": 8,
+            "LTN": 9,
+            "CNE": 10,
+            "CDT": 11,
+            "LCL": 12,
+            "COL": 13
+        };
 
-        return { vehiculeList, agentsData };
+        const agentsList = agentsData
+            .sort((a, b) => {
+                const gradeA = gradeDict[a.grade.toLowerCase()] || "ZZZ";
+                const gradeB = gradeDict[b.grade.toLowerCase()] || "ZZZ";
+                if (gradeA !== gradeB) {
+                    return (gradePriority[gradeA] || 99) - (gradePriority[gradeB] || 99);
+                } else {
+                    return a.nom.localeCompare(b.nom);
+                }
+            })
+            .map(agent => `${gradeDict[agent.grade.toLowerCase()]} ${agent.nom} ${agent.prenom} (${agent.matricule})`);
+        const agentsStr = agentsList.join(' | ');
+        return { vehiculeList, agentsData, agentsStr };
+
     } catch (err){
         console.error('Error fetching data:', err);
         throw err;
