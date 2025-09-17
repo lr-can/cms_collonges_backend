@@ -664,7 +664,7 @@ async function giveAgentsAndVehicules(){
                 const gradeA = gradeDict[a.grade.toLowerCase()] || "ZZZ";
                 const gradeB = gradeDict[b.grade.toLowerCase()] || "ZZZ";
                 if (gradeA !== gradeB) {
-                    return (gradePriority[gradeA] || 99) - (gradePriority[gradeB] || 99);
+                    return (gradePriority[gradeB] || 99) - (gradePriority[gradeA] || 99);
                 } else {
                     return a.nom.localeCompare(b.nom);
                 }
