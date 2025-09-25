@@ -818,4 +818,32 @@ async function resetRICounter(type, matricule){
         });
 }
 
-module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, getPlanning, insertRIIntoGSHEET, resetRICounter, switchArah };
+async function insertParrainageData(payload) {
+    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+    const auth = new google.auth.JWT(
+        config.google.client_email,
+        null,
+        privateKey,
+        ['https://www.googleapis.com/auth/spreadsheets']
+    );
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = '1UmDP0LygLZ7xMuYODsvxD1uhQY3ZNd2RYz3_agOl9a8';
+    const range = 'Reponses!A2:Q';
+
+    try {
+        const response = await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            resource: payload,
+        });
+        console.log('Parrainage data appended successfully!');
+        return response;
+    } catch (err) {
+        console.error('Error appending parrainage data:', err);
+        throw err;
+    }
+}
+
+module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, getPlanning, insertRIIntoGSHEET, resetRICounter, switchArah, insertParrainageData };
