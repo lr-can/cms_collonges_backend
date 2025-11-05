@@ -359,58 +359,57 @@ async function insertSmartemisResponse(data) {
         }
     }
     if (data.csPersList){
-        if (data.csPersList.length >= 2 && data.csPersList.length < 30){
-            if (!fetch){
+        if (!fetch){
                 fetch = (await import('node-fetch')).default;
             }
-            const agentsInfo = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup');
-            const agentsData = await agentsInfo.json();
-            const agentInfoList = data.csPersList.map(person => {
-                const agent = agentsData.find(agent => agent.matricule === `${person.persStatutCod}${person.persId}`);
-                return {
-                    persStatutCod: person.persStatutCod,
-                    matricule: `${person.persStatutCod}${person.persId}`,
-                    grade: agent ? agent.grade : 'Unknown',
-                    nom: person.nom,
-                    prenom: person.prenom,
-                    administrativeStatusCode: person.administrativeStatus.code,
-                    administrativeStatusRgb: person.administrativeStatus.rgb
-                };              
+        const agentsInfo = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup');
+        const agentsData = await agentsInfo.json();
+        const agentInfoList = data.csPersList.map(person => {
+            const agent = agentsData.find(agent => agent.matricule === `${person.persStatutCod}${person.persId}`);
+            return {
+                persStatutCod: person.persStatutCod,
+                matricule: `${person.persStatutCod}${person.persId}`,
+                grade: agent ? agent.grade : 'Unknown',
+                nom: person.nom,
+                prenom: person.prenom,
+                administrativeStatusCode: person.administrativeStatus.code,
+                administrativeStatusRgb: person.administrativeStatus.rgb
+            };              
+        });
+        const values = agentInfoList.map(agent => [
+            agent.matricule,
+            agent.grade,
+            agent.nom,
+            agent.prenom,
+            agent.administrativeStatusCode,
+            agent.administrativeStatusRgb
+        ]);
+        let range2 = '';
+        data.csPersList.length >= 2 && data.csPersList.length < 30 ? range2 = 'Feuille 5!A2:F30' : range2 = 'Feuille 12!A2:F100';
+        try {
+            await sheets.spreadsheets.values.clear({
+                spreadsheetId,
+                range: range2,
             });
-            const values = agentInfoList.map(agent => [
-                agent.matricule,
-                agent.grade,
-                agent.nom,
-                agent.prenom,
-                agent.administrativeStatusCode,
-                agent.administrativeStatusRgb
-            ]);
-            let range2 = 'Feuille 5!A2:F100';
-            try {
-                await sheets.spreadsheets.values.clear({
-                    spreadsheetId,
-                    range: range2,
-                });
-                console.log('Data cleared successfully!');
-            } catch (error) {
-                console.error('Error clearing data:', error);
-            }
-            try {
-                const response = await sheets.spreadsheets.values.update({
-                    spreadsheetId,
-                    range: range2,
-                    valueInputOption: 'USER_ENTERED',
-                    resource: {
-                        values: values,
-                    },
-                });
-                console.log('Data inserted successfully:', response.data);
-            } catch (error) {
-                console.error('Error inserting data:', error);
-            }
-
-            console.log(agentInfoList);
+            console.log('Data cleared successfully!');
+        } catch (error) {
+            console.error('Error clearing data:', error);
         }
+        try {
+            const response = await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: range2,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: values,
+                },
+            });
+            console.log('Data inserted successfully:', response.data);
+        } catch (error) {
+            console.error('Error inserting data:', error);
+        }
+
+        console.log(agentInfoList);
     }
         if (data.notificationList){
             if (!fetch) {
