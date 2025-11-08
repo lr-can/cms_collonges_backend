@@ -889,8 +889,8 @@ async function insertParrainageData(payload) {
 }
 
 async function getAllSheetsData(spreadsheetId) {
-    const privateKeyRaw = config?.google?.private_key || process.env.GOOGLE_PRIVATE_KEY;
-    const clientEmail = config?.google?.client_email || process.env.GOOGLE_CLIENT_EMAIL;
+    const privateKeyRaw = (config && config.google && config.google.private_key) || process.env.GOOGLE_PRIVATE_KEY;
+    const clientEmail = (config && config.google && config.google.client_email) || process.env.GOOGLE_CLIENT_EMAIL;
     if (!privateKeyRaw || !clientEmail) {
         console.error('Google credentials missing: provide config.google.private_key and config.google.client_email or set GOOGLE_PRIVATE_KEY and GOOGLE_CLIENT_EMAIL env vars');
         return []; // Return an empty result to avoid crashing
@@ -911,10 +911,16 @@ async function getAllSheetsData(spreadsheetId) {
             spreadsheetId,
             fields: 'sheets.properties.title'
         });
-        const titles = meta.data.sheets.map(s => s.properties.title);
+        const sheetsMeta = (meta && meta.data && meta.data.sheets) || [];
+        const titles = sheetsMeta.map(s => s.properties && s.properties.title ? s.properties.title : '').filter(t => t !== '');
 
-        // Build ranges (adjust columns if needed)
-        const ranges = titles.map(title => `${title}!A:Z`);
+        // Build ranges (quote sheet names that contain spaces or special chars)
+        const ranges = titles.map(title => {
+            // If title contains spaces or special chars, wrap in single quotes and escape existing single quotes
+            const needsQuotes = /\s|[^A-Za-z0-9_\-]/.test(title);
+            const safeTitle = needsQuotes ? `'${title.replace(/'/g, "\\'")}'` : title;
+            return `${safeTitle}!A:Z`;
+        });
 
         // Helper to chunk ranges to avoid hitting request size limits
         const chunk = (arr, size) => {
@@ -937,9 +943,12 @@ async function getAllSheetsData(spreadsheetId) {
         // Map results back to sheet titles and preserve order
         const valuesByTitle = {};
         for (const vr of allValueRanges) {
-            // vr.range is like "Sheet1!A:Z" or "Sheet Name!A:Z"
-            const title = vr.range ? vr.range.split('!')[0] : null;
-            valuesByTitle[title] = vr.values || [];
+            // vr.range is like "Sheet1!A:Z" or "'Sheet Name'!A:Z"
+            if (!vr || !vr.range) continue;
+            let titlePart = vr.range.split('!')[0];
+            // Remove surrounding single quotes if present
+            titlePart = titlePart.replace(/^'(.*)'$/, '$1');
+            valuesByTitle[titlePart] = vr.values || [];
         }
 
         const allSheetData = titles.map(title => ({
