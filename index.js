@@ -62,6 +62,7 @@ const RI_checked = require("./routes/RI_checked");
 const resetRICount = require("./routes/resetRICount");
 const switchArah = require("./routes/switchArah_");
 const sendParrainageData = require("./routes/sendParrainageData");
+const getAllSheetsData = require("./routes/getAllSheetsData");
 
 app.use(express.json());
 app.use(cors());
@@ -135,7 +136,7 @@ app.use("/RI_checked", RI_checked);
 app.use("/resetRICount", resetRICount);
 app.use("/switchArah", switchArah);
 app.use("/sendParrainageData", sendParrainageData);
-
+app.use("/getAllSheetsData", getAllSheetsData);
 
 
 app.use((err, req, res, next) => {

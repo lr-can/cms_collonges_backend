@@ -888,4 +888,71 @@ async function insertParrainageData(payload) {
     }
 }
 
-module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, getPlanning, insertRIIntoGSHEET, resetRICounter, switchArah, insertParrainageData };
+async function getAllSheetsData(spreadsheetId) {
+    const privateKeyRaw = config?.google?.private_key || process.env.GOOGLE_PRIVATE_KEY;
+    const clientEmail = config?.google?.client_email || process.env.GOOGLE_CLIENT_EMAIL;
+    if (!privateKeyRaw || !clientEmail) {
+        console.error('Google credentials missing: provide config.google.private_key and config.google.client_email or set GOOGLE_PRIVATE_KEY and GOOGLE_CLIENT_EMAIL env vars');
+        return []; // Return an empty result to avoid crashing
+    }
+    const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
+    const auth = new google.auth.JWT(
+        clientEmail,
+        null,
+        privateKey,
+        ['https://www.googleapis.com/auth/spreadsheets']
+    );
+
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    try {
+        // Get sheet titles
+        const meta = await sheets.spreadsheets.get({
+            spreadsheetId,
+            fields: 'sheets.properties.title'
+        });
+        const titles = meta.data.sheets.map(s => s.properties.title);
+
+        // Build ranges (adjust columns if needed)
+        const ranges = titles.map(title => `${title}!A:Z`);
+
+        // Helper to chunk ranges to avoid hitting request size limits
+        const chunk = (arr, size) => {
+            const out = [];
+            for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+            return out;
+        };
+
+        // Batch get in chunks (Google Sheets batchGet supports many ranges but chunking is safer)
+        const allValueRanges = [];
+        const rangeChunks = chunk(ranges, 100);
+        for (const rc of rangeChunks) {
+            const batchRes = await sheets.spreadsheets.values.batchGet({
+                spreadsheetId,
+                ranges: rc,
+            });
+            allValueRanges.push(...(batchRes.data.valueRanges || []));
+        }
+
+        // Map results back to sheet titles and preserve order
+        const valuesByTitle = {};
+        for (const vr of allValueRanges) {
+            // vr.range is like "Sheet1!A:Z" or "Sheet Name!A:Z"
+            const title = vr.range ? vr.range.split('!')[0] : null;
+            valuesByTitle[title] = vr.values || [];
+        }
+
+        const allSheetData = titles.map(title => ({
+            title,
+            values: valuesByTitle[title] || []
+        }));
+
+        return allSheetData;
+    } catch (err) {
+        console.error('Error fetching all sheets data (batch):', err);
+        throw err;
+    }
+}
+
+
+module.exports = { insertInterventionNotif, giveInterventionType, insertSmartemisResponse, verifyIfInter, clearSmartemisResponse, giveAgentsAndVehicules, getPlanning, insertRIIntoGSHEET, resetRICounter, switchArah, insertParrainageData, getAllSheetsData };
