@@ -893,7 +893,7 @@ async function getAllSheetsData(spreadsheetId) {
     const clientEmail = (config && config.google && config.google.client_email) || process.env.GOOGLE_CLIENT_EMAIL;
     if (!privateKeyRaw || !clientEmail) {
         console.error('Google credentials missing: provide config.google.private_key and config.google.client_email or set GOOGLE_PRIVATE_KEY and GOOGLE_CLIENT_EMAIL env vars');
-        return []; // Return an empty result to avoid crashing
+        return [];
     }
     const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
     const auth = new google.auth.JWT(
@@ -906,30 +906,36 @@ async function getAllSheetsData(spreadsheetId) {
     const sheets = google.sheets({ version: 'v4', auth });
 
     try {
-        // Get sheet titles
+        // Fetch available sheet titles
         const meta = await sheets.spreadsheets.get({
             spreadsheetId,
             fields: 'sheets.properties.title'
         });
         const sheetsMeta = (meta && meta.data && meta.data.sheets) || [];
-        const titles = sheetsMeta.map(s => s.properties && s.properties.title ? s.properties.title : '').filter(t => t !== '');
+        const availableTitles = sheetsMeta.map(s => s.properties && s.properties.title ? s.properties.title : '');
 
-        // Build ranges (quote sheet names that contain spaces or special chars)
-        const ranges = titles.map(title => {
-            // If title contains spaces or special chars, wrap in single quotes and escape existing single quotes
+        // We only want Feuille 1, and Feuille 4 through Feuille 13
+        const desiredTitles = ['Feuille 1'];
+        for (let i = 4; i <= 13; i++) desiredTitles.push(`Feuille ${i}`);
+
+        // Keep only those that actually exist in the spreadsheet, preserving desired order
+        const titlesToFetch = desiredTitles.filter(t => availableTitles.includes(t));
+        if (titlesToFetch.length === 0) return [];
+
+        // Build ranges for the selected sheets
+        const ranges = titlesToFetch.map(title => {
             const needsQuotes = /\s|[^A-Za-z0-9_\-]/.test(title);
             const safeTitle = needsQuotes ? `'${title.replace(/'/g, "\\'")}'` : title;
             return `${safeTitle}!A:Z`;
         });
 
-        // Helper to chunk ranges to avoid hitting request size limits
+        // Batch get ranges (chunk to be safe)
         const chunk = (arr, size) => {
             const out = [];
             for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
             return out;
         };
 
-        // Batch get in chunks (Google Sheets batchGet supports many ranges but chunking is safer)
         const allValueRanges = [];
         const rangeChunks = chunk(ranges, 100);
         for (const rc of rangeChunks) {
@@ -940,25 +946,23 @@ async function getAllSheetsData(spreadsheetId) {
             allValueRanges.push(...(batchRes.data.valueRanges || []));
         }
 
-        // Map results back to sheet titles and preserve order
+        // Map results back to titles
         const valuesByTitle = {};
         for (const vr of allValueRanges) {
-            // vr.range is like "Sheet1!A:Z" or "'Sheet Name'!A:Z"
             if (!vr || !vr.range) continue;
             let titlePart = vr.range.split('!')[0];
-            // Remove surrounding single quotes if present
             titlePart = titlePart.replace(/^'(.*)'$/, '$1');
             valuesByTitle[titlePart] = vr.values || [];
         }
 
-        const allSheetData = titles.map(title => ({
+        const allSheetData = titlesToFetch.map(title => ({
             title,
             values: valuesByTitle[title] || []
         }));
 
         return allSheetData;
     } catch (err) {
-        console.error('Error fetching all sheets data (batch):', err);
+        console.error('Error fetching selected sheets data (batch):', err);
         throw err;
     }
 }
