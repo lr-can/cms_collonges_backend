@@ -366,7 +366,7 @@ async function insertSmartemisResponse(data) {
             debut: item.instructionStartDate?.date || '',
             fin: item.instructionEndDate?.date || '',
             titre: item.instructionTitle || '',
-            text: item.instructionTxxt || ''
+            text: item.instructionTxt || ''
         }));
         let rangeInstr = 'Feuille 13!A2:F100';
         try {
