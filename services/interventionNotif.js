@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 const config = require('../config');
 const db = require('./db');
+const { text } = require('express');
 let fetch
 
 
@@ -357,6 +358,48 @@ async function insertSmartemisResponse(data) {
         } catch (error) {
             console.error('Error updating spreadsheet:', error);
         }
+    }
+    if (data.localGlobalInstructionList && data.localGlobalInstructionList.length >= 0) {
+        let values = data.localGlobalInstructionList.map(item => ({
+            origin: item.instructionOrigCs || '',
+            nom: item.instructionOrigName || '',
+            debut: item.instructionStartDate?.date || '',
+            fin: item.instructionEndDate?.date || '',
+            titre: item.instructionTitle || '',
+            text: item.instructionTxxt || ''
+        }));
+        let rangeInstr = 'Feuille 13!A2:F100';
+        try {
+            await sheets.spreadsheets.values.clear({
+                spreadsheetId,
+                range: rangeInstr,
+            });
+            console.log('Data cleared successfully!');
+        } catch (error) {
+            console.error('Error clearing data:', error);
+        }
+        if (values.length > 0) {
+        try {
+            const response = await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: rangeInstr,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: values.map(item => [
+                        item.origin,
+                        item.nom,
+                        item.debut,
+                        item.fin,
+                        item.titre,
+                        item.text
+                    ]),
+                },
+            });
+            console.log('Data inserted successfully:', response.data);
+        } catch (error) {
+            console.error('Error inserting data:', error);
+        }
+    }
     }
     if (data.csPersList){
         if (!fetch){
