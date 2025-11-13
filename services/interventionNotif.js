@@ -916,7 +916,7 @@ async function getAllSheetsData(spreadsheetId) {
 
         // We only want Feuille 1, and Feuille 4 through Feuille 13
         const desiredTitles = ['Feuille 1'];
-        for (let i = 4; i <= 13; i++) desiredTitles.push(`Feuille ${i}`);
+        for (let i = 4; i <= 14; i++) desiredTitles.push(`Feuille ${i}`);
 
         // Keep only those that actually exist in the spreadsheet, preserving desired order
         const titlesToFetch = desiredTitles.filter(t => availableTitles.includes(t));
