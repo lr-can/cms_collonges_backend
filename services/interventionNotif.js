@@ -62,7 +62,28 @@ await clearSmartemisResponse();
         .catch(err => {
             console.log('Error sending phone notification:', err);
         });
-    let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/(\|.*? -)/g, '-').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee').replace(/RECO - AVIS/g, 'RECO | AVIS');
+    let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee').replace(/RECO - AVIS/g, 'RECO | AVIS');
+    
+    // Parse using split to handle additional dashes in addresses
+    // Format: 🚧 N°{num}/1 - {date} {heure} - {titre} - {adresse} - {engins} Engins
+    // Note: We removed the replace(/(\|.*? -)/g, '-') to preserve ERP information in addresses
+    let parts = cleanedEntry.split(' - ');
+    
+    // If we have more than 5 parts, it means the address contains additional dashes
+    // We need to merge the middle parts (parts 3 to n-2) into the address
+    if (parts.length > 5) {
+        // Parts structure: [0: 🚧 N°{num}/1, 1: {date} {heure}, 2: {titre}, 3..n-2: {adresse}, n-1: {engins} Engins]
+        // Merge parts 3 to n-2 into a single address part
+        let addressParts = parts.slice(3, parts.length - 1);
+        parts = [
+            parts[0],  // 🚧 N°{num}/1
+            parts[1],  // {date} {heure}
+            parts[2],  // {titre}
+            addressParts.join(' - '),  // {adresse} (merged with original dashes)
+            parts[parts.length - 1]  // {engins} Engins
+        ];
+    }
+    
     numInter = cleanedEntry.match(/N°(\d+)/);
 
     if (numInter) {
@@ -88,13 +109,14 @@ await clearSmartemisResponse();
         heureInter = '';
     }
 
-    addressInter = cleanedEntry.match(/(.*) - (\d+) Engins/);
+    // Extract address from parts if we have the correct structure
     longitude = "";
     latitude = "";
     villeInter = "";
-
-    if (addressInter) {
-        addressInter = addressInter[1].replace(/🚧.*?-.*?-.*?-/, '').replace(" ", "");
+    
+    if (parts.length >= 5) {
+        addressInter = parts[3].trim();
+        
         if (addressInter.includes('HYDR SAONE')) {
             longitude = "4.855327";
             latitude = "45.821767";
@@ -116,23 +138,69 @@ await clearSmartemisResponse();
             villeInter = splittedAddress[0];
         }
     } else {
-        addressInter = '';
+        // Fallback to old method if split didn't work
+        addressInter = cleanedEntry.match(/(.*) - (\d+) Engins/);
+        if (addressInter) {
+            addressInter = addressInter[1].replace(/🚧.*?-.*?-.*?-/, '').replace(" ", "");
+            if (addressInter.includes('HYDR SAONE')) {
+                longitude = "4.855327";
+                latitude = "45.821767";
+            } else {
+                try {
+                    const coords = await findInterventionCoordinates(addressInter);
+                    longitude = String(coords.lng).replace(',', '.');
+                    latitude = String(coords.lat).replace(',', '.');
+                } catch (err) {
+                    console.error('Error finding coordinates:', err);
+                    throw err;
+                }
+            }
+            let splittedAddress = addressInter.split(' ');
+            if (addressInter.includes("LYON 0")){
+                villeInter = splittedAddress[0] + " " + splittedAddress[1].replace("0", "") + "ÈME";
+                addressInter = addressInter.replace(/LYON 0\d/, villeInter);
+            } else {
+                villeInter = splittedAddress[0];
+            }
+        } else {
+            addressInter = '';
+        }
     }
 
-    incidentInter = cleanedEntry.match(/(\d+):(\d+) -(.*)-/);
-
-    if (incidentInter) {
-        incidentInter = incidentInter[3].toString().match(/ (.*) -/)[1];
+    // Extract incident type from parts if we have the correct structure
+    if (parts.length >= 5) {
+        incidentInter = parts[2].trim();
     } else {
-        incidentInter = '';
+        // Fallback to old method
+        incidentInter = cleanedEntry.match(/(\d+):(\d+) -(.*)-/);
+        if (incidentInter) {
+            incidentInter = incidentInter[3].toString().match(/ (.*) -/);
+            if (incidentInter) {
+                incidentInter = incidentInter[1];
+            } else {
+                incidentInter = '';
+            }
+        } else {
+            incidentInter = '';
+        }
     }
 
-    enginsInter = cleanedEntry.match(/- (\d+) Engins/);
-
-    if (enginsInter) {
-        enginsInter = enginsInter[1];
+    // Extract engins from parts if we have the correct structure
+    if (parts.length >= 5) {
+        enginsInter = parts[4].match(/(\d+) Engins/);
+        if (enginsInter) {
+            enginsInter = enginsInter[1];
+        } else {
+            enginsInter = '';
+        }
     } else {
-        enginsInter = '';
+        // Fallback to old method
+        enginsInter = cleanedEntry.match(/- (\d+) Engins/);
+        if (enginsInter) {
+            enginsInter = enginsInter[1];
+        } else {
+            enginsInter = '';
+        }
     }
 }
     
