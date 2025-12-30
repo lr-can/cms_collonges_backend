@@ -62,7 +62,7 @@ await clearSmartemisResponse();
         .catch(err => {
             console.log('Error sending phone notification:', err);
         });
-    let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee').replace(/RECO - AVIS/g, 'RECO | AVIS');
+    let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee').replace(/RECO - AVIS/g, 'RECO | AVIS').replace(/DFUR -/g, "DFUR");
     
     // Parse using split to handle additional dashes in addresses
     // Format: 🚧 N°{num}/1 - {date} {heure} - {titre} - {adresse} - {engins} Engins
