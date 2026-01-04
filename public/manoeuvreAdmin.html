@@ -207,7 +207,7 @@
                 Chargement des données...
             </div>
 
-            <template v-else>
+            <template v-else-if="data">
                 <!-- Info Manœuvre -->
                 <div v-if="manoeuvreInfo.length > 0" class="info-section">
                     <h2>Informations de la Manœuvre</h2>
@@ -314,14 +314,19 @@
                     // Grouper par OD
                     const odMap = {};
                     this.manoeuvrants.forEach(agent => {
-                        const odNum = agent.od;
-                        // Ignorer les agents sans OD
-                        if (!odNum || odNum === '' || odNum === 'undefined') {
-                            return;
+                        let odNum = agent.od;
+                        // Normaliser le numéro d'OD (convertir en string et nettoyer)
+                        if (!odNum || odNum === 'undefined' || odNum === 'null') {
+                            return; // Ignorer les agents sans OD valide
                         }
+                        odNum = String(odNum).trim();
+                        if (odNum === '') {
+                            return; // Ignorer les chaînes vides
+                        }
+                        
                         if (!odMap[odNum]) {
                             odMap[odNum] = {
-                                numero: String(odNum), // S'assurer que c'est une string
+                                numero: odNum,
                                 engins: {}
                             };
                         }
@@ -351,7 +356,13 @@
                     return ods.sort((a, b) => {
                         if (a.status === 'pending' && b.status === 'done') return -1;
                         if (a.status === 'done' && b.status === 'pending') return 1;
-                        return a.numero - b.numero;
+                        // Tri numérique si possible, sinon alphabétique
+                        const numA = parseInt(a.numero);
+                        const numB = parseInt(b.numero);
+                        if (!isNaN(numA) && !isNaN(numB)) {
+                            return numA - numB;
+                        }
+                        return String(a.numero).localeCompare(String(b.numero));
                     });
                 }
             },
