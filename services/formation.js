@@ -1,5 +1,7 @@
 const fs = require('fs');
 const turf = require('@turf/turf');
+const { google } = require('googleapis');
+const config = require('../config');
 let fetch;
 
 const telexFirstPartGeoJson = JSON.parse(fs.readFileSync('ressources/firstPart.geojson', 'utf8'));
@@ -430,6 +432,139 @@ async function getVehiculesAndCaserne (){
 
 
 
+async function launchApp(data, numInter) {
+    try {
+        const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+        const auth = new google.auth.JWT(
+            config.google.client_email,
+            null,
+            privateKey,
+            ['https://www.googleapis.com/auth/spreadsheets']
+        );
+
+        const sheets = google.sheets({ version: 'v4', auth });
+        const spreadsheetId = '1tnZ7-Lrjp6FBoZfhhOacIuU72e3sa7aaL-Yissqxu4E';
+        const range = 'Manoeuvre_info!A:C';
+
+        // Utiliser numInter passé en paramètre
+        const numManoeuvre = numInter;
+
+        // Construction de titleManoeuvre
+        const titleManoeuvre = data.sinistre?.libelleComplet || '';
+
+        // Construction de adresseManoeuvre
+        let adresseManoeuvre = '';
+        if (data.adresses?.adresseCommune) {
+            const commune = (data.adresses.adresseCommune.commune || '').toUpperCase().trim();
+            const voie = (data.adresses.adresseCommune.voie || '').toUpperCase().trim();
+            adresseManoeuvre = `${commune} ${voie}`.trim();
+            
+            // Ajout de l'ERP si présent
+            if (data.adresses.adresseCommune.erp) {
+                adresseManoeuvre += ` | ${data.adresses.adresseCommune.erp.toUpperCase().trim()}`;
+            }
+        }
+
+        // Insertion dans la Google Sheet - Manoeuvre_info
+        const responseInfo = await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: [[numManoeuvre, titleManoeuvre, adresseManoeuvre]],
+            },
+        });
+
+        console.log('Manoeuvre info inserted successfully!');
+
+        // Préparation des données pour Manoeuvrants
+        const grades_list = {
+            "Sap 2CL": "SAP",
+            "Sap 1CL": "SAP",
+            "Caporal": "CAP",
+            "Caporal-Chef": "CCH",
+            "Sergent": "SGT",
+            "Sergent-Chef": "SCH",
+            "Adjudant": "ADJ",
+            "Adjudant-Chef": "ADC",
+            "Lieutenant": "LTN",
+            "Capitaine": "CNE",
+            "Commandant": "CDT",
+            "Colonel": "COL",
+            "Lieutenant-Colonel": "LCL",
+            "Expert": "EXP",
+            "Infirmière": "INF",
+        };
+
+        const manoeuvrantsData = [];
+        if (data.ordresDeparts && Array.isArray(data.ordresDeparts)) {
+            for (const OD of data.ordresDeparts) {
+                if (OD.engins && Array.isArray(OD.engins)) {
+                    for (const engin of OD.engins) {
+                        if (engin.affectation && Array.isArray(engin.affectation)) {
+                            for (const agent of engin.affectation) {
+                                const agent_grade = grades_list[agent.grade] || agent.grade;
+                                // Extraire nom et prénom depuis label (format: "matricule - grade NOM Prenom")
+                                let nom = '';
+                                let prenom = '';
+                                if (agent.label) {
+                                    const labelParts = agent.label
+                                        .replace(`${agent.matricule} - `, '')
+                                        .replace(agent_grade, '')
+                                        .trim()
+                                        .split(' ');
+                                    if (labelParts.length > 0) {
+                                        nom = labelParts[0] || '';
+                                        prenom = labelParts.slice(1).join(' ') || '';
+                                    }
+                                }
+                                // Fallback sur nomAgent et prenomAgent si disponibles
+                                nom = nom || agent.nomAgent || agent.nom || '';
+                                prenom = prenom || agent.prenomAgent || agent.prenom || '';
+
+                                const gfo = engin.gfo || (agent.emploi ? agent.emploi.split('_')[0] : '');
+                                const role = agent.emploi ? agent.emploi.split('_')[1] : '';
+
+                                manoeuvrantsData.push([
+                                    agent.matricule || '',
+                                    agent_grade,
+                                    nom,
+                                    prenom,
+                                    agent.engin || engin.engin || '',
+                                    engin.caserne || '',
+                                    gfo,
+                                    role,
+                                    'PENDING', // StatusConnexion
+                                    'PENDING'  // StatusAlerte
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Insertion dans la Google Sheet - Manoeuvrants
+        if (manoeuvrantsData.length > 0) {
+            const rangeManoeuvrants = 'Manoeuvrants!A:J';
+            const responseManoeuvrants = await sheets.spreadsheets.values.append({
+                spreadsheetId,
+                range: rangeManoeuvrants,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: manoeuvrantsData,
+                },
+            });
+            console.log('Manoeuvrants data inserted successfully!');
+        }
+
+        return responseInfo;
+    } catch (err) {
+        console.error('Error inserting manoeuvre info:', err);
+        throw err;
+    }
+}
+
 async function generateTelex(data){
     let adresses = data.adresses;
     let observation = data.observation;
@@ -437,6 +572,16 @@ async function generateTelex(data){
     let currentDate = new Date();
     let numberOfMinutesFromBeginningOfYear = Math.floor((currentDate - new Date(currentDate.getFullYear(), 0, 0)) / 60000);
     numInter += numberOfMinutesFromBeginningOfYear;
+
+    // Appeler launchApp si data.launchApp est true
+    if (data.launchApp === true) {
+        try {
+            await launchApp(data, numInter);
+        } catch (err) {
+            console.error('Error in launchApp:', err);
+            // On continue même si launchApp échoue
+        }
+    }
     let htmlRender = '';
     const htmlHeader = `<!DOCTYPE html>
 <html lang="fr">

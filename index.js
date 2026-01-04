@@ -63,6 +63,7 @@ const resetRICount = require("./routes/resetRICount");
 const switchArah = require("./routes/switchArah_");
 const sendParrainageData = require("./routes/sendParrainageData");
 const getAllSheetsData = require("./routes/getAllSheetsData");
+const manoeuvre = require("./routes/manoeuvre");
 
 app.use(express.json());
 app.use(cors());
@@ -137,6 +138,7 @@ app.use("/resetRICount", resetRICount);
 app.use("/switchArah", switchArah);
 app.use("/sendParrainageData", sendParrainageData);
 app.use("/getAllSheetsData", getAllSheetsData);
+app.use("/", manoeuvre);
 
 
 app.use((err, req, res, next) => {
