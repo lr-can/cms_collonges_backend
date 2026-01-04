@@ -216,7 +216,7 @@
             height: 10px;
             border: 1px solid #2d3126;
             position: relative;
-            background: #c3d6a5;
+            background: #2d3126;
         }
         .battery-icon::after {
             content: '';
@@ -447,8 +447,6 @@
                     alertOD: '',
                     alertMessage: '',
                     audio: null,
-                    silentAudio: null,
-                    vibrationInterval: null,
                     permissionsGranted: false
                 }
             },
@@ -581,16 +579,6 @@
                     this.audio = new Audio('/sonnerie.mp3');
                     this.audio.loop = true;
                     this.audio.preload = 'auto';
-                    
-                    // Créer un son vide (silence)
-                    this.silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
-                    this.silentAudio.loop = true;
-                    this.silentAudio.volume = 0;
-                    this.silentAudio.preload = 'auto';
-                    // Démarrer le son vide en boucle
-                    this.silentAudio.play().catch(err => {
-                        console.error('Error playing silent audio:', err);
-                    });
                 },
                 async fetchData() {
                     try {
@@ -616,10 +604,6 @@
                                 this.isAlertActive = newStatusAlerte === 'DONE';
                                 
                                 if (this.isAlertActive && !previousStatus) {
-                                    // Arrêter le son vide avant de démarrer l'alerte
-                                    if (this.silentAudio) {
-                                        this.silentAudio.pause();
-                                    }
                                     // Construire le message d'alerte : VEHICULE-ROLE-GFO
                                     const vehicule = (this.agentData.engLib || '').toUpperCase().replace('-', '');
                                     const role = (this.agentData.role || '').toUpperCase();
@@ -630,19 +614,6 @@
                                 } else if (!this.isAlertActive && previousStatus) {
                                     // Si on passe de DONE à autre chose (ex: RECEIVED), arrêter l'alerte
                                     this.stopAlert();
-                                    // Reprendre le son vide
-                                    if (this.silentAudio) {
-                                        this.silentAudio.play().catch(err => {
-                                            console.error('Error resuming silent audio:', err);
-                                        });
-                                    }
-                                } else if (!this.isAlertActive && !previousStatus) {
-                                    // S'assurer que le son vide est en cours de lecture quand il n'y a pas d'alerte
-                                    if (this.silentAudio && this.silentAudio.paused) {
-                                        this.silentAudio.play().catch(err => {
-                                            console.error('Error playing silent audio:', err);
-                                        });
-                                    }
                                 }
                             }
                         }
@@ -651,31 +622,18 @@
                     }
                 },
                 startAlert() {
-                    // Vibration pattern: 1s on, 1s off (synchronisé avec l'audio)
-                    const vibratePattern = () => {
-                        if ('vibrate' in navigator) {
-                            navigator.vibrate(1000); // 1 seconde de vibration
-                        }
-                    };
+                    // Vibration optimisée : pattern [1000, 1000] = 1s vibre, 1s pause, en boucle
+                    // C'est plus performant qu'un setInterval répétitif
+                    if ('vibrate' in navigator) {
+                        // Pattern de vibration : vibrer 1.2 seconde, pause 1 seconde, répéter
+                        navigator.vibrate([1200, 1000]);
+                    }
                     
-                    // Sonnerie: volume 0.3 puis 1 (démarrer en même temps que la vibration)
+                    // Sonnerie: volume 0.3 puis 1
                     if (this.audio) {
                         this.audio.volume = 0.3;
-                        this.audio.play().then(() => {
-                            // Démarrer la vibration en même temps que l'audio
-                            vibratePattern();
-                            
-                            // Répéter le pattern de vibration toutes les 2 secondes (1s vibre, 1s pause)
-                            this.vibrationInterval = setInterval(() => {
-                                vibratePattern();
-                            }, 2000);
-                        }).catch(err => {
+                        this.audio.play().catch(err => {
                             console.error('Error playing audio:', err);
-                            // Si l'audio ne démarre pas, démarrer quand même la vibration
-                            vibratePattern();
-                            this.vibrationInterval = setInterval(() => {
-                                vibratePattern();
-                            }, 2000);
                         });
                         
                         setTimeout(() => {
@@ -683,12 +641,6 @@
                                 this.audio.volume = 1.0;
                             }
                         }, 1000);
-                    } else {
-                        // Si pas d'audio, démarrer la vibration quand même
-                        vibratePattern();
-                        this.vibrationInterval = setInterval(() => {
-                            vibratePattern();
-                        }, 2000);
                     }
 
                     // Notification
@@ -701,22 +653,14 @@
                     }
                 },
                 stopAlert() {
-                    if (this.vibrationInterval) {
-                        clearInterval(this.vibrationInterval);
-                        this.vibrationInterval = null;
-                        if ('vibrate' in navigator) {
-                            navigator.vibrate(0);
-                        }
+                    // Arrêter les vibrations
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate(0);
                     }
+                    // Arrêter le son
                     if (this.audio) {
                         this.audio.pause();
                         this.audio.currentTime = 0;
-                    }
-                    // Reprendre le son vide
-                    if (this.silentAudio && this.silentAudio.paused) {
-                        this.silentAudio.play().catch(err => {
-                            console.error('Error resuming silent audio:', err);
-                        });
                     }
                 },
                 async acknowledge() {
@@ -761,9 +705,8 @@
                         this.audio.pause();
                         this.audio = null;
                     }
-                    if (this.silentAudio) {
-                        this.silentAudio.pause();
-                        this.silentAudio = null;
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate(0);
                     }
                     this.screen = 'login';
                     this.agentData = null;
@@ -778,9 +721,8 @@
                     this.audio.pause();
                     this.audio = null;
                 }
-                if (this.silentAudio) {
-                    this.silentAudio.pause();
-                    this.silentAudio = null;
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(0);
                 }
             }
         }).mount('#app');

@@ -225,6 +225,18 @@
                     </div>
                 </div>
 
+                <!-- Bouton Fin de Manœuvre -->
+                <div v-if="allOrdresDepartDeclenches" class="info-section" style="background: #fff3cd; border: 2px solid #ffc107;">
+                    <h2 style="color: #856404;">Manœuvre terminée</h2>
+                    <p style="margin-bottom: 15px; color: #856404;">Tous les ordres de départ ont été déclenchés.</p>
+                    <button 
+                        class="btn btn-danger" 
+                        @click="finirManoeuvre"
+                        style="width: 100%; padding: 15px; font-size: 16px;">
+                        Finir la Manœuvre
+                    </button>
+                </div>
+
                 <!-- Ordres de Départ -->
                 <div v-for="od in ordresDepart" :key="od.numero" class="od-section">
                     <div class="od-header">
@@ -233,7 +245,7 @@
                             class="btn btn-primary" 
                             @click="lancerOrdreDepart(od.numero)"
                             :disabled="od.status === 'done'">
-                            {{ od.status === 'done' ? 'Déclenché' : 'Lancer l\'OD' }}
+                            {{ od.status === 'done'|| od.status === 'received' ? 'Déclenché' : 'Lancer l\'OD' }}
                         </button>
                     </div>
 
@@ -364,6 +376,11 @@
                         }
                         return String(a.numero).localeCompare(String(b.numero));
                     });
+                },
+                allOrdresDepartDeclenches() {
+                    // Vérifier si tous les ordres de départ sont déclenchés (status = 'done')
+                    if (this.ordresDepart.length === 0) return false;
+                    return this.ordresDepart.every(od => od.status === 'done');
                 }
             },
             methods: {
@@ -411,6 +428,29 @@
                     } catch (err) {
                         this.error = err.message;
                         console.error('Error launching OD:', err);
+                    }
+                },
+                async finirManoeuvre() {
+                    if (!confirm('Êtes-vous sûr de vouloir terminer la manœuvre ? Cela réinitialisera toutes les données.')) {
+                        return;
+                    }
+                    try {
+                        const response = await fetch('/reinitialiseManoeuvre', {
+                            method: 'POST'
+                        });
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`Erreur lors de la réinitialisation: ${response.status} ${errorText}`);
+                        }
+                        const result = await response.json();
+                        console.log('Manœuvre terminée:', result);
+                        // Rafraîchir les données
+                        await this.fetchData();
+                        this.error = null;
+                        alert('Manœuvre terminée avec succès !');
+                    } catch (err) {
+                        this.error = err.message;
+                        console.error('Error finishing manoeuvre:', err);
                     }
                 }
             },
