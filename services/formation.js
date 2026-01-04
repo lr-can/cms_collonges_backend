@@ -1141,7 +1141,7 @@ async function generateTelex(data){
             "Caporal" : "CAP",
             "Caporal-Chef": "CCH",
             "Sergent": "SGT",
-            "Sergent-Chef": "SCH",
+            "Sergent-Chef": "SCHE",
             "Adjudant": "ADJ",
             "Adjudant-Chef": "ADC",
             "Lieutenant": "LTN",
