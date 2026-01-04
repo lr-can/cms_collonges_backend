@@ -315,9 +315,13 @@
                     const odMap = {};
                     this.manoeuvrants.forEach(agent => {
                         const odNum = agent.od;
+                        // Ignorer les agents sans OD
+                        if (!odNum || odNum === '' || odNum === 'undefined') {
+                            return;
+                        }
                         if (!odMap[odNum]) {
                             odMap[odNum] = {
-                                numero: odNum,
+                                numero: String(odNum), // S'assurer que c'est une string
                                 engins: {}
                             };
                         }
@@ -368,18 +372,31 @@
                     }
                 },
                 async lancerOrdreDepart(ordreDepart) {
+                    // Validation : s'assurer que ordreDepart n'est pas vide
+                    if (!ordreDepart || ordreDepart === '' || ordreDepart === 'undefined') {
+                        this.error = 'Numéro d\'ordre de départ invalide';
+                        console.error('Invalid ordreDepart:', ordreDepart);
+                        return;
+                    }
+                    
                     if (!confirm(`Êtes-vous sûr de vouloir lancer l'ordre de départ ${ordreDepart} ?`)) {
                         return;
                     }
                     try {
-                        const response = await fetch(`/declencherOrdreDepart/${ordreDepart}`, {
+                        // Encoder le paramètre pour éviter les problèmes d'URL
+                        const encodedOrdreDepart = encodeURIComponent(String(ordreDepart));
+                        const response = await fetch(`/declencherOrdreDepart/${encodedOrdreDepart}`, {
                             method: 'POST'
                         });
-                        if (!response.ok) throw new Error('Erreur lors du déclenchement');
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`Erreur lors du déclenchement: ${response.status} ${errorText}`);
+                        }
                         const result = await response.json();
                         console.log('Ordre de départ lancé:', result);
                         // Rafraîchir les données
                         await this.fetchData();
+                        this.error = null;
                     } catch (err) {
                         this.error = err.message;
                         console.error('Error launching OD:', err);
