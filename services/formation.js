@@ -535,7 +535,8 @@ async function launchApp(data, numInter) {
                                     gfo,
                                     role,
                                     'PENDING', // StatusConnexion
-                                    'PENDING'  // StatusAlerte
+                                    'PENDING', // StatusAlerte
+                                    OD.ordreDepart || '' // OD
                                 ]);
                             }
                         }
@@ -546,7 +547,7 @@ async function launchApp(data, numInter) {
 
         // Insertion dans la Google Sheet - Manoeuvrants
         if (manoeuvrantsData.length > 0) {
-            const rangeManoeuvrants = 'Manoeuvrants!A:J';
+            const rangeManoeuvrants = 'Manoeuvrants!A:K';
             const responseManoeuvrants = await sheets.spreadsheets.values.append({
                 spreadsheetId,
                 range: rangeManoeuvrants,

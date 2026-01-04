@@ -57,5 +57,16 @@ router.get('/getManoeuvreDetails', async function(req, res, next) {
     }
 });
 
+// POST /declencherOrdreDepart/:ordreDepart
+router.post('/declencherOrdreDepart/:ordreDepart', async function(req, res, next) {
+    try {
+        const result = await manoeuvre.declencherOrdreDepart(req.params.ordreDepart);
+        res.json(result);
+    } catch (err) {
+        console.error(`Error in declencherOrdreDepart for ordre ${req.params.ordreDepart}:`, err.message);
+        next(err);
+    }
+});
+
 module.exports = router;
 

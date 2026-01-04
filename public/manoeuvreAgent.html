@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue Agent - Manœuvre</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .info-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .info-section h2 {
+            color: #34495e;
+            margin-bottom: 15px;
+        }
+        .agent-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+        }
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .agent-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .agent-details {
+            margin-top: 10px;
+            color: #7f8c8d;
+        }
+        .detail-row {
+            margin: 8px 0;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+            display: inline-block;
+            min-width: 120px;
+        }
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-done {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-received {
+            background: #cfe2ff;
+            color: #084298;
+        }
+        .status-ok {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>Vue Agent - Manœuvre</h1>
+
+            <div v-if="error" class="error">
+                {{ error }}
+            </div>
+
+            <div v-if="loading && !data" class="loading">
+                Chargement des données...
+            </div>
+
+            <template v-else>
+                <!-- Info Manœuvre -->
+                <div v-if="manoeuvreInfo.length > 0" class="info-section">
+                    <h2>Informations de la Manœuvre</h2>
+                    <div class="detail-row">
+                        <span class="detail-label">N° Manœuvre:</span>
+                        <span>{{ manoeuvreInfo[0][0] }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Titre:</span>
+                        <span>{{ manoeuvreInfo[0][1] }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Adresse:</span>
+                        <span>{{ manoeuvreInfo[0][2] }}</span>
+                    </div>
+                </div>
+
+                <!-- Liste des Agents -->
+                <div v-for="agent in agents" :key="agent.matricule" class="agent-card">
+                    <div class="agent-header">
+                        <div class="agent-name">{{ agent.grade }} {{ agent.nom }} {{ agent.prenom }}</div>
+                        <div>
+                            <span class="status-badge" :class="'status-' + agent.statusConnexion.toLowerCase()">
+                                Connexion: {{ agent.statusConnexion }}
+                            </span>
+                            <span class="status-badge" :class="'status-' + agent.statusAlerte.toLowerCase()" style="margin-left: 10px;">
+                                Alerte: {{ agent.statusAlerte }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="agent-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Matricule:</span>
+                            <span>{{ agent.matricule }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Rôle:</span>
+                            <span>{{ agent.role }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Engin:</span>
+                            <span>{{ agent.engLib }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Caserne:</span>
+                            <span>{{ agent.engCaserne }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">GFO:</span>
+                            <span>{{ agent.gfo }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Ordre de Départ:</span>
+                            <span>{{ agent.od }}</span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    data: null,
+                    loading: false,
+                    error: null
+                }
+            },
+            computed: {
+                manoeuvreInfo() {
+                    if (!this.data || !this.data.Manoeuvre_info) return [];
+                    return this.data.Manoeuvre_info.slice(1);
+                },
+                agents() {
+                    if (!this.data || !this.data.Manoeuvrants) return [];
+                    const rows = this.data.Manoeuvrants.slice(1);
+                    return rows.map(row => ({
+                        matricule: row[0] || '',
+                        grade: row[1] || '',
+                        nom: row[2] || '',
+                        prenom: row[3] || '',
+                        engLib: row[4] || '',
+                        engCaserne: row[5] || '',
+                        gfo: row[6] || '',
+                        role: row[7] || '',
+                        statusConnexion: row[8] || 'PENDING',
+                        statusAlerte: row[9] || 'PENDING',
+                        od: row[10] || ''
+                    }));
+                }
+            },
+            methods: {
+                async fetchData() {
+                    this.loading = true;
+                    this.error = null;
+                    try {
+                        const response = await fetch('/getManoeuvreDetails');
+                        if (!response.ok) throw new Error('Erreur lors du chargement des données');
+                        this.data = await response.json();
+                    } catch (err) {
+                        this.error = err.message;
+                        console.error('Error fetching data:', err);
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            },
+            mounted() {
+                this.fetchData();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

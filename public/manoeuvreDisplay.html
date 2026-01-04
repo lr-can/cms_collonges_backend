@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affichage Manœuvre</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .info-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .info-section h2 {
+            color: #34495e;
+            margin-bottom: 15px;
+        }
+        .info-item {
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            display: inline-block;
+            min-width: 150px;
+        }
+        .od-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .od-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        .engin-card {
+            background: #ecf0f1;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .engin-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        .engin-details {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .agent-list {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #bdc3c7;
+        }
+        .agent-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+        }
+        .agent-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .agent-details {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>Affichage Manœuvre</h1>
+
+            <div v-if="error" class="error">
+                {{ error }}
+            </div>
+
+            <div v-if="loading && !data" class="loading">
+                Chargement des données...
+            </div>
+
+            <template v-else>
+                <!-- Info Manœuvre -->
+                <div v-if="manoeuvreInfo.length > 0" class="info-section">
+                    <h2>Informations de la Manœuvre</h2>
+                    <div class="info-item">
+                        <span class="info-label">N° Manœuvre:</span>
+                        <span>{{ manoeuvreInfo[0][0] }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Titre:</span>
+                        <span>{{ manoeuvreInfo[0][1] }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Adresse:</span>
+                        <span>{{ manoeuvreInfo[0][2] }}</span>
+                    </div>
+                </div>
+
+                <!-- Ordres de Départ -->
+                <div v-for="od in ordresDepart" :key="od.numero" class="od-section">
+                    <div class="od-title">Ordre de Départ {{ od.numero }}</div>
+
+                    <div v-for="engin in od.engins" :key="engin.id" class="engin-card">
+                        <div class="engin-name">{{ engin.nom }}</div>
+                        <div class="engin-details">{{ engin.caserne }} - {{ engin.gfo }}</div>
+                        <div class="agent-list">
+                            <div v-for="agent in engin.agents" :key="agent.matricule" class="agent-item">
+                                <div class="agent-name">{{ agent.grade }} {{ agent.nom }} {{ agent.prenom }}</div>
+                                <div class="agent-details">
+                                    Matricule: {{ agent.matricule }} | Rôle: {{ agent.role }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    data: null,
+                    loading: false,
+                    error: null
+                }
+            },
+            computed: {
+                manoeuvreInfo() {
+                    if (!this.data || !this.data.Manoeuvre_info) return [];
+                    return this.data.Manoeuvre_info.slice(1);
+                },
+                manoeuvrants() {
+                    if (!this.data || !this.data.Manoeuvrants) return [];
+                    const rows = this.data.Manoeuvrants.slice(1);
+                    return rows.map(row => ({
+                        matricule: row[0] || '',
+                        grade: row[1] || '',
+                        nom: row[2] || '',
+                        prenom: row[3] || '',
+                        engLib: row[4] || '',
+                        engCaserne: row[5] || '',
+                        gfo: row[6] || '',
+                        role: row[7] || '',
+                        statusConnexion: row[8] || 'PENDING',
+                        statusAlerte: row[9] || 'PENDING',
+                        od: row[10] || ''
+                    }));
+                },
+                ordresDepart() {
+                    const odMap = {};
+                    this.manoeuvrants.forEach(agent => {
+                        const odNum = agent.od;
+                        if (!odMap[odNum]) {
+                            odMap[odNum] = {
+                                numero: odNum,
+                                engins: {}
+                            };
+                        }
+                        const enginKey = `${agent.engLib}_${agent.engCaserne}`;
+                        if (!odMap[odNum].engins[enginKey]) {
+                            odMap[odNum].engins[enginKey] = {
+                                id: enginKey,
+                                nom: agent.engLib,
+                                caserne: agent.engCaserne,
+                                gfo: agent.gfo,
+                                agents: []
+                            };
+                        }
+                        odMap[odNum].engins[enginKey].agents.push(agent);
+                    });
+
+                    return Object.values(odMap).map(od => {
+                        od.engins = Object.values(od.engins);
+                        return od;
+                    }).sort((a, b) => a.numero - b.numero);
+                }
+            },
+            methods: {
+                async fetchData() {
+                    this.loading = true;
+                    this.error = null;
+                    try {
+                        const response = await fetch('/getManoeuvreDetails');
+                        if (!response.ok) throw new Error('Erreur lors du chargement des données');
+                        this.data = await response.json();
+                    } catch (err) {
+                        this.error = err.message;
+                        console.error('Error fetching data:', err);
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            },
+            mounted() {
+                this.fetchData();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+

@@ -21,7 +21,7 @@ async function changeConnexion(matricule) {
         // Lire toutes les données pour trouver la ligne du matricule
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
-            range: 'Manoeuvrants!A:J',
+            range: 'Manoeuvrants!A:K',
         });
 
         const values = response.data.values || [];
@@ -67,7 +67,7 @@ async function declenchementManoeuvre(engin, caserne) {
         // Lire toutes les données
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
-            range: 'Manoeuvrants!A:J',
+            range: 'Manoeuvrants!A:K',
         });
 
         const values = response.data.values || [];
@@ -117,7 +117,7 @@ async function departManoeuvre(matricule) {
         // Lire toutes les données
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
-            range: 'Manoeuvrants!A:J',
+            range: 'Manoeuvrants!A:K',
         });
 
         const values = response.data.values || [];
@@ -169,13 +169,62 @@ async function reinitialiseManoeuvre() {
         // Vider Manoeuvrants à partir de A2
         await sheets.spreadsheets.values.clear({
             spreadsheetId: SPREADSHEET_ID,
-            range: 'Manoeuvrants!A2:J',
+            range: 'Manoeuvrants!A2:K',
         });
 
         console.log('Manoeuvre sheets cleared successfully');
         return { success: true, message: 'Manoeuvre sheets cleared' };
     } catch (err) {
         console.error('Error reinitialising manoeuvre:', err);
+        throw err;
+    }
+}
+
+async function declencherOrdreDepart(ordreDepart) {
+    try {
+        const sheets = await getSheetsAuth();
+        
+        // Lire toutes les données
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'Manoeuvrants!A:K',
+        });
+
+        const values = response.data.values || [];
+        if (values.length < 2) {
+            throw new Error('No data found in Manoeuvrants sheet');
+        }
+
+        // Trouver toutes les lignes correspondant à l'ordre de départ (colonne K, index 10)
+        const rowsToUpdate = [];
+        for (let i = 1; i < values.length; i++) {
+            if (values[i][10] === String(ordreDepart)) {
+                rowsToUpdate.push(i + 1); // +1 car les indices de ligne commencent à 1
+            }
+        }
+
+        if (rowsToUpdate.length === 0) {
+            throw new Error(`No rows found for ordre depart ${ordreDepart}`);
+        }
+
+        // Mettre à jour StatusAlerte (colonne J, index 9) pour toutes les lignes trouvées
+        const updates = rowsToUpdate.map(rowIndex => ({
+            range: `Manoeuvrants!J${rowIndex}`,
+            values: [['DONE']],
+        }));
+
+        await sheets.spreadsheets.values.batchUpdate({
+            spreadsheetId: SPREADSHEET_ID,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                data: updates,
+            },
+        });
+
+        console.log(`StatusAlerte updated to DONE for ordre depart ${ordreDepart}`);
+        return { success: true, ordreDepart, rowsUpdated: rowsToUpdate.length, statusAlerte: 'DONE' };
+    } catch (err) {
+        console.error('Error in declencherOrdreDepart:', err);
         throw err;
     }
 }
@@ -242,6 +291,7 @@ module.exports = {
     declenchementManoeuvre,
     departManoeuvre,
     reinitialiseManoeuvre,
-    getManoeuvreDetails
+    getManoeuvreDetails,
+    declencherOrdreDepart
 };
 

@@ -67,6 +67,7 @@ const manoeuvre = require("./routes/manoeuvre");
 
 app.use(express.json());
 app.use(cors());
+app.use(express.static('public'));
 app.use(
   express.urlencoded({
     extended: true,
@@ -139,6 +140,19 @@ app.use("/switchArah", switchArah);
 app.use("/sendParrainageData", sendParrainageData);
 app.use("/getAllSheetsData", getAllSheetsData);
 app.use("/", manoeuvre);
+
+// Routes pour les pages HTML
+app.get('/manoeuvreAdmin', (req, res) => {
+    res.sendFile(__dirname + '/public/manoeuvreAdmin.html');
+});
+
+app.get('/manoeuvreDisplay', (req, res) => {
+    res.sendFile(__dirname + '/public/manoeuvreDisplay.html');
+});
+
+app.get('/manoeuvreAgent', (req, res) => {
+    res.sendFile(__dirname + '/public/manoeuvreAgent.html');
+});
 
 
 app.use((err, req, res, next) => {
