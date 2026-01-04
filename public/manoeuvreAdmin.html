@@ -359,9 +359,14 @@
                     // Convertir en tableau et trier
                     const ods = Object.values(odMap).map(od => {
                         od.engins = Object.values(od.engins);
-                        // Déterminer le statut de l'OD (done si tous les engins sont DONE)
-                        const allDone = od.engins.every(e => e.statusAlerte === 'DONE');
-                        od.status = allDone ? 'done' : 'pending';
+                        // Déterminer le statut de l'OD (done si tous les agents de tous les engins ont DONE ou RECEIVED)
+                        const allDoneOrReceived = od.engins.every(engin => {
+                            // Vérifier que tous les agents de cet engin ont un statut DONE ou RECEIVED
+                            return engin.agents.every(agent => 
+                                agent.statusAlerte === 'DONE' || agent.statusAlerte === 'RECEIVED'
+                            );
+                        });
+                        od.status = allDoneOrReceived ? 'done' : 'pending';
                         return od;
                     });
 
@@ -378,9 +383,9 @@
                     });
                 },
                 allOrdresDepartDeclenches() {
-                    // Vérifier si tous les ordres de départ sont déclenchés (status = 'done')
+                    // Vérifier si tous les ordres de départ sont déclenchés (tous les agents ont DONE ou RECEIVED)
                     if (this.ordresDepart.length === 0) return false;
-                    return this.ordresDepart.every(od => od.status === 'done' || od.status === 'received');
+                    return this.ordresDepart.every(od => od.status === 'done');
                 }
             },
             methods: {
