@@ -173,6 +173,8 @@
             margin: 0 auto;
             width: 100%;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            max-height: 800px;
+            max-width: 800px;
         }
         .bip-screen {
             background: #2a3a2a;
@@ -279,32 +281,63 @@
             margin-top: 15px;
             gap: 10px;
         }
+        /* Bip buttons layout */
+        .bip-buttons {
+            position: relative;
+            width: 270px;
+            height: 130px;
+            margin: 30px auto 0 auto;
+            display: block;
+        }
+
         .bip-button {
-            flex: 1;
+            position: absolute;
+            width: 50px;
             height: 50px;
-            background: #333;
-            border: 2px solid #555;
-            border-radius: 8px;
-            color: #0f0;
+            background: #e0e0e0;
+            border: 2px solid #bbb;
+            border-radius: 50%;
+            color: #222;
             font-family: 'Courier New', monospace;
-            font-size: 12px;
+            font-size: 13px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             text-transform: uppercase;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.10);
+            z-index: 1;
         }
+        /* The main (yellow, big, centered) button */
         .bip-button.btn-yellow {
-            background: #ff0;
-            color: #000;
-            border-color: #ff0;
+            width: 100px;
+            height: 100px;
+            left: 50%;
+            top: 15px;
+            transform: translateX(-50%);
+            background: #ffeb3b;
+            color: #333;
+            border-color: #ffe300;
             font-weight: bold;
-        }
-        .bip-button:active {
-            background: #444;
+            z-index: 2;
         }
         .bip-button.btn-yellow:active {
-            background: #cc0;
+            background: #ffe066;
+        }
+        /* Second button: to the right of the yellow */
+        .bip-button.btn-2 {
+            left: calc(50% + 70px);
+            top: 40px;
+        }
+        /* Third button: lower and between yellow and second, closer to second */
+        .bip-button.btn-3 {
+            left: calc(50% + 32px);
+            top: 95px;
+        }
+        .bip-button:active:not(.btn-yellow) {
+            background: #cacaca;
+            color: #000;
         }
         .hidden {
             display: none !important;
@@ -386,9 +419,9 @@
                     </div>
                 </div>
                 <div class="bip-buttons">
-                    <button :class="['bip-button', { 'btn-yellow': isAlertActive }]" @click="acknowledge">OK</button>
-                    <button class="bip-button" @click="refreshData">REFRESH</button>
-                    <button class="bip-button" @click="disconnect">OFF</button>
+                    <div :class="['bip-button', 'btn-yellow']" @click="acknowledge"></div>
+                    <div class="bip-button" @click="refreshData"></div>
+                    <div class="bip-button" @click="disconnect">OFF</div>
                 </div>
             </div>
         </div>
@@ -414,6 +447,7 @@
                     alertOD: '',
                     alertMessage: '',
                     audio: null,
+                    silentAudio: null,
                     vibrationInterval: null,
                     permissionsGranted: false
                 }
@@ -547,6 +581,16 @@
                     this.audio = new Audio('/sonnerie.mp3');
                     this.audio.loop = true;
                     this.audio.preload = 'auto';
+                    
+                    // Créer un son vide (silence)
+                    this.silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
+                    this.silentAudio.loop = true;
+                    this.silentAudio.volume = 0;
+                    this.silentAudio.preload = 'auto';
+                    // Démarrer le son vide en boucle
+                    this.silentAudio.play().catch(err => {
+                        console.error('Error playing silent audio:', err);
+                    });
                 },
                 async fetchData() {
                     try {
@@ -572,8 +616,12 @@
                                 this.isAlertActive = newStatusAlerte === 'DONE';
                                 
                                 if (this.isAlertActive && !previousStatus) {
+                                    // Arrêter le son vide avant de démarrer l'alerte
+                                    if (this.silentAudio) {
+                                        this.silentAudio.pause();
+                                    }
                                     // Construire le message d'alerte : VEHICULE-ROLE-GFO
-                                    const vehicule = (this.agentData.engLib || '').toUpperCase();
+                                    const vehicule = (this.agentData.engLib || '').toUpperCase().replace('-', '');
                                     const role = (this.agentData.role || '').toUpperCase();
                                     const gfo = (this.agentData.gfo || '').toUpperCase();
                                     this.alertMessage = `${vehicule}-${role}-${gfo}`;
@@ -582,6 +630,19 @@
                                 } else if (!this.isAlertActive && previousStatus) {
                                     // Si on passe de DONE à autre chose (ex: RECEIVED), arrêter l'alerte
                                     this.stopAlert();
+                                    // Reprendre le son vide
+                                    if (this.silentAudio) {
+                                        this.silentAudio.play().catch(err => {
+                                            console.error('Error resuming silent audio:', err);
+                                        });
+                                    }
+                                } else if (!this.isAlertActive && !previousStatus) {
+                                    // S'assurer que le son vide est en cours de lecture quand il n'y a pas d'alerte
+                                    if (this.silentAudio && this.silentAudio.paused) {
+                                        this.silentAudio.play().catch(err => {
+                                            console.error('Error playing silent audio:', err);
+                                        });
+                                    }
                                 }
                             }
                         }
@@ -590,17 +651,17 @@
                     }
                 },
                 startAlert() {
-                    // Vibration pattern: 2s on, 1s off
-                    this.vibrationInterval = setInterval(() => {
-                        if ('vibrate' in navigator) {
-                            navigator.vibrate(2000);
-                            setTimeout(() => {
-                                if ('vibrate' in navigator) {
-                                    navigator.vibrate(0);
-                                }
-                            }, 2000);
-                        }
-                    }, 3000);
+                    // Vibration pattern: 500ms off, 1s on, 500ms off (cycle de 2s)
+                    // Pattern vibrate: [pause, vibre, pause] = [500, 1000, 500]
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate([500, 1000, 500]);
+                        // Répéter le pattern toutes les 2 secondes
+                        this.vibrationInterval = setInterval(() => {
+                            if ('vibrate' in navigator) {
+                                navigator.vibrate([500, 1000, 500]);
+                            }
+                        }, 2000);
+                    }
 
                     // Sonnerie: volume 0.3 puis 1
                     if (this.audio) {
@@ -613,7 +674,7 @@
                             if (this.audio) {
                                 this.audio.volume = 1.0;
                             }
-                        }, 15000);
+                        }, 16000);
                     }
 
                     // Notification
@@ -636,6 +697,12 @@
                     if (this.audio) {
                         this.audio.pause();
                         this.audio.currentTime = 0;
+                    }
+                    // Reprendre le son vide
+                    if (this.silentAudio && this.silentAudio.paused) {
+                        this.silentAudio.play().catch(err => {
+                            console.error('Error resuming silent audio:', err);
+                        });
                     }
                 },
                 async acknowledge() {
@@ -670,11 +737,19 @@
                 },
                 disconnect() {
                     this.stopAlert();
+                    // Demander confirmation pour déconnecter
+                    if (!confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) {
+                        return;
+                    }
                     if (this.refreshInterval) clearInterval(this.refreshInterval);
                     if (this.timeInterval) clearInterval(this.timeInterval);
                     if (this.audio) {
                         this.audio.pause();
                         this.audio = null;
+                    }
+                    if (this.silentAudio) {
+                        this.silentAudio.pause();
+                        this.silentAudio = null;
                     }
                     this.screen = 'login';
                     this.agentData = null;
@@ -688,6 +763,10 @@
                 if (this.audio) {
                     this.audio.pause();
                     this.audio = null;
+                }
+                if (this.silentAudio) {
+                    this.silentAudio.pause();
+                    this.silentAudio = null;
                 }
             }
         }).mount('#app');
