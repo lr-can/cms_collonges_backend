@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=DotGothic16&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=VT323&display=swap" rel="stylesheet">
     <title>Bip Manœuvre - Agent</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
@@ -20,7 +20,7 @@
             src: url('data:font/woff2;base64,') format('woff2');
         }
         body {
-            font-family: 'DotGothic16', monospace;
+            font-family: 'VT323', monospace;
             background: #000;
             color: #0f0;
             overflow: hidden;
@@ -87,7 +87,7 @@
             background: #000;
             border: 2px solid #0f0;
             color: #0f0;
-            font-family: 'DotGothic16', monospace;
+            font-family: 'VT323', monospace;
             font-size: 16px;
             text-transform: uppercase;
         }
@@ -102,7 +102,7 @@
             background: #0f0;
             color: #000;
             border: none;
-            font-family: 'DotGothic16', monospace;
+            font-family: 'VT323', monospace;
             font-size: 16px;
             font-weight: bold;
             text-transform: uppercase;
@@ -151,7 +151,7 @@
             background: #0f0;
             color: #000;
             border: none;
-            font-family: 'DotGothic16', monospace;
+            font-family: 'VT323', monospace;
             font-size: 16px;
             font-weight: bold;
             text-transform: uppercase;
@@ -185,7 +185,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            font-family: 'DotGothic16', monospace;
+            font-family: 'VT323', monospace;
             position: relative;
             min-height: 200px;
             max-height: 200px;
@@ -263,7 +263,7 @@
             text-align: center;
             font-size: 18px;
             line-height: 1.8;
-            font-family: 'DotGothic16', monospace;
+            font-family: 'VT323', monospace;
             letter-spacing: 1px;
             text-transform: uppercase;
         }
@@ -297,7 +297,7 @@
             border: 2px solid #bbb;
             border-radius: 50%;
             color: #222;
-            font-family: 'DotGothic16', monospace;
+            font-family: 'VT323', monospace;
             font-size: 13px;
             cursor: pointer;
             display: flex;
@@ -703,13 +703,14 @@
                     }
                     
                     // Construire le titre de notification selon le format demandé
-                    const notificationTitle = `🚧 N°${numManoeuvre || '?'}/${od} - ${dateHeure} - ${libelleManoeuvre || 'Manœuvre'} - ${adresse || 'Adresse non disponible'} - ${nombreEnginsTotal} Engins`;
+                    const notificationTitle = `${this.agentData.engLib.replace('-', '')}-${this.agentData.role.toUpperCase()}-${this.agentData.gfo.toUpperCase()}`;
+                    const notificationBody = `🚧 N°${numManoeuvre || '?'}/${od} - ${dateHeure} - ${libelleManoeuvre || 'Manœuvre'} - ${adresse || 'Adresse non disponible'} - ${nombreEnginsTotal} Engins`;
                     
                     // Afficher la notification via le Service Worker (notification push) - SANS vibrations
                     if ('serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted') {
                         const registration = await navigator.serviceWorker.ready;
                         registration.showNotification(notificationTitle, {
-                            body: `👉 Appuyez sur le bouton jaune pour confirmer`,
+                            body: notificationBody,
                             icon: '/favicon.ico',
                             badge: '/favicon.ico',
                             tag: 'manoeuvre-alert',
@@ -724,7 +725,7 @@
                     } else if ('Notification' in window && Notification.permission === 'granted') {
                         // Fallback sur notification standard si Service Worker non disponible
                         new Notification(notificationTitle, {
-                            body: `👉 Appuyez sur le bouton jaune pour confirmer`,
+                            body: notificationBody,
                             icon: '/favicon.ico',
                             tag: 'manoeuvre-alert',
                             requireInteraction: true
