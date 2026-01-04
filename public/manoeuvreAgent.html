@@ -26,8 +26,8 @@
             position: fixed;
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
-            image-rendering: crisp-edges;
             image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
         }
         .login-screen {
             background: #000;
@@ -185,6 +185,7 @@
             font-family: 'Courier New', monospace;
             position: relative;
             min-height: 200px;
+            max-height: 200px;
         }
         .bip-screen.active {
             background: #3a4a3a;
@@ -465,6 +466,20 @@
                             statusAlerte: agent[9] || 'PENDING',
                             od: agent[10] || ''
                         };
+
+                        // Mettre à jour le statut de connexion à OK
+                        try {
+                            const connResponse = await fetch(`/changeConnexion/${this.agentData.matricule}`, {
+                                method: 'POST'
+                            });
+                            if (connResponse.ok) {
+                                this.agentData.statusConnexion = 'OK';
+                                this.isConnected = true;
+                            }
+                        } catch (err) {
+                            console.error('Error updating connection status:', err);
+                            // On continue même si ça échoue
+                        }
 
                         this.data = data;
                         this.screen = 'instructions';
