@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=DotGothic16&display=swap" rel="stylesheet">
     <title>Bip Manœuvre - Agent</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
@@ -17,7 +20,7 @@
             src: url('data:font/woff2;base64,') format('woff2');
         }
         body {
-            font-family: 'Courier New', monospace;
+            font-family: 'DotGothic16', monospace;
             background: #000;
             color: #0f0;
             overflow: hidden;
@@ -84,7 +87,7 @@
             background: #000;
             border: 2px solid #0f0;
             color: #0f0;
-            font-family: 'Courier New', monospace;
+            font-family: 'DotGothic16', monospace;
             font-size: 16px;
             text-transform: uppercase;
         }
@@ -99,7 +102,7 @@
             background: #0f0;
             color: #000;
             border: none;
-            font-family: 'Courier New', monospace;
+            font-family: 'DotGothic16', monospace;
             font-size: 16px;
             font-weight: bold;
             text-transform: uppercase;
@@ -148,7 +151,7 @@
             background: #0f0;
             color: #000;
             border: none;
-            font-family: 'Courier New', monospace;
+            font-family: 'DotGothic16', monospace;
             font-size: 16px;
             font-weight: bold;
             text-transform: uppercase;
@@ -175,21 +178,22 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
         }
         .bip-screen {
-            background: #2a3a2a;
-            border: 2px solid #1a2a1a;
+            background: #c3d6a5;
+            border: 2px solid #96a57d;
             border-radius: 5px;
             padding: 15px;
             flex: 1;
             display: flex;
             flex-direction: column;
-            font-family: 'Courier New', monospace;
+            font-family: 'DotGothic16', monospace;
             position: relative;
             min-height: 200px;
             max-height: 200px;
+            color: #2d3126;
         }
         .bip-screen.active {
-            background: #c3d6a5;
-            border-color: #96a57d;
+            background: #ffeb3b;
+            border-color: #f1cd00;
         }
         .screen-header {
             display: flex;
@@ -212,7 +216,7 @@
             height: 10px;
             border: 1px solid #2d3126;
             position: relative;
-            background: #2a3a2a;
+            background: #c3d6a5;
         }
         .battery-icon::after {
             content: '';
@@ -245,6 +249,10 @@
         .signal-bar:nth-child(4) { height: 100%; }
         .time-display {
             font-size: 14px;
+            color: #2d3126;
+        }
+        .battery-level {
+            color: #2d3126;
         }
         .screen-content {
             flex: 1;
@@ -255,29 +263,22 @@
             text-align: center;
             font-size: 18px;
             line-height: 1.8;
-            font-family: 'Courier New', monospace;
+            font-family: 'DotGothic16', monospace;
             letter-spacing: 1px;
             text-transform: uppercase;
         }
         .screen-waiting {
-            color: #5a6a5a;
+            color: #2d3126;
             font-weight: normal;
         }
         .screen-alert {
             color: #2d3126;
-            background: #f1cd00;
             font-weight: bold;
             font-size: 20px;
         }
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
-        }
-        .bip-buttons {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 15px;
-            gap: 10px;
         }
         /* Bip buttons layout */
         .bip-buttons {
@@ -296,7 +297,7 @@
             border: 2px solid #bbb;
             border-radius: 50%;
             color: #222;
-            font-family: 'Courier New', monospace;
+            font-family: 'DotGothic16', monospace;
             font-size: 13px;
             cursor: pointer;
             display: flex;
@@ -314,6 +315,7 @@
             left: 50%;
             top: 15px;
             transform: translateX(-50%);
+            margin-left: 0;
             background: #ffeb3b;
             color: #333;
             border-color: #ffe300;
@@ -328,10 +330,10 @@
             left: calc(50% + 70px);
             top: 40px;
         }
-        /* Third button: lower and between yellow and second, closer to second */
+        /* Third button (OFF): to the right of the yellow button */
         .bip-button.btn-3 {
-            left: calc(50% + 32px);
-            top: 95px;
+            left: calc(50% + 70px);
+            top: 15px;
         }
         .bip-button:active:not(.btn-yellow) {
             background: #cacaca;
@@ -649,30 +651,44 @@
                     }
                 },
                 startAlert() {
-                    // Vibration pattern: 500ms off, 1s on, 500ms off (cycle de 2s)
-                    // Pattern vibrate: [pause, vibre, pause] = [500, 1000, 500]
-                    if ('vibrate' in navigator) {
-                        navigator.vibrate([500, 1000, 500]);
-                        // Répéter le pattern toutes les 2 secondes
-                        this.vibrationInterval = setInterval(() => {
-                            if ('vibrate' in navigator) {
-                                navigator.vibrate([500, 1000, 500]);
-                            }
-                        }, 2000);
-                    }
-
-                    // Sonnerie: volume 0.3 puis 1
+                    // Vibration pattern: 1s on, 1s off (synchronisé avec l'audio)
+                    const vibratePattern = () => {
+                        if ('vibrate' in navigator) {
+                            navigator.vibrate(1000); // 1 seconde de vibration
+                        }
+                    };
+                    
+                    // Sonnerie: volume 0.3 puis 1 (démarrer en même temps que la vibration)
                     if (this.audio) {
                         this.audio.volume = 0.3;
-                        this.audio.play().catch(err => {
+                        this.audio.play().then(() => {
+                            // Démarrer la vibration en même temps que l'audio
+                            vibratePattern();
+                            
+                            // Répéter le pattern de vibration toutes les 2 secondes (1s vibre, 1s pause)
+                            this.vibrationInterval = setInterval(() => {
+                                vibratePattern();
+                            }, 2000);
+                        }).catch(err => {
                             console.error('Error playing audio:', err);
+                            // Si l'audio ne démarre pas, démarrer quand même la vibration
+                            vibratePattern();
+                            this.vibrationInterval = setInterval(() => {
+                                vibratePattern();
+                            }, 2000);
                         });
                         
                         setTimeout(() => {
                             if (this.audio) {
                                 this.audio.volume = 1.0;
                             }
-                        }, 16000);
+                        }, 1000);
+                    } else {
+                        // Si pas d'audio, démarrer la vibration quand même
+                        vibratePattern();
+                        this.vibrationInterval = setInterval(() => {
+                            vibratePattern();
+                        }, 2000);
                     }
 
                     // Notification
