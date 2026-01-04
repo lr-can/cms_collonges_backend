@@ -67,7 +67,16 @@ const manoeuvre = require("./routes/manoeuvre");
 
 app.use(express.json());
 app.use(cors());
-app.use(express.static('public'));
+
+// Servir les fichiers statiques avec le bon Content-Type pour le Service Worker
+app.use(express.static('public', {
+    setHeaders: (res, path) => {
+        if (path.endsWith('service-worker.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+            res.setHeader('Service-Worker-Allowed', '/');
+        }
+    }
+}));
 app.use(
   express.urlencoded({
     extended: true,

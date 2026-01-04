@@ -529,6 +529,16 @@
                 },
                 async requestPermissions() {
                     try {
+                        // Enregistrer le Service Worker pour les notifications push
+                        if ('serviceWorker' in navigator) {
+                            try {
+                                const registration = await navigator.serviceWorker.register('/service-worker.js');
+                                console.log('Service Worker enregistré:', registration);
+                            } catch (err) {
+                                console.error('Erreur enregistrement Service Worker:', err);
+                            }
+                        }
+                        
                         // Demander autorisation notifications
                         if ('Notification' in window && Notification.permission === 'default') {
                             await Notification.requestPermission();
@@ -621,7 +631,7 @@
                         console.error('Error fetching data:', err);
                     }
                 },
-                startAlert() {
+                async startAlert() {
                     // Vibration optimisée : pattern [1000, 1000] = 1s vibre, 1s pause, en boucle
                     // C'est plus performant qu'un setInterval répétitif
                     if ('vibrate' in navigator) {
@@ -643,12 +653,60 @@
                         }, 1000);
                     }
 
-                    // Notification
-                    if ('Notification' in window && Notification.permission === 'granted') {
-                        new Notification('Ordre de Départ', {
-                            body: `Ordre de Départ ${this.agentData.od} déclenché`,
+                    // Construire le message de notification avec tous les détails
+                    const vehicule = (this.agentData.engLib || '').toUpperCase().replace('-', '');
+                    const role = (this.agentData.role || '').toUpperCase();
+                    const gfo = (this.agentData.gfo || '').toUpperCase();
+                    const od = this.alertOD || this.agentData.od || '';
+                    const nom = (this.agentData.nom || '').toUpperCase();
+                    const prenom = (this.agentData.prenom || '').toUpperCase();
+                    const grade = (this.agentData.grade || '').toUpperCase();
+                    const caserne = (this.agentData.engCaserne || '').toUpperCase();
+                    
+                    // Récupérer les infos de la manœuvre si disponibles
+                    let manoeuvreDetails = '';
+                    if (this.data && this.data.Manoeuvre_info && this.data.Manoeuvre_info.length > 1) {
+                        const infoRows = this.data.Manoeuvre_info.slice(1);
+                        if (infoRows.length > 0 && infoRows[0].length > 0) {
+                            manoeuvreDetails = infoRows[0][0] || '';
+                        }
+                    }
+                    
+                    const notificationTitle = `🚨 Ordre de Départ ${od}`;
+                    let notificationBody = `${nom} ${prenom} (${grade})\n`;
+                    notificationBody += `Véhicule: ${vehicule}${caserne ? ' - ' + caserne : ''}\n`;
+                    notificationBody += `Rôle: ${role}\n`;
+                    notificationBody += `GFO: ${gfo}`;
+                    if (manoeuvreDetails) {
+                        notificationBody += `\n\n${manoeuvreDetails}`;
+                    }
+                    notificationBody += `\n\n👉 Appuyez sur le bouton jaune pour confirmer`;
+                    
+                    // Afficher la notification via le Service Worker (notification push)
+                    if ('serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted') {
+                        const registration = await navigator.serviceWorker.ready;
+                        registration.showNotification(notificationTitle, {
+                            body: notificationBody,
                             icon: '/favicon.ico',
-                            tag: 'manoeuvre-alert'
+                            badge: '/favicon.ico',
+                            tag: 'manoeuvre-alert',
+                            requireInteraction: true, // La notification reste jusqu'à interaction
+                            vibrate: [1200, 1000], // Pattern de vibration dans la notification
+                            data: {
+                                url: window.location.href,
+                                od: od,
+                                vehicule: vehicule,
+                                role: role,
+                                gfo: gfo
+                            }
+                        });
+                    } else if ('Notification' in window && Notification.permission === 'granted') {
+                        // Fallback sur notification standard si Service Worker non disponible
+                        new Notification(notificationTitle, {
+                            body: notificationBody,
+                            icon: '/favicon.ico',
+                            tag: 'manoeuvre-alert',
+                            requireInteraction: true
                         });
                     }
                 },
@@ -711,6 +769,18 @@
                     this.screen = 'login';
                     this.agentData = null;
                     this.data = null;
+                }
+            },
+            mounted() {
+                // Enregistrer le Service Worker au chargement de la page
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/service-worker.js')
+                        .then((registration) => {
+                            console.log('Service Worker enregistré avec succès:', registration.scope);
+                        })
+                        .catch((error) => {
+                            console.log('Échec de l\'enregistrement du Service Worker:', error);
+                        });
                 }
             },
             beforeUnmount() {
