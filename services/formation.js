@@ -461,7 +461,7 @@ async function launchApp(data, numInter) {
             
             // Ajout de l'ERP si présent
             if (data.adresses.adresseCommune.erp) {
-                adresseManoeuvre += ` | ${data.adresses.adresseCommune.erp.toUpperCase().trim()}`;
+                adresseManoeuvre += ` | ERP ${data.adresses.adresseCommune.erp.toUpperCase().trim()}`;
             }
         }
 
@@ -484,7 +484,7 @@ async function launchApp(data, numInter) {
             "Caporal": "CAP",
             "Caporal-Chef": "CCH",
             "Sergent": "SGT",
-            "Sergent-Chef": "SCH",
+            "Sergent-Chef": "SCHE",
             "Adjudant": "ADJ",
             "Adjudant-Chef": "ADC",
             "Lieutenant": "LTN",
