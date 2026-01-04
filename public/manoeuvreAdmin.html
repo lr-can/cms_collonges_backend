@@ -380,7 +380,7 @@
                 allOrdresDepartDeclenches() {
                     // Vérifier si tous les ordres de départ sont déclenchés (status = 'done')
                     if (this.ordresDepart.length === 0) return false;
-                    return this.ordresDepart.every(od => od.status === 'done');
+                    return this.ordresDepart.every(od => od.status === 'done' || od.status === 'received');
                 }
             },
             methods: {

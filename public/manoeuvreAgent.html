@@ -653,57 +653,78 @@
                         }, 1000);
                     }
 
-                    // Construire le message de notification avec tous les détails
-                    const vehicule = (this.agentData.engLib || '').toUpperCase().replace('-', '');
-                    const role = (this.agentData.role || '').toUpperCase();
-                    const gfo = (this.agentData.gfo || '').toUpperCase();
+                    // Récupérer les infos de la manœuvre
                     const od = this.alertOD || this.agentData.od || '';
-                    const nom = (this.agentData.nom || '').toUpperCase();
-                    const prenom = (this.agentData.prenom || '').toUpperCase();
-                    const grade = (this.agentData.grade || '').toUpperCase();
-                    const caserne = (this.agentData.engCaserne || '').toUpperCase();
+                    let numManoeuvre = '';
+                    let libelleManoeuvre = '';
+                    let adresse = '';
                     
-                    // Récupérer les infos de la manœuvre si disponibles
-                    let manoeuvreDetails = '';
                     if (this.data && this.data.Manoeuvre_info && this.data.Manoeuvre_info.length > 1) {
-                        const infoRows = this.data.Manoeuvre_info.slice(1);
-                        if (infoRows.length > 0 && infoRows[0].length > 0) {
-                            manoeuvreDetails = infoRows[0][0] || '';
+                        const infoRow = this.data.Manoeuvre_info[1]; // Première ligne après le header
+                        if (infoRow) {
+                            numManoeuvre = infoRow[0] || '';
+                            libelleManoeuvre = infoRow[1] || '';
+                            adresse = infoRow[2] || '';
                         }
                     }
                     
-                    const notificationTitle = `🚨 Ordre de Départ ${od}`;
-                    let notificationBody = `${nom} ${prenom} (${grade})\n`;
-                    notificationBody += `Véhicule: ${vehicule}${caserne ? ' - ' + caserne : ''}\n`;
-                    notificationBody += `Rôle: ${role}\n`;
-                    notificationBody += `GFO: ${gfo}`;
-                    if (manoeuvreDetails) {
-                        notificationBody += `\n\n${manoeuvreDetails}`;
-                    }
-                    notificationBody += `\n\n👉 Appuyez sur le bouton jaune pour confirmer`;
+                    // Calculer la date et heure actuelle
+                    const now = new Date();
+                    const dd = String(now.getDate()).padStart(2, '0');
+                    const MM = String(now.getMonth() + 1).padStart(2, '0');
+                    const hh = String(now.getHours()).padStart(2, '0');
+                    const mm = String(now.getMinutes()).padStart(2, '0');
+                    const dateHeure = `${dd}/${MM} ${hh}:${mm}`;
                     
-                    // Afficher la notification via le Service Worker (notification push)
+                    // Calculer le nombre total d'engins (de cet OD et des précédents)
+                    let nombreEnginsTotal = 0;
+                    if (this.data && this.data.Manoeuvrants && this.data.Manoeuvrants.length > 1) {
+                        const rows = this.data.Manoeuvrants.slice(1);
+                        const enginsUniques = new Set();
+                        
+                        // Compter tous les engins des OD <= ordreDépart actuel
+                        rows.forEach(row => {
+                            const rowOD = row[10] || '';
+                            const engLib = row[4] || '';
+                            const engCaserne = row[5] || '';
+                            
+                            // Convertir les OD en nombres pour comparer
+                            const odNum = parseInt(od) || 0;
+                            const rowODNum = parseInt(rowOD) || 0;
+                            
+                            // Si l'OD de cette ligne est <= à l'OD actuel, compter l'engin
+                            if (rowODNum > 0 && rowODNum <= odNum && engLib) {
+                                const enginKey = `${engLib}_${engCaserne}`;
+                                enginsUniques.add(enginKey);
+                            }
+                        });
+                        
+                        nombreEnginsTotal = enginsUniques.size;
+                    }
+                    
+                    // Construire le titre de notification selon le format demandé
+                    const notificationTitle = `🚧 N°${numManoeuvre || '?'}/${od} - ${dateHeure} - ${libelleManoeuvre || 'Manœuvre'} - ${adresse || 'Adresse non disponible'} - ${nombreEnginsTotal} Engins`;
+                    
+                    // Afficher la notification via le Service Worker (notification push) - SANS vibrations
                     if ('serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted') {
                         const registration = await navigator.serviceWorker.ready;
                         registration.showNotification(notificationTitle, {
-                            body: notificationBody,
+                            body: `👉 Appuyez sur le bouton jaune pour confirmer`,
                             icon: '/favicon.ico',
                             badge: '/favicon.ico',
                             tag: 'manoeuvre-alert',
                             requireInteraction: true, // La notification reste jusqu'à interaction
-                            vibrate: [1200, 1000], // Pattern de vibration dans la notification
+                            // PAS de vibrate ici pour ne pas interférer avec les vibrations de l'app
                             data: {
                                 url: window.location.href,
                                 od: od,
-                                vehicule: vehicule,
-                                role: role,
-                                gfo: gfo
+                                numManoeuvre: numManoeuvre
                             }
                         });
                     } else if ('Notification' in window && Notification.permission === 'granted') {
                         // Fallback sur notification standard si Service Worker non disponible
                         new Notification(notificationTitle, {
-                            body: notificationBody,
+                            body: `👉 Appuyez sur le bouton jaune pour confirmer`,
                             icon: '/favicon.ico',
                             tag: 'manoeuvre-alert',
                             requireInteraction: true
