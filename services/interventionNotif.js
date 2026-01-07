@@ -552,6 +552,37 @@ async function insertSmartemisResponse(data) {
                 }
             }
         }
+    if (data.planningCounterList && data.planningCounterList.length > 0) {
+        const values = data.planningCounterList.map(item => [
+            item.cod || '',
+            item.lib || '',
+            item.value || '',
+            item.totalValue || ''
+        ]);
+        let rangePlanning = 'Feuille 16!A2:D100';
+        try {
+            await sheets.spreadsheets.values.clear({
+                spreadsheetId,
+                range: rangePlanning,
+            });
+            console.log('Planning counter data cleared successfully!');
+        } catch (error) {
+            console.error('Error clearing planning counter data:', error);
+        }
+        try {
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: rangePlanning,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: values,
+                },
+            });
+            console.log('Planning counter data inserted successfully:', values);
+        } catch (error) {
+            console.error('Error inserting planning counter data:', error);
+        }
+    }
     }
 
 
