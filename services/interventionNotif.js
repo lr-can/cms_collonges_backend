@@ -548,6 +548,9 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                 case 'CODBRS':
                     columns.push('BATO_ca');
                     break;
+                case 'EQSAV':
+                    columns.push('AQUA_ca');
+                    break;
                 case 'APP':
                     columns.push('SAP_eqc', 'PSSAP_eqc');
                     break;
