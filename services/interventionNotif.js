@@ -647,6 +647,8 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
         if (mode === 'disponibilite' || mode === 'intervention') {
             console.log(`Mode ${mode} détecté, pas de traitement des emplois`);
         } else {
+            console.log(`Mode emplois détecté - totalAgentsCount: ${totalAgentsCount}, availableAgentsCount: ${availableAgentsCount}`);
+            
             // Mode emplois : traiter les codes d'emplois (un code par requête)
             const codesToProcess = planningCounterList.filter(item => 
                 item.cod !== 'DISPO' && 
@@ -656,15 +658,25 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                 item.cod !== 'AEC'
             );
 
+            console.log(`Codes à traiter (après filtrage): ${codesToProcess.map(c => c.cod).join(', ')}`);
+
             // Filtrer les codes qui correspondent aux critères
             const validCodes = codesToProcess.filter(item => {
                 const value = parseInt(item.value) || 0;
                 const totalValue = parseInt(item.totalValue) || 0;
                 // Vérifier : availableAgents.length === value ET csPersList.length === totalValue
-                return value > 0 && 
+                const isValid = value > 0 && 
                        availableAgentsCount === value && 
                        totalAgentsCount === totalValue;
+                
+                if (!isValid && item.cod === 'CDG') {
+                    console.log(`CDG filtré - value: ${value}, totalValue: ${totalValue}, availableAgentsCount: ${availableAgentsCount}, totalAgentsCount: ${totalAgentsCount}`);
+                }
+                
+                return isValid;
             });
+
+            console.log(`Codes valides: ${validCodes.map(c => c.cod).join(', ')}`);
 
             // Grouper les codes qui ont les mêmes value et totalValue (codes ambigus)
             const codesByKey = new Map();
@@ -680,19 +692,27 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
 
             // Traiter chaque groupe de codes (même value et totalValue = codes ambigus)
             codesByKey.forEach((codesGroup, key) => {
+                console.log(`Traitement du groupe ${key} avec ${codesGroup.length} code(s): ${codesGroup.map(c => c.cod).join(', ')}`);
+                
                 // Pour chaque code du groupe, réinitialiser ses colonnes et mettre à 1
                 codesGroup.forEach(item => {
                     const cod = item.cod;
                     const value = parseInt(item.value) || 0;
                     
+                    console.log(`Traitement du code ${cod} - Réinitialisation et mise à jour pour ${csPersList.length} agents`);
+                    
                     // Obtenir les colonnes concernées par ce code
                     const columnsToReset = getColumnsForCode(cod);
+                    console.log(`Colonnes à réinitialiser pour ${cod}: ${columnsToReset.join(', ')}`);
                     
                     // Réinitialiser les colonnes concernées pour tous les agents de csPersList
                     csPersList.forEach(person => {
                         const matricule = `${person.persStatutCod}${person.persId}`;
                         const agentRow = agentsMap.get(matricule);
-                        if (!agentRow) return;
+                        if (!agentRow) {
+                            console.log(`Agent ${matricule} non trouvé dans agentsMap`);
+                            return;
+                        }
                         
                         // Réinitialiser les colonnes concernées à 0
                         columnsToReset.forEach(colName => {
@@ -704,6 +724,7 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                     });
                     
                     // Mettre à 1 pour TOUS les agents de csPersList (pas seulement les disponibles)
+                    let updatedCount = 0;
                     csPersList.forEach(person => {
                         const matricule = `${person.persStatutCod}${person.persId}`;
                         const agentRow = agentsMap.get(matricule);
@@ -715,7 +736,9 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
 
                         // Appliquer les correspondances (mettre à 1)
                         applyCorrespondance(cod, agentRow, asup1, grade);
+                        updatedCount++;
                     });
+                    console.log(`${updatedCount} agents mis à jour pour le code ${cod}`);
                 });
             });
         }
