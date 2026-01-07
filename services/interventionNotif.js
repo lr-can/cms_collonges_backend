@@ -737,23 +737,29 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                     codeLog.columnsReset = columnsToReset;
                     result.logs.push(`Colonnes à réinitialiser pour ${cod}: ${columnsToReset.join(', ')}`);
                     
-                    // Réinitialiser les colonnes concernées pour tous les agents de csPersList
-                    csPersList.forEach(person => {
-                        const matricule = `${person.persStatutCod}${person.persId}`;
-                        const agentRow = agentsMap.get(matricule);
-                        if (!agentRow) {
-                            result.logs.push(`Agent ${matricule} non trouvé dans agentsMap`);
-                            return;
-                        }
-                        
-                        // Réinitialiser les colonnes concernées à 0
+                    // Réinitialiser les colonnes concernées pour TOUS les agents dans la feuille (pas seulement csPersList)
+                    let resetCount = 0;
+                    agentsMap.forEach((agentRow, matricule) => {
+                        // Réinitialiser les colonnes concernées à 0 pour tous les agents
                         columnsToReset.forEach(colName => {
                             const colIndex = getColIndex(colName);
                             if (colIndex >= 0) {
-                                updateCell(agentRow.data, colIndex, 0);
+                                const oldValue = agentRow.data[colIndex];
+                                if (oldValue != 0 && oldValue != '0' && oldValue != '') {
+                                    updateCell(agentRow.data, colIndex, 0);
+                                    resetCount++;
+                                    // Logger seulement pour les agents qui avaient une valeur non nulle
+                                    if (resetCount <= 10) { // Limiter les logs
+                                        result.logs.push(`Réinitialisé ${colName} pour ${matricule} (ancienne valeur: ${oldValue})`);
+                                    }
+                                } else {
+                                    // S'assurer que c'est bien 0 même si c'était déjà vide
+                                    updateCell(agentRow.data, colIndex, 0);
+                                }
                             }
                         });
                     });
+                    result.logs.push(`${resetCount} colonnes réinitialisées pour le code ${cod} (sur tous les agents de la feuille)`);
                     
                     // Mettre à 1 pour TOUS les agents de csPersList (pas seulement les disponibles)
                     csPersList.forEach(person => {
@@ -767,6 +773,13 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
 
                         // Appliquer les correspondances (mettre à 1)
                         applyCorrespondance(cod, agentRow, asup1, grade);
+                        
+                        // Vérifier que les valeurs ont bien été mises à jour
+                        const cdgIndex = getColIndex('CDG_cdg');
+                        if (cod === 'CDG' && cdgIndex >= 0) {
+                            const cdgValue = agentRow.data[cdgIndex];
+                            result.logs.push(`Agent ${matricule} - CDG_cdg après mise à jour: ${cdgValue}`);
+                        }
                         
                         codeLog.agentsUpdated.push({
                             matricule: matricule,
@@ -782,18 +795,55 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
         }
 
         // Préparer les données pour la mise à jour
-        const valuesToUpdate = rows.slice(1).map(row => {
+        // On doit mettre à jour toutes les lignes (y compris celles qui ont été modifiées)
+        // IMPORTANT: rows contient les références aux tableaux modifiés, donc les modifications sont présentes
+        const valuesToUpdate = rows.slice(1).map((row, index) => {
+            // Créer une copie de la ligne pour éviter de modifier l'original
+            const rowCopy = [...row];
+            
             // S'assurer que la ligne a la bonne longueur
-            while (row.length < headers.length) {
-                row.push('');
+            while (rowCopy.length < headers.length) {
+                rowCopy.push('');
             }
-            return row.slice(0, headers.length);
+            
+            // Vérifier les valeurs pour les agents modifiés (pour debug)
+            const matricule = rowCopy[getColIndex('matricule')];
+            if (matricule && result.updatedAgents.some(update => 
+                update.agentsUpdated.some(agent => agent.matricule === matricule)
+            )) {
+                const cdgIndex = getColIndex('CDG_cdg');
+                if (cdgIndex >= 0) {
+                    result.logs.push(`Ligne ${index + 2} - Agent ${matricule} - CDG_cdg avant sauvegarde: ${rowCopy[cdgIndex]}`);
+                }
+            }
+            
+            return rowCopy.slice(0, headers.length);
         });
 
+        result.logs.push(`Préparation de ${valuesToUpdate.length} lignes pour la mise à jour`);
+
+        // Fonction pour convertir un numéro de colonne en lettre (1 -> A, 27 -> AA, etc.)
+        const colNumToLetter = (num) => {
+            let result = '';
+            while (num > 0) {
+                num--;
+                result = String.fromCharCode(65 + (num % 26)) + result;
+                num = Math.floor(num / 26);
+            }
+            return result;
+        };
+
         // Mettre à jour la feuille agentsASUP dans spreadsheetId2
+        // Utiliser un range qui couvre toutes les lignes à mettre à jour
+        const lastRow = rows.length;
+        const lastCol = colNumToLetter(headers.length);
+        const updateRange = `agentsASUP!A2:${lastCol}${lastRow}`;
+        
+        result.logs.push(`Mise à jour du range: ${updateRange} (${headers.length} colonnes, ${lastRow} lignes)`);
+        
         await sheets.spreadsheets.values.update({
             spreadsheetId: spreadsheetIdAgents,
-            range: 'agentsASUP!A2',
+            range: updateRange,
             valueInputOption: 'USER_ENTERED',
             resource: {
                 values: valuesToUpdate,
