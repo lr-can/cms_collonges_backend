@@ -373,19 +373,23 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
 
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId2 = config.google.spreadsheetId2;
-    const rangeAgents = 'Feuille 16!A1:AK1000'; // Ajuster selon le nombre de colonnes
+    
+    // Les agents avec leurs colonnes d'emplois sont dans la feuille "agentsASUP" du spreadsheetId2
+    // La Feuille 16 du spreadsheetId classique contient le planningCounterList (Code, Libellé, Nombre, NombreMax)
+    const spreadsheetIdAgents = spreadsheetId2;
+    const rangeAgents = 'agentsASUP!A:AK'; // Feuille agentsASUP de spreadsheetId2 contenant les agents
 
     try {
-        // Lire les données actuelles de la Feuille 16
+        // Lire les données actuelles de la feuille agentsASUP du spreadsheetId2 (agents avec colonnes d'emplois)
         const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: spreadsheetId2,
+            spreadsheetId: spreadsheetIdAgents,
             range: rangeAgents,
         });
 
         const rows = response.data.values || [];
         if (rows.length === 0) {
-            result.logs.push('Aucune donnée trouvée dans Feuille 16');
-            result.errors.push('Aucune donnée trouvée dans Feuille 16');
+            result.logs.push('Aucune donnée trouvée dans agentsASUP');
+            result.errors.push('Aucune donnée trouvée dans agentsASUP');
             return result;
         }
 
@@ -786,10 +790,10 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
             return row.slice(0, headers.length);
         });
 
-        // Mettre à jour la feuille
+        // Mettre à jour la feuille agentsASUP dans spreadsheetId2
         await sheets.spreadsheets.values.update({
-            spreadsheetId: spreadsheetId2,
-            range: 'Feuille 16!A2',
+            spreadsheetId: spreadsheetIdAgents,
+            range: 'agentsASUP!A2',
             valueInputOption: 'USER_ENTERED',
             resource: {
                 values: valuesToUpdate,
