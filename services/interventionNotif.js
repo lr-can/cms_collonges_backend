@@ -439,21 +439,8 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
             row[colIndex] = value;
         };
 
-        // Réinitialiser toutes les colonnes d'emplois à 0 pour tous les agents (disponibles et en intervention)
-        const emploiColumns = [
-            'SAP_ca', 'SAP_cd', 'SAP_eq', 'SAP_eqc',
-            'PSSAP_ca', 'PSSAP_cd', 'PSSAP_eq', 'PSSAP_eqc',
-            'DIV_ca', 'DIV_cd', 'DIV_eq',
-            'INC_ca', 'INC_cd', 'INC_ce', 'INC_eq',
-            'PSINC_ca', 'PSINC_cd', 'PSINC_ce', 'PSINC_eq',
-            'CDG_cd', 'CDG_cdg',
-            'INFAMU_inf', 'INFAMU_cd',
-            'BATO_ca', 'BATO_eq',
-            'AQUA_ca', 'AQUA_cd'
-        ];
-
-        // Fonction pour initialiser ou réinitialiser un agent
-        const initOrResetAgent = (person) => {
+        // Fonction pour initialiser un agent manquant
+        const initAgent = (person) => {
             const matricule = `${person.persStatutCod}${person.persId}`;
             let agentRow = agentsMap.get(matricule);
             
@@ -472,19 +459,11 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                     data: newRow
                 });
                 rows.push(newRow);
-            } else {
-                // Réinitialiser les colonnes d'emplois à 0
-                emploiColumns.forEach(col => {
-                    const colIndex = getColIndex(col);
-                    if (colIndex >= 0) {
-                        updateCell(agentRow.data, colIndex, 0);
-                    }
-                });
             }
         };
 
-        // Initialiser/réinitialiser tous les agents (disponibles et en intervention)
-        csPersList.forEach(initOrResetAgent);
+        // Initialiser les agents manquants (sans réinitialiser les colonnes d'emplois)
+        csPersList.forEach(initAgent);
 
         // Récupérer les données d'asup depuis l'API
         if (!fetch) {
@@ -508,6 +487,57 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                    gradeLower.includes('infirmier') ||
                    gradeLower === 'sap 1cl' ||
                    gradeLower === 'sap 2cl';
+        };
+
+        // Fonction pour obtenir les colonnes concernées par un code
+        const getColumnsForCode = (cod) => {
+            const columns = [];
+            switch(cod) {
+                case 'CDG':
+                    columns.push('CDG_cdg');
+                    break;
+                case 'CAINC':
+                    columns.push('INC_ca');
+                    break;
+                case 'CASAP':
+                    columns.push('SAP_ca');
+                    break;
+                case 'CADIV':
+                    columns.push('DIV_ca');
+                    break;
+                case 'EQSAP':
+                    columns.push('SAP_eq', 'SAP_eqc', 'PSSAP_eqc', 'PSSAP_eq', 'PSSAP_ca');
+                    break;
+                case 'EQINC':
+                    columns.push('INC_eq', 'PSINC_eq', 'PSINC_ce', 'INC_ce');
+                    break;
+                case 'EQDIV':
+                    columns.push('DIV_eq');
+                    break;
+                case 'INFPSU':
+                    columns.push('INFAMU_inf');
+                    break;
+                case 'CCOD1':
+                    columns.push('INC_cd', 'PSINC_cd');
+                    break;
+                case 'BTARS':
+                    columns.push('SAP_cd');
+                    break;
+                case 'B':
+                    columns.push('PSSAP_cd', 'DIV_cd', 'INFAMU_cd', 'CDG_cd', 'AQUA_cd');
+                    break;
+                case 'MATELOT':
+                    columns.push('BATO_eq');
+                    break;
+                case 'CODBRSM':
+                case 'CODBRS':
+                    columns.push('BATO_ca');
+                    break;
+                case 'APP':
+                    columns.push('SAP_eqc', 'PSSAP_eqc');
+                    break;
+            }
+            return columns;
         };
 
         // Fonction pour appliquer les correspondances pour un code donné
@@ -617,7 +647,7 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
         if (mode === 'disponibilite' || mode === 'intervention') {
             console.log(`Mode ${mode} détecté, pas de traitement des emplois`);
         } else {
-            // Mode emplois : traiter les codes d'emplois
+            // Mode emplois : traiter les codes d'emplois (un code par requête)
             const codesToProcess = planningCounterList.filter(item => 
                 item.cod !== 'DISPO' && 
                 item.cod !== 'DEP_ITV__PERS' && 
@@ -636,7 +666,7 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                        totalAgentsCount === totalValue;
             });
 
-            // Grouper les codes qui ont les mêmes value et totalValue
+            // Grouper les codes qui ont les mêmes value et totalValue (codes ambigus)
             const codesByKey = new Map();
             validCodes.forEach(item => {
                 const value = parseInt(item.value) || 0;
@@ -648,64 +678,44 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                 codesByKey.get(key).push(item);
             });
 
-            // Regrouper tous les codes valides par agent pour optimiser (traitement ligne par ligne)
-            const agentsToCodesMap = new Map(); // matricule -> [codes à appliquer]
-            
-            // Traiter chaque groupe de codes (même value et totalValue)
+            // Traiter chaque groupe de codes (même value et totalValue = codes ambigus)
             codesByKey.forEach((codesGroup, key) => {
-                // Séparer les codes de base et conditionnels (B)
-                const baseCodes = codesGroup.filter(item => item.cod !== 'B');
-                const conditionalCodes = codesGroup.filter(item => item.cod === 'B');
-
-                // Traiter d'abord les codes de base
-                baseCodes.forEach(item => {
-                    // On modifie tous les agents de csPersList, sans utiliser slice
-                    const agentsToUpdate = csPersList;
+                // Pour chaque code du groupe, réinitialiser ses colonnes et mettre à 1
+                codesGroup.forEach(item => {
+                    const cod = item.cod;
+                    const value = parseInt(item.value) || 0;
                     
-                    agentsToUpdate.forEach(person => {
-                        const matricule = `${person.persStatutCod}${person.persId}`;
-                        if (!agentsToCodesMap.has(matricule)) {
-                            agentsToCodesMap.set(matricule, []);
-                        }
-                        agentsToCodesMap.get(matricule).push({ cod: item.cod, isConditional: false });
-                    });
-                });
-
-                // Traiter ensuite les codes conditionnels (B) qui dépendent des codes de base
-                conditionalCodes.forEach(item => {
-                    const agentsToUpdate = csPersList;
+                    // Obtenir les colonnes concernées par ce code
+                    const columnsToReset = getColumnsForCode(cod);
                     
-                    agentsToUpdate.forEach(person => {
+                    // Réinitialiser les colonnes concernées pour tous les agents de csPersList
+                    csPersList.forEach(person => {
                         const matricule = `${person.persStatutCod}${person.persId}`;
-                        if (!agentsToCodesMap.has(matricule)) {
-                            agentsToCodesMap.set(matricule, []);
-                        }
-                        agentsToCodesMap.get(matricule).push({ cod: item.cod, isConditional: true });
+                        const agentRow = agentsMap.get(matricule);
+                        if (!agentRow) return;
+                        
+                        // Réinitialiser les colonnes concernées à 0
+                        columnsToReset.forEach(colName => {
+                            const colIndex = getColIndex(colName);
+                            if (colIndex >= 0) {
+                                updateCell(agentRow.data, colIndex, 0);
+                            }
+                        });
                     });
-                });
-            });
+                    
+                    // Mettre à 1 pour TOUS les agents de csPersList (pas seulement les disponibles)
+                    csPersList.forEach(person => {
+                        const matricule = `${person.persStatutCod}${person.persId}`;
+                        const agentRow = agentsMap.get(matricule);
+                        if (!agentRow) return;
 
-            // Appliquer toutes les correspondances pour chaque agent (traitement ligne par ligne)
-            agentsToCodesMap.forEach((codesList, matricule) => {
-                const agentRow = agentsMap.get(matricule);
-                if (!agentRow) return;
+                        const asupInfo = asupMap.get(matricule);
+                        const asup1 = asupInfo && asupInfo.asup1;
+                        const grade = agentRow.data[getColIndex('grade')] || asupInfo?.grade || '';
 
-                const asupInfo = asupMap.get(matricule);
-                const asup1 = asupInfo && asupInfo.asup1;
-                const grade = agentRow.data[getColIndex('grade')] || asupInfo?.grade || '';
-
-                // Séparer les codes de base et conditionnels
-                const baseCodesToApply = codesList.filter(c => !c.isConditional);
-                const conditionalCodesToApply = codesList.filter(c => c.isConditional);
-
-                // Appliquer d'abord les codes de base
-                baseCodesToApply.forEach(codeInfo => {
-                    applyCorrespondance(codeInfo.cod, agentRow, asup1, grade);
-                });
-
-                // Appliquer ensuite les codes conditionnels (B vérifie les valeurs déjà mises à jour)
-                conditionalCodesToApply.forEach(codeInfo => {
-                    applyCorrespondance(codeInfo.cod, agentRow, asup1, grade);
+                        // Appliquer les correspondances (mettre à 1)
+                        applyCorrespondance(cod, agentRow, asup1, grade);
+                    });
                 });
             });
         }
