@@ -319,6 +319,423 @@ async function giveInterventionType(titre) {
     }
 }
 
+async function getPlanningCounterListFromSheet(sheets, spreadsheetId) {
+    try {
+        // Lire les données de la Feuille 16 (Code, Libellé, Nombre, NombreMax)
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'Feuille 16!A2:D100',
+        });
+
+        const rows = response.data.values || [];
+        if (rows.length === 0) {
+            console.log('No planning counter data found in Feuille 16');
+            return [];
+        }
+
+        // Parser les données : Code (A), Libellé (B), Nombre (C), NombreMax (D)
+        const planningCounterList = rows.map(row => ({
+            cod: row[0] || '',
+            lib: row[1] || '',
+            value: row[2] || '0',
+            totalValue: row[3] || '0'
+        })).filter(item => item.cod); // Filtrer les lignes vides
+
+        return planningCounterList;
+    } catch (error) {
+        console.error('Error reading planning counter list from sheet:', error);
+        return [];
+    }
+}
+
+async function updateAgentsEmplois(csPersList, planningCounterList) {
+    if (!csPersList || !planningCounterList || planningCounterList.length === 0) {
+        return;
+    }
+
+    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
+    const auth = new google.auth.JWT(
+        config.google.client_email,
+        null,
+        privateKey,
+        ['https://www.googleapis.com/auth/spreadsheets']
+    );
+
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId2 = config.google.spreadsheetId2;
+    const rangeAgents = 'Feuille 16!A1:AK1000'; // Ajuster selon le nombre de colonnes
+
+    try {
+        // Lire les données actuelles de la Feuille 16
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: spreadsheetId2,
+            range: rangeAgents,
+        });
+
+        const rows = response.data.values || [];
+        if (rows.length === 0) {
+            console.log('No data found in Feuille 16');
+            return;
+        }
+
+        // Récupérer les en-têtes
+        const headers = rows[0];
+        const headerIndexMap = {};
+        headers.forEach((header, index) => {
+            headerIndexMap[header] = index;
+        });
+
+        // Créer un map des agents existants par matricule
+        const agentsMap = new Map();
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (row[0]) { // Si matricule existe
+                agentsMap.set(row[0], {
+                    rowIndex: i,
+                    data: row
+                });
+            }
+        }
+
+        // Filtrer csPersList pour exclure les agents avec administrativeStatusCode == "IN" ou "IND" (pour disponibilité)
+        const availableAgents = csPersList.filter(person => 
+            person.administrativeStatus && 
+            person.administrativeStatus.code !== "IN" && 
+            person.administrativeStatus.code !== "IND"
+        );
+
+        // Créer un map de tous les agents par matricule (pour les interventions)
+        const allAgentsMap = new Map();
+        csPersList.forEach(person => {
+            const matricule = `${person.persStatutCod}${person.persId}`;
+            allAgentsMap.set(matricule, person);
+        });
+
+        // Créer un map des agents disponibles par matricule
+        const availableAgentsMap = new Map();
+        availableAgents.forEach(person => {
+            const matricule = `${person.persStatutCod}${person.persId}`;
+            availableAgentsMap.set(matricule, person);
+        });
+
+        // Créer un map des codes de planningCounterList
+        const planningMap = new Map();
+        planningCounterList.forEach(item => {
+            planningMap.set(item.cod, {
+                lib: item.lib,
+                value: parseInt(item.value) || 0,
+                totalValue: parseInt(item.totalValue) || 0
+            });
+        });
+
+        // Fonction pour obtenir l'index d'une colonne
+        const getColIndex = (colName) => headerIndexMap[colName] || -1;
+
+        // Fonction pour mettre à jour une valeur dans une ligne
+        const updateCell = (row, colIndex, value) => {
+            while (row.length <= colIndex) {
+                row.push('');
+            }
+            row[colIndex] = value;
+        };
+
+        // Réinitialiser toutes les colonnes d'emplois à 0 pour tous les agents (disponibles et en intervention)
+        const emploiColumns = [
+            'SAP_ca', 'SAP_cd', 'SAP_eq', 'SAP_eqc',
+            'PSSAP_ca', 'PSSAP_cd', 'PSSAP_eq', 'PSSAP_eqc',
+            'DIV_ca', 'DIV_cd', 'DIV_eq',
+            'INC_ca', 'INC_cd', 'INC_ce', 'INC_eq',
+            'PSINC_ca', 'PSINC_cd', 'PSINC_ce', 'PSINC_eq',
+            'CDG_cd', 'CDG_cdg',
+            'INFAMU_inf', 'INFAMU_cd',
+            'BATO_ca', 'BATO_eq',
+            'AQUA_ca', 'AQUA_cd'
+        ];
+
+        // Fonction pour initialiser ou réinitialiser un agent
+        const initOrResetAgent = (person) => {
+            const matricule = `${person.persStatutCod}${person.persId}`;
+            let agentRow = agentsMap.get(matricule);
+            
+            if (!agentRow) {
+                // Créer un nouvel agent
+                const newRow = new Array(headers.length).fill(0);
+                newRow[getColIndex('matricule')] = matricule;
+                newRow[getColIndex('nomAgent')] = person.nom || '';
+                newRow[getColIndex('prenomAgent')] = person.prenom || '';
+                newRow[getColIndex('grade')] = 'Sap 2CL';
+                newRow[getColIndex('email')] = `${(person.prenom || '').toLowerCase()}.${(person.nom || '').toUpperCase()}@sdmis.fr`;
+                // Les autres colonnes initialisées à 0
+                
+                agentsMap.set(matricule, {
+                    rowIndex: rows.length,
+                    data: newRow
+                });
+                rows.push(newRow);
+            } else {
+                // Réinitialiser les colonnes d'emplois à 0
+                emploiColumns.forEach(col => {
+                    const colIndex = getColIndex(col);
+                    if (colIndex >= 0) {
+                        updateCell(agentRow.data, colIndex, 0);
+                    }
+                });
+            }
+        };
+
+        // Initialiser/réinitialiser tous les agents (disponibles et en intervention)
+        csPersList.forEach(initOrResetAgent);
+
+        // Récupérer les données d'asup depuis l'API
+        if (!fetch) {
+            fetch = (await import('node-fetch')).default;
+        }
+        const agentsInfo = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup');
+        const agentsData = await agentsInfo.json();
+        const asupMap = new Map();
+        agentsData.forEach(agent => {
+            asupMap.set(agent.matricule, {
+                asup1: agent.asup1 === '1' || agent.asup1 === 1,
+                grade: agent.grade
+            });
+        });
+
+        // Fonction pour vérifier si un grade est Infirmière, Sap 1CL ou Sap 2CL
+        const isSpecialGrade = (grade) => {
+            if (!grade) return false;
+            const gradeLower = grade.toLowerCase();
+            return gradeLower.includes('infirmière') || 
+                   gradeLower.includes('infirmier') ||
+                   gradeLower === 'sap 1cl' ||
+                   gradeLower === 'sap 2cl';
+        };
+
+        // Fonction pour appliquer les correspondances pour un code donné
+        const applyCorrespondance = (cod, agentRow, asup1, grade) => {
+            switch(cod) {
+                case 'CDG':
+                    updateCell(agentRow.data, getColIndex('CDG_cdg'), 1);
+                    break;
+                case 'CAINC':
+                    updateCell(agentRow.data, getColIndex('INC_ca'), 1);
+                    break;
+                case 'CASAP':
+                    updateCell(agentRow.data, getColIndex('SAP_ca'), 1);
+                    break;
+                case 'CADIV':
+                    updateCell(agentRow.data, getColIndex('DIV_ca'), 1);
+                    break;
+                case 'EQSAP':
+                    updateCell(agentRow.data, getColIndex('SAP_eq'), 1);
+                    updateCell(agentRow.data, getColIndex('SAP_eqc'), 1);
+                    if (asup1) {
+                        updateCell(agentRow.data, getColIndex('PSSAP_eqc'), 1);
+                        updateCell(agentRow.data, getColIndex('PSSAP_eq'), 1);
+                    }
+                    if (!isSpecialGrade(grade)) {
+                        updateCell(agentRow.data, getColIndex('PSSAP_ca'), 1);
+                    }
+                    break;
+                case 'EQINC':
+                    updateCell(agentRow.data, getColIndex('INC_eq'), 1);
+                    if (asup1) {
+                        updateCell(agentRow.data, getColIndex('PSINC_eq'), 1);
+                        updateCell(agentRow.data, getColIndex('PSINC_ce'), 1);
+                    }
+                    if (!isSpecialGrade(grade)) {
+                        updateCell(agentRow.data, getColIndex('INC_ce'), 1);
+                    }
+                    break;
+                case 'EQDIV':
+                    updateCell(agentRow.data, getColIndex('DIV_eq'), 1);
+                    break;
+                case 'INFPSU':
+                    updateCell(agentRow.data, getColIndex('INFAMU_inf'), 1);
+                    break;
+                case 'CCOD1':
+                    updateCell(agentRow.data, getColIndex('INC_cd'), 1);
+                    if (asup1) {
+                        updateCell(agentRow.data, getColIndex('PSINC_cd'), 1);
+                    }
+                    break;
+                case 'BTARS':
+                    updateCell(agentRow.data, getColIndex('SAP_cd'), 1);
+                    break;
+                case 'B':
+                    updateCell(agentRow.data, getColIndex('PSSAP_cd'), 1);
+                    updateCell(agentRow.data, getColIndex('DIV_cd'), 1);
+                    // Vérifier si SAP_eq = 1
+                    const sapEqIndex = getColIndex('SAP_eq');
+                    if (sapEqIndex >= 0 && agentRow.data[sapEqIndex] == 1) {
+                        updateCell(agentRow.data, getColIndex('INFAMU_cd'), 1);
+                    }
+                    // Vérifier si INC_eq = 1
+                    const incEqIndex = getColIndex('INC_eq');
+                    if (incEqIndex >= 0 && agentRow.data[incEqIndex] == 1) {
+                        updateCell(agentRow.data, getColIndex('CDG_cd'), 1);
+                    }
+                    updateCell(agentRow.data, getColIndex('AQUA_cd'), 1);
+                    break;
+                case 'MATELOT':
+                    updateCell(agentRow.data, getColIndex('BATO_eq'), 1);
+                    break;
+                case 'CODBRSM':
+                case 'CODBRS':
+                    updateCell(agentRow.data, getColIndex('BATO_ca'), 1);
+                    break;
+                case 'APP':
+                    updateCell(agentRow.data, getColIndex('SAP_eqc'), 1);
+                    if (asup1) {
+                        updateCell(agentRow.data, getColIndex('PSSAP_eqc'), 1);
+                    }
+                    break;
+            }
+        };
+
+        // Déterminer le mode : disponibilité, intervention ou emplois
+        const dispo = planningCounterList.find(item => item.cod === 'DISPO');
+        const depItvPers = planningCounterList.find(item => item.cod === 'DEP_ITV__PERS');
+        const totalAgentsCount = csPersList.length;
+        const availableAgentsCount = availableAgents.length;
+        
+        let mode = 'emplois'; // Par défaut, mode emplois
+        if (dispo) {
+            const dispoTotalValue = parseInt(dispo.totalValue) || 0;
+            if (totalAgentsCount === dispoTotalValue) {
+                mode = 'disponibilite'; // Mode Feuille 12
+            }
+        }
+        
+        if (mode !== 'disponibilite' && depItvPers) {
+            const depItvValue = parseInt(depItvPers.value) || 0;
+            if (totalAgentsCount === depItvValue) {
+                mode = 'intervention'; // Mode Feuille 5
+            }
+        }
+
+        // Si on est en mode disponibilité ou intervention, on ne traite pas les emplois
+        if (mode === 'disponibilite' || mode === 'intervention') {
+            console.log(`Mode ${mode} détecté, pas de traitement des emplois`);
+        } else {
+            // Mode emplois : traiter les codes d'emplois
+            const codesToProcess = planningCounterList.filter(item => 
+                item.cod !== 'DISPO' && 
+                item.cod !== 'DEP_ITV__PERS' && 
+                item.cod !== 'SMRES' && 
+                item.cod !== 'DIP' && 
+                item.cod !== 'AEC'
+            );
+
+            // Filtrer les codes qui correspondent aux critères
+            const validCodes = codesToProcess.filter(item => {
+                const value = parseInt(item.value) || 0;
+                const totalValue = parseInt(item.totalValue) || 0;
+                // Vérifier : availableAgents.length === value ET csPersList.length === totalValue
+                return value > 0 && 
+                       availableAgentsCount === value && 
+                       totalAgentsCount === totalValue;
+            });
+
+            // Grouper les codes qui ont les mêmes value et totalValue
+            const codesByKey = new Map();
+            validCodes.forEach(item => {
+                const value = parseInt(item.value) || 0;
+                const totalValue = parseInt(item.totalValue) || 0;
+                const key = `${value}_${totalValue}`;
+                if (!codesByKey.has(key)) {
+                    codesByKey.set(key, []);
+                }
+                codesByKey.get(key).push(item);
+            });
+
+            // Regrouper tous les codes valides par agent pour optimiser (traitement ligne par ligne)
+            const agentsToCodesMap = new Map(); // matricule -> [codes à appliquer]
+            
+            // Traiter chaque groupe de codes (même value et totalValue)
+            codesByKey.forEach((codesGroup, key) => {
+                // Séparer les codes de base et conditionnels (B)
+                const baseCodes = codesGroup.filter(item => item.cod !== 'B');
+                const conditionalCodes = codesGroup.filter(item => item.cod === 'B');
+
+                // Traiter d'abord les codes de base
+                baseCodes.forEach(item => {
+                    // On modifie tous les agents de csPersList, sans utiliser slice
+                    const agentsToUpdate = csPersList;
+                    
+                    agentsToUpdate.forEach(person => {
+                        const matricule = `${person.persStatutCod}${person.persId}`;
+                        if (!agentsToCodesMap.has(matricule)) {
+                            agentsToCodesMap.set(matricule, []);
+                        }
+                        agentsToCodesMap.get(matricule).push({ cod: item.cod, isConditional: false });
+                    });
+                });
+
+                // Traiter ensuite les codes conditionnels (B) qui dépendent des codes de base
+                conditionalCodes.forEach(item => {
+                    const agentsToUpdate = csPersList;
+                    
+                    agentsToUpdate.forEach(person => {
+                        const matricule = `${person.persStatutCod}${person.persId}`;
+                        if (!agentsToCodesMap.has(matricule)) {
+                            agentsToCodesMap.set(matricule, []);
+                        }
+                        agentsToCodesMap.get(matricule).push({ cod: item.cod, isConditional: true });
+                    });
+                });
+            });
+
+            // Appliquer toutes les correspondances pour chaque agent (traitement ligne par ligne)
+            agentsToCodesMap.forEach((codesList, matricule) => {
+                const agentRow = agentsMap.get(matricule);
+                if (!agentRow) return;
+
+                const asupInfo = asupMap.get(matricule);
+                const asup1 = asupInfo && asupInfo.asup1;
+                const grade = agentRow.data[getColIndex('grade')] || asupInfo?.grade || '';
+
+                // Séparer les codes de base et conditionnels
+                const baseCodesToApply = codesList.filter(c => !c.isConditional);
+                const conditionalCodesToApply = codesList.filter(c => c.isConditional);
+
+                // Appliquer d'abord les codes de base
+                baseCodesToApply.forEach(codeInfo => {
+                    applyCorrespondance(codeInfo.cod, agentRow, asup1, grade);
+                });
+
+                // Appliquer ensuite les codes conditionnels (B vérifie les valeurs déjà mises à jour)
+                conditionalCodesToApply.forEach(codeInfo => {
+                    applyCorrespondance(codeInfo.cod, agentRow, asup1, grade);
+                });
+            });
+        }
+
+        // Préparer les données pour la mise à jour
+        const valuesToUpdate = rows.slice(1).map(row => {
+            // S'assurer que la ligne a la bonne longueur
+            while (row.length < headers.length) {
+                row.push('');
+            }
+            return row.slice(0, headers.length);
+        });
+
+        // Mettre à jour la feuille
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: spreadsheetId2,
+            range: 'Feuille 16!A2',
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: valuesToUpdate,
+            },
+        });
+
+        console.log('Agents emplois updated successfully');
+    } catch (error) {
+        console.error('Error updating agents emplois:', error);
+        throw error;
+    }
+}
+
 async function insertSmartemisResponse(data) {
     const privateKey = config.google.private_key.replace(/\\n/g, '\n');
     const auth = new google.auth.JWT(
@@ -495,29 +912,73 @@ async function insertSmartemisResponse(data) {
             agent.administrativeStatusCode,
             agent.administrativeStatusRgb
         ]);
-        let range2 = '';
-        data.csPersList.length >= 2 && data.csPersList.length < 30 ? range2 = 'Feuille 5!A2:F30' : range2 = 'Feuille 12!A2:F100';
-        try {
-            await sheets.spreadsheets.values.clear({
-                spreadsheetId,
-                range: range2,
-            });
-            console.log('Data cleared successfully!');
-        } catch (error) {
-            console.error('Error clearing data:', error);
+        
+        // Récupérer planningCounterList depuis data ou depuis la Feuille 16
+        let planningCounterList = data.planningCounterList;
+        if (!planningCounterList || planningCounterList.length === 0) {
+            // Lire depuis la Feuille 16 du spreadsheetId
+            planningCounterList = await getPlanningCounterListFromSheet(sheets, spreadsheetId);
         }
-        try {
-            const response = await sheets.spreadsheets.values.update({
-                spreadsheetId,
-                range: range2,
-                valueInputOption: 'USER_ENTERED',
-                resource: {
-                    values: values,
-                },
-            });
-            console.log('Data inserted successfully:', response.data);
-        } catch (error) {
-            console.error('Error inserting data:', error);
+        
+        // Déterminer la feuille selon la logique :
+        // - Si csPersList.length === totalValue de DISPO → Feuille 12 (disponibilité)
+        // - Sinon si csPersList.length === value de DEP_ITV__PERS → Feuille 5 (intervention)
+        // - Sinon → mode emplois (pas de mise à jour de cette feuille)
+        let range2 = null; // Par défaut, pas de mise à jour (mode emplois)
+        if (planningCounterList && planningCounterList.length > 0) {
+            const dispo = planningCounterList.find(item => item.cod === 'DISPO');
+            const depItvPers = planningCounterList.find(item => item.cod === 'DEP_ITV__PERS');
+            const totalAgents = data.csPersList ? data.csPersList.length : 0;
+            
+            if (dispo) {
+                const dispoTotalValue = parseInt(dispo.totalValue) || 0;
+                if (totalAgents === dispoTotalValue) {
+                    range2 = 'Feuille 12!A2:F100'; // Mode disponibilité
+                }
+            }
+            
+            if (!range2 && depItvPers) {
+                const depItvValue = parseInt(depItvPers.value) || 0;
+                if (totalAgents === depItvValue) {
+                    range2 = 'Feuille 5!A2:F30'; // Mode intervention
+                }
+            }
+        }
+                
+        // Ne mettre à jour la feuille que si on n'est pas en mode emplois
+        if (range2) {
+            try {
+                await sheets.spreadsheets.values.clear({
+                    spreadsheetId,
+                    range: range2,
+                });
+                console.log('Data cleared successfully!');
+            } catch (error) {
+                console.error('Error clearing data:', error);
+            }
+            try {
+                const response = await sheets.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: range2,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: {
+                        values: values,
+                    },
+                });
+                console.log('Data inserted successfully:', response.data);
+            } catch (error) {
+                console.error('Error inserting data:', error);
+            }
+        }
+
+        // Mettre à jour les emplois des agents si planningCounterList existe
+        // (se fait toujours, même en mode disponibilité/intervention, mais la fonction gère le mode)
+        if (planningCounterList && planningCounterList.length > 0) {
+            try {
+                await updateAgentsEmplois(data.csPersList, planningCounterList);
+            } catch (error) {
+                console.error('Error updating agents emplois:', error);
+            }
         }
 
         console.log(agentInfoList);
