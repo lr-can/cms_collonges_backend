@@ -349,8 +349,18 @@ async function getPlanningCounterListFromSheet(sheets, spreadsheetId) {
 }
 
 async function updateAgentsEmplois(csPersList, planningCounterList) {
+    const result = {
+        success: false,
+        mode: null,
+        logs: [],
+        updatedAgents: [],
+        processedCodes: [],
+        errors: []
+    };
+    
     if (!csPersList || !planningCounterList || planningCounterList.length === 0) {
-        return;
+        result.logs.push('Pas de csPersList ou planningCounterList vide');
+        return result;
     }
 
     const privateKey = config.google.private_key.replace(/\\n/g, '\n');
@@ -374,8 +384,9 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
 
         const rows = response.data.values || [];
         if (rows.length === 0) {
-            console.log('No data found in Feuille 16');
-            return;
+            result.logs.push('Aucune donnée trouvée dans Feuille 16');
+            result.errors.push('Aucune donnée trouvée dans Feuille 16');
+            return result;
         }
 
         // Récupérer les en-têtes
@@ -643,11 +654,13 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
             }
         }
 
+        result.mode = mode;
+        result.logs.push(`Mode détecté: ${mode} - totalAgentsCount: ${totalAgentsCount}, availableAgentsCount: ${availableAgentsCount}`);
+        
         // Si on est en mode disponibilité ou intervention, on ne traite pas les emplois
         if (mode === 'disponibilite' || mode === 'intervention') {
-            console.log(`Mode ${mode} détecté, pas de traitement des emplois`);
+            result.logs.push(`Mode ${mode} détecté, pas de traitement des emplois`);
         } else {
-            console.log(`Mode emplois détecté - totalAgentsCount: ${totalAgentsCount}, availableAgentsCount: ${availableAgentsCount}`);
             
             // Mode emplois : traiter les codes d'emplois (un code par requête)
             const codesToProcess = planningCounterList.filter(item => 
@@ -658,7 +671,7 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                 item.cod !== 'AEC'
             );
 
-            console.log(`Codes à traiter (après filtrage): ${codesToProcess.map(c => c.cod).join(', ')}`);
+            result.logs.push(`Codes à traiter (après filtrage): ${codesToProcess.map(c => c.cod).join(', ')}`);
 
             // Filtrer les codes qui correspondent aux critères
             const validCodes = codesToProcess.filter(item => {
@@ -670,13 +683,20 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                        totalAgentsCount === totalValue;
                 
                 if (!isValid && item.cod === 'CDG') {
-                    console.log(`CDG filtré - value: ${value}, totalValue: ${totalValue}, availableAgentsCount: ${availableAgentsCount}, totalAgentsCount: ${totalAgentsCount}`);
+                    const logMsg = `CDG filtré - value: ${value}, totalValue: ${totalValue}, availableAgentsCount: ${availableAgentsCount}, totalAgentsCount: ${totalAgentsCount}`;
+                    result.logs.push(logMsg);
                 }
                 
                 return isValid;
             });
 
-            console.log(`Codes valides: ${validCodes.map(c => c.cod).join(', ')}`);
+            result.logs.push(`Codes valides: ${validCodes.map(c => c.cod).join(', ')}`);
+            result.processedCodes = validCodes.map(c => ({
+                cod: c.cod,
+                lib: c.lib,
+                value: parseInt(c.value) || 0,
+                totalValue: parseInt(c.totalValue) || 0
+            }));
 
             // Grouper les codes qui ont les mêmes value et totalValue (codes ambigus)
             const codesByKey = new Map();
@@ -692,25 +712,33 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
 
             // Traiter chaque groupe de codes (même value et totalValue = codes ambigus)
             codesByKey.forEach((codesGroup, key) => {
-                console.log(`Traitement du groupe ${key} avec ${codesGroup.length} code(s): ${codesGroup.map(c => c.cod).join(', ')}`);
+                const logMsg = `Traitement du groupe ${key} avec ${codesGroup.length} code(s): ${codesGroup.map(c => c.cod).join(', ')}`;
+                result.logs.push(logMsg);
                 
                 // Pour chaque code du groupe, réinitialiser ses colonnes et mettre à 1
                 codesGroup.forEach(item => {
                     const cod = item.cod;
                     const value = parseInt(item.value) || 0;
                     
-                    console.log(`Traitement du code ${cod} - Réinitialisation et mise à jour pour ${csPersList.length} agents`);
+                    const codeLog = {
+                        cod: cod,
+                        columnsReset: [],
+                        agentsUpdated: []
+                    };
+                    
+                    result.logs.push(`Traitement du code ${cod} - Réinitialisation et mise à jour pour ${csPersList.length} agents`);
                     
                     // Obtenir les colonnes concernées par ce code
                     const columnsToReset = getColumnsForCode(cod);
-                    console.log(`Colonnes à réinitialiser pour ${cod}: ${columnsToReset.join(', ')}`);
+                    codeLog.columnsReset = columnsToReset;
+                    result.logs.push(`Colonnes à réinitialiser pour ${cod}: ${columnsToReset.join(', ')}`);
                     
                     // Réinitialiser les colonnes concernées pour tous les agents de csPersList
                     csPersList.forEach(person => {
                         const matricule = `${person.persStatutCod}${person.persId}`;
                         const agentRow = agentsMap.get(matricule);
                         if (!agentRow) {
-                            console.log(`Agent ${matricule} non trouvé dans agentsMap`);
+                            result.logs.push(`Agent ${matricule} non trouvé dans agentsMap`);
                             return;
                         }
                         
@@ -724,7 +752,6 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                     });
                     
                     // Mettre à 1 pour TOUS les agents de csPersList (pas seulement les disponibles)
-                    let updatedCount = 0;
                     csPersList.forEach(person => {
                         const matricule = `${person.persStatutCod}${person.persId}`;
                         const agentRow = agentsMap.get(matricule);
@@ -736,9 +763,16 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
 
                         // Appliquer les correspondances (mettre à 1)
                         applyCorrespondance(cod, agentRow, asup1, grade);
-                        updatedCount++;
+                        
+                        codeLog.agentsUpdated.push({
+                            matricule: matricule,
+                            nom: person.nom,
+                            prenom: person.prenom
+                        });
                     });
-                    console.log(`${updatedCount} agents mis à jour pour le code ${cod}`);
+                    
+                    result.logs.push(`${codeLog.agentsUpdated.length} agents mis à jour pour le code ${cod}`);
+                    result.updatedAgents.push(codeLog);
                 });
             });
         }
@@ -762,14 +796,26 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
             },
         });
 
-        console.log('Agents emplois updated successfully');
+        result.success = true;
+        result.logs.push(`Agents emplois mis à jour avec succès - ${valuesToUpdate.length} lignes`);
+        return result;
     } catch (error) {
+        result.success = false;
+        result.errors.push(`Erreur lors de la mise à jour: ${error.message}`);
+        result.logs.push(`Erreur: ${error.message}`);
         console.error('Error updating agents emplois:', error);
-        throw error;
+        return result;
     }
 }
 
 async function insertSmartemisResponse(data) {
+    const result = {
+        success: true,
+        operations: [],
+        emploisUpdate: null,
+        errors: []
+    };
+    
     const privateKey = config.google.private_key.replace(/\\n/g, '\n');
     const auth = new google.auth.JWT(
         config.google.client_email,
@@ -793,8 +839,7 @@ async function insertSmartemisResponse(data) {
                 spreadsheetId,
                 range: range10,
             });
-            console.log('Data cleared successfully!');
-            let values = [
+            const itvDetailValues = [
                 [ depItvCsList, srvExtList, formattedDate ]
               ];
             await sheets.spreadsheets.values.update({
@@ -802,16 +847,27 @@ async function insertSmartemisResponse(data) {
                 range: range10,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
-                    values: values,
+                    values: itvDetailValues,
                 },
             });
-            console.log('Data inserted successfully:', values);
+            result.operations.push({
+                type: 'itvDetail',
+                range: range10,
+                success: true
+            });
         } catch (error) {
-            console.error('Error inserting data:', error);
+            result.operations.push({
+                type: 'itvDetail',
+                range: range10,
+                success: false,
+                error: error.message
+            });
+            result.errors.push(`Erreur lors de l'insertion de itvDetail: ${error.message}`);
+            result.success = false;
         }
     }
     if (data.histItvList && data.histItvList.length > 0) {
-        const values = data.histItvList.map(item => [
+        const histValues = data.histItvList.map(item => [
             item.histDate?.date || '',
             item.histTxt || '',
         ]);
@@ -822,29 +878,35 @@ async function insertSmartemisResponse(data) {
                 spreadsheetId,
                 range: rangeHist,
             });
-            console.log('Data cleared successfully!');
-        }
-        catch (error) {
-            console.error('Error clearing data:', error);
-        }
-        try {
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: rangeHist,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
-                    values: values,
+                    values: histValues,
                 },
             });
-            console.log('Historical intervention data inserted successfully:', values);
+            result.operations.push({
+                type: 'histItvList',
+                range: rangeHist,
+                success: true,
+                rowsInserted: histValues.length
+            });
         } catch (error) {
-            console.error('Error inserting historical intervention data:', error);
+            result.operations.push({
+                type: 'histItvList',
+                range: rangeHist,
+                success: false,
+                error: error.message
+            });
+            result.errors.push(`Erreur lors de l'insertion de histItvList: ${error.message}`);
+            result.success = false;
         }
     }
 
     if (data.engList) {
         try {
-            const values = data.engList.map(eng => [
+            const engValues = data.engList.map(eng => [
                 eng.famEngCod,
                 eng.famEngLib,
                 eng.engId,
@@ -860,25 +922,36 @@ async function insertSmartemisResponse(data) {
                 data.result.num
             ]);
             const currentTime = new Date().toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
-            values.forEach(row => row.push(currentTime));
-
+            engValues.forEach(row => row.push(currentTime));
 
             const response = await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
-                    values: values,
+                    values: engValues,
                 },
             });
 
-            console.log('Update successful:', response.data);
+            result.operations.push({
+                type: 'engList',
+                range: range,
+                success: true,
+                rowsUpdated: engValues.length
+            });
         } catch (error) {
-            console.error('Error updating spreadsheet:', error);
+            result.operations.push({
+                type: 'engList',
+                range: range,
+                success: false,
+                error: error.message
+            });
+            result.errors.push(`Erreur lors de la mise à jour de engList: ${error.message}`);
+            result.success = false;
         }
     }
     if (data.localGlobalInstructionList && data.localGlobalInstructionList.length >= 0) {
-        let values = data.localGlobalInstructionList.map(item => ({
+        const instructionValues = data.localGlobalInstructionList.map(item => ({
             origin: item.instructionOrigCs || '',
             nom: item.instructionOrigName || '',
             debut: item.instructionStartDate?.date || '',
@@ -892,18 +965,17 @@ async function insertSmartemisResponse(data) {
                 spreadsheetId,
                 range: rangeInstr,
             });
-            console.log('Data cleared successfully!');
         } catch (error) {
-            console.error('Error clearing data:', error);
+            result.errors.push(`Erreur lors du clear de ${rangeInstr}: ${error.message}`);
         }
-        if (values.length > 0) {
+        if (instructionValues.length > 0) {
         try {
             const response = await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: rangeInstr,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
-                    values: values.map(item => [
+                    values: instructionValues.map(item => [
                         item.origin,
                         item.nom,
                         item.debut,
@@ -913,9 +985,21 @@ async function insertSmartemisResponse(data) {
                     ]),
                 },
             });
-            console.log('Data inserted successfully:', response.data);
+            result.operations.push({
+                type: 'localGlobalInstructionList',
+                range: rangeInstr,
+                success: true,
+                rowsInserted: instructionValues.length
+            });
         } catch (error) {
-            console.error('Error inserting data:', error);
+            result.operations.push({
+                type: 'localGlobalInstructionList',
+                range: rangeInstr,
+                success: false,
+                error: error.message
+            });
+            result.errors.push(`Erreur lors de l'insertion de localGlobalInstructionList: ${error.message}`);
+            result.success = false;
         }
     }
     }
@@ -937,7 +1021,7 @@ async function insertSmartemisResponse(data) {
                 administrativeStatusRgb: person.administrativeStatus.rgb
             };              
         });
-        const values = agentInfoList.map(agent => [
+        const csPersValues = agentInfoList.map(agent => [
             agent.matricule,
             agent.grade,
             agent.nom,
@@ -985,9 +1069,19 @@ async function insertSmartemisResponse(data) {
                     spreadsheetId,
                     range: range2,
                 });
-                console.log('Data cleared successfully!');
+                result.operations.push({
+                    type: 'clear',
+                    range: range2,
+                    success: true
+                });
             } catch (error) {
-                console.error('Error clearing data:', error);
+                result.operations.push({
+                    type: 'clear',
+                    range: range2,
+                    success: false,
+                    error: error.message
+                });
+                result.errors.push(`Erreur lors du clear de ${range2}: ${error.message}`);
             }
             try {
                 const response = await sheets.spreadsheets.values.update({
@@ -995,26 +1089,49 @@ async function insertSmartemisResponse(data) {
                     range: range2,
                     valueInputOption: 'USER_ENTERED',
                     resource: {
-                        values: values,
+                        values: csPersValues,
                     },
                 });
-                console.log('Data inserted successfully:', response.data);
+                result.operations.push({
+                    type: 'update',
+                    range: range2,
+                    success: true,
+                    rowsUpdated: csPersValues.length
+                });
             } catch (error) {
-                console.error('Error inserting data:', error);
+                result.operations.push({
+                    type: 'update',
+                    range: range2,
+                    success: false,
+                    error: error.message
+                });
+                result.errors.push(`Erreur lors de la mise à jour de ${range2}: ${error.message}`);
             }
+        } else {
+            result.operations.push({
+                type: 'info',
+                message: 'Mode emplois détecté - pas de mise à jour de la feuille csPersList'
+            });
         }
 
         // Mettre à jour les emplois des agents si planningCounterList existe
         // (se fait toujours, même en mode disponibilité/intervention, mais la fonction gère le mode)
         if (planningCounterList && planningCounterList.length > 0) {
             try {
-                await updateAgentsEmplois(data.csPersList, planningCounterList);
+                const emploisResult = await updateAgentsEmplois(data.csPersList, planningCounterList);
+                result.emploisUpdate = emploisResult;
+                if (!emploisResult.success) {
+                    result.success = false;
+                }
             } catch (error) {
-                console.error('Error updating agents emplois:', error);
+                result.emploisUpdate = {
+                    success: false,
+                    error: error.message
+                };
+                result.errors.push(`Erreur lors de la mise à jour des emplois: ${error.message}`);
+                result.success = false;
             }
         }
-
-        console.log(agentInfoList);
     }
         if (data.notificationList){
             if (!fetch) {
@@ -1047,7 +1164,7 @@ async function insertSmartemisResponse(data) {
             }
         }
     if (data.planningCounterList && data.planningCounterList.length > 0) {
-        const values = data.planningCounterList.map(item => [
+        const planningValues = data.planningCounterList.map(item => [
             item.cod || '',
             item.lib || '',
             item.value || '',
@@ -1059,9 +1176,8 @@ async function insertSmartemisResponse(data) {
                 spreadsheetId,
                 range: rangePlanning,
             });
-            console.log('Planning counter data cleared successfully!');
         } catch (error) {
-            console.error('Error clearing planning counter data:', error);
+            result.errors.push(`Erreur lors du clear de ${rangePlanning}: ${error.message}`);
         }
         try {
             await sheets.spreadsheets.values.update({
@@ -1069,14 +1185,28 @@ async function insertSmartemisResponse(data) {
                 range: rangePlanning,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
-                    values: values,
+                    values: planningValues,
                 },
             });
-            console.log('Planning counter data inserted successfully:', values);
+            result.operations.push({
+                type: 'planningCounterList',
+                range: rangePlanning,
+                success: true,
+                rowsInserted: planningValues.length
+            });
         } catch (error) {
-            console.error('Error inserting planning counter data:', error);
+            result.operations.push({
+                type: 'planningCounterList',
+                range: rangePlanning,
+                success: false,
+                error: error.message
+            });
+            result.errors.push(`Erreur lors de l'insertion de planningCounterList: ${error.message}`);
+            result.success = false;
         }
     }
+    
+    return result;
     }
 
 

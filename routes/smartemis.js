@@ -2,13 +2,18 @@ const express = require('express');
 const router5 = express.Router();
 const notif = require('../services/interventionNotif');
 
-/* GET info. */
+/* POST smartemis response. */
 router5.post('/', async function(req, res, next) {
   try {
-    res.json(await notif.insertSmartemisResponse(req.body));
+    const result = await notif.insertSmartemisResponse(req.body);
+    res.json(result);
   } catch (err) {
     console.error(`Erreur lors de l'enregistrement dans google sheets`, err.message);
-    next(err);
+    res.status(500).json({
+      success: false,
+      error: err.message,
+      errors: [err.message]
+    });
   }
 });
 
