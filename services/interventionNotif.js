@@ -614,7 +614,11 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                     updateCell(agentRow.data, getColIndex('DIV_cd'), 1);
                     // Vérifier si SAP_eq = 1
                     const sapEqIndex = getColIndex('SAP_eq');
-                    if (sapEqIndex >= 0 && agentRow.data[sapEqIndex] == 1) {
+                    const sapCdIndex = getColIndex('SAP_cd');
+                    if (
+                        (sapEqIndex >= 0 && agentRow.data[sapEqIndex] == 1) ||
+                        (sapCdIndex >= 0 && agentRow.data[sapCdIndex] == 1)
+                    ) {
                         updateCell(agentRow.data, getColIndex('INFAMU_cd'), 1);
                     }
                     // Vérifier si INC_eq = 1
