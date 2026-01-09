@@ -65,8 +65,8 @@ const sendParrainageData = require("./routes/sendParrainageData");
 const getAllSheetsData = require("./routes/getAllSheetsData");
 const manoeuvre = require("./routes/manoeuvre");
 
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
 
 // Servir les fichiers statiques avec le bon Content-Type pour le Service Worker
 app.use(express.static('public', {
