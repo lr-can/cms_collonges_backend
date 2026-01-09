@@ -1,56 +1,148 @@
-const { google } = require('googleapis');
-const config = require('../config');
+const { db } = require('./firebase-admin');
 
-const SPREADSHEET_ID = '1tnZ7-Lrjp6FBoZfhhOacIuU72e3sa7aaL-Yissqxu4E';
+const MANOEUVRE_INFO_PATH = 'manoeuvre/info';
+const MANOEUVRANTS_PATH = 'manoeuvre/manoeuvrants';
 
-async function getSheetsAuth() {
-    const privateKey = config.google.private_key.replace(/\\n/g, '\n');
-    const auth = new google.auth.JWT(
-        config.google.client_email,
-        null,
-        privateKey,
-        ['https://www.googleapis.com/auth/spreadsheets']
-    );
-    return google.sheets({ version: 'v4', auth });
+// Fonction pour créer les données de manoeuvre dans Firebase
+async function createManoeuvreInFirebase(data, numInter) {
+    try {
+        const numManoeuvre = numInter;
+        
+        // Construction de titleManoeuvre
+        const titleManoeuvre = data.sinistre?.libelleComplet || '';
+        
+        // Construction de adresseManoeuvre
+        let adresseManoeuvre = '';
+        if (data.adresses?.adresseCommune) {
+            const commune = (data.adresses.adresseCommune.commune || '').toUpperCase().trim();
+            const voie = (data.adresses.adresseCommune.voie || '').toUpperCase().trim();
+            adresseManoeuvre = `${commune} ${voie}`.trim();
+            
+            // Ajout de l'ERP si présent
+            if (data.adresses.adresseCommune.erp) {
+                adresseManoeuvre += ` | ERP ${data.adresses.adresseCommune.erp.toUpperCase().trim()}`;
+            }
+        }
+
+        // Insérer les infos de manoeuvre dans Firebase
+        const infoRef = db.ref(MANOEUVRE_INFO_PATH);
+        await infoRef.set({
+            numManoeuvre: numManoeuvre,
+            titleManoeuvre: titleManoeuvre,
+            adresseManoeuvre: adresseManoeuvre
+        });
+
+        console.log('Manoeuvre info inserted successfully in Firebase!');
+
+        // Préparation des données pour Manoeuvrants
+        const grades_list = {
+            "Sap 2CL": "SAP",
+            "Sap 1CL": "SAP",
+            "Caporal": "CAP",
+            "Caporal-Chef": "CCH",
+            "Sergent": "SGT",
+            "Sergent-Chef": "SCHE",
+            "Adjudant": "ADJ",
+            "Adjudant-Chef": "ADC",
+            "Lieutenant": "LTN",
+            "Capitaine": "CNE",
+            "Commandant": "CDT",
+            "Colonel": "COL",
+            "Lieutenant-Colonel": "LCL",
+            "Expert": "EXP",
+            "Infirmière": "INF",
+        };
+
+        const manoeuvrantsRef = db.ref(MANOEUVRANTS_PATH);
+        const manoeuvrants = {};
+
+        if (data.ordresDeparts && Array.isArray(data.ordresDeparts)) {
+            for (const OD of data.ordresDeparts) {
+                if (OD.engins && Array.isArray(OD.engins)) {
+                    for (const engin of OD.engins) {
+                        if (engin.affectation && Array.isArray(engin.affectation)) {
+                            for (const agent of engin.affectation) {
+                                const agent_grade = grades_list[agent.grade] || agent.grade;
+                                
+                                // Extraire nom et prénom depuis label
+                                let nom = '';
+                                let prenom = '';
+                                if (agent.label) {
+                                    const labelParts = agent.label
+                                        .replace(`${agent.matricule} - `, '')
+                                        .replace(agent_grade, '')
+                                        .trim()
+                                        .split(' ');
+                                    if (labelParts.length > 0) {
+                                        nom = labelParts[0] || '';
+                                        prenom = labelParts.slice(1).join(' ') || '';
+                                    }
+                                }
+                                // Fallback sur nomAgent et prenomAgent si disponibles
+                                nom = nom || agent.nomAgent || agent.nom || '';
+                                prenom = prenom || agent.prenomAgent || agent.prenom || '';
+
+                                const gfo = engin.gfo || (agent.emploi ? agent.emploi.split('_')[0] : '');
+                                const role = agent.emploi ? agent.emploi.split('_')[1] : '';
+
+                                // Utiliser matricule + timestamp comme clé unique
+                                const manoeuvrantId = `${agent.matricule}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                                
+                                manoeuvrants[manoeuvrantId] = {
+                                    matricule: agent.matricule || '',
+                                    grade: agent_grade,
+                                    nom: nom,
+                                    prenom: prenom,
+                                    engin: agent.engin || engin.engin || '',
+                                    caserne: engin.caserne || '',
+                                    gfo: gfo,
+                                    role: role,
+                                    statusConnexion: 'PENDING',
+                                    statusAlerte: 'PENDING',
+                                    ordreDepart: OD.ordreDepart || ''
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Insérer tous les manoeuvrants dans Firebase
+        if (Object.keys(manoeuvrants).length > 0) {
+            await manoeuvrantsRef.update(manoeuvrants);
+            console.log('Manoeuvrants data inserted successfully in Firebase!');
+        }
+
+        return { success: true, numManoeuvre, manoeuvrantsCount: Object.keys(manoeuvrants).length };
+    } catch (err) {
+        console.error('Error inserting manoeuvre info in Firebase:', err);
+        throw err;
+    }
 }
 
 async function changeConnexion(matricule) {
     try {
-        const sheets = await getSheetsAuth();
-        
-        // Lire toutes les données pour trouver la ligne du matricule
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'Manoeuvrants!A:K',
-        });
+        const manoeuvrantsRef = db.ref(MANOEUVRANTS_PATH);
+        const snapshot = await manoeuvrantsRef.once('value');
+        const manoeuvrants = snapshot.val() || {};
 
-        const values = response.data.values || [];
-        if (values.length < 2) {
-            throw new Error('No data found in Manoeuvrants sheet');
-        }
+        // Trouver tous les manoeuvrants avec ce matricule et mettre à jour leur statusConnexion
+        const updates = {};
+        let found = false;
 
-        // Trouver la ligne correspondant au matricule (colonne A, index 0)
-        let rowIndex = -1;
-        for (let i = 1; i < values.length; i++) {
-            if (values[i][0] === matricule) {
-                rowIndex = i + 1; // +1 car les indices de ligne dans l'API commencent à 1
-                break;
+        for (const id in manoeuvrants) {
+            if (manoeuvrants[id].matricule === matricule) {
+                updates[`${MANOEUVRANTS_PATH}/${id}/statusConnexion`] = 'OK';
+                found = true;
             }
         }
 
-        if (rowIndex === -1) {
+        if (!found) {
             throw new Error(`Matricule ${matricule} not found`);
         }
 
-        // Mettre à jour StatusConnexion (colonne I, index 8)
-        await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID,
-            range: `Manoeuvrants!I${rowIndex}`,
-            valueInputOption: 'USER_ENTERED',
-            resource: {
-                values: [['OK']],
-            },
-        });
+        await db.ref().update(updates);
 
         console.log(`StatusConnexion updated to OK for matricule ${matricule}`);
         return { success: true, matricule, statusConnexion: 'OK' };
@@ -62,48 +154,29 @@ async function changeConnexion(matricule) {
 
 async function declenchementManoeuvre(engin, caserne) {
     try {
-        const sheets = await getSheetsAuth();
-        
-        // Lire toutes les données
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'Manoeuvrants!A:K',
-        });
+        const manoeuvrantsRef = db.ref(MANOEUVRANTS_PATH);
+        const snapshot = await manoeuvrantsRef.once('value');
+        const manoeuvrants = snapshot.val() || {};
 
-        const values = response.data.values || [];
-        if (values.length < 2) {
-            throw new Error('No data found in Manoeuvrants sheet');
-        }
+        // Trouver tous les manoeuvrants correspondant à engin et caserne
+        const updates = {};
+        let count = 0;
 
-        // Trouver toutes les lignes correspondant à engin et caserne
-        // engLib est en colonne E (index 4), engCaserne en colonne F (index 5)
-        const rowsToUpdate = [];
-        for (let i = 1; i < values.length; i++) {
-            if (values[i][4] === engin && values[i][5] === caserne) {
-                rowsToUpdate.push(i + 1); // +1 car les indices de ligne commencent à 1
+        for (const id in manoeuvrants) {
+            if (manoeuvrants[id].engin === engin && manoeuvrants[id].caserne === caserne) {
+                updates[`${MANOEUVRANTS_PATH}/${id}/statusAlerte`] = 'DONE';
+                count++;
             }
         }
 
-        if (rowsToUpdate.length === 0) {
-            throw new Error(`No rows found for engin ${engin} and caserne ${caserne}`);
+        if (count === 0) {
+            throw new Error(`No manoeuvrants found for engin ${engin} and caserne ${caserne}`);
         }
 
-        // Mettre à jour StatusAlerte (colonne J, index 9) pour toutes les lignes trouvées
-        const updates = rowsToUpdate.map(rowIndex => ({
-            range: `Manoeuvrants!J${rowIndex}`,
-            values: [['DONE']],
-        }));
-
-        await sheets.spreadsheets.values.batchUpdate({
-            spreadsheetId: SPREADSHEET_ID,
-            valueInputOption: 'USER_ENTERED',
-            resource: {
-                data: updates,
-            },
-        });
+        await db.ref().update(updates);
 
         console.log(`StatusAlerte updated to DONE for engin ${engin} and caserne ${caserne}`);
-        return { success: true, engin, caserne, rowsUpdated: rowsToUpdate.length, statusAlerte: 'DONE' };
+        return { success: true, engin, caserne, rowsUpdated: count, statusAlerte: 'DONE' };
     } catch (err) {
         console.error('Error in declenchementManoeuvre:', err);
         throw err;
@@ -112,41 +185,26 @@ async function declenchementManoeuvre(engin, caserne) {
 
 async function departManoeuvre(matricule) {
     try {
-        const sheets = await getSheetsAuth();
-        
-        // Lire toutes les données
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'Manoeuvrants!A:K',
-        });
+        const manoeuvrantsRef = db.ref(MANOEUVRANTS_PATH);
+        const snapshot = await manoeuvrantsRef.once('value');
+        const manoeuvrants = snapshot.val() || {};
 
-        const values = response.data.values || [];
-        if (values.length < 2) {
-            throw new Error('No data found in Manoeuvrants sheet');
-        }
+        // Trouver tous les manoeuvrants avec ce matricule et mettre à jour leur statusAlerte
+        const updates = {};
+        let found = false;
 
-        // Trouver la ligne correspondant au matricule
-        let rowIndex = -1;
-        for (let i = 1; i < values.length; i++) {
-            if (values[i][0] === matricule) {
-                rowIndex = i + 1;
-                break;
+        for (const id in manoeuvrants) {
+            if (manoeuvrants[id].matricule === matricule) {
+                updates[`${MANOEUVRANTS_PATH}/${id}/statusAlerte`] = 'RECEIVED';
+                found = true;
             }
         }
 
-        if (rowIndex === -1) {
+        if (!found) {
             throw new Error(`Matricule ${matricule} not found`);
         }
 
-        // Mettre à jour StatusAlerte (colonne J, index 9)
-        await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID,
-            range: `Manoeuvrants!J${rowIndex}`,
-            valueInputOption: 'USER_ENTERED',
-            resource: {
-                values: [['RECEIVED']],
-            },
-        });
+        await db.ref().update(updates);
 
         console.log(`StatusAlerte updated to RECEIVED for matricule ${matricule}`);
         return { success: true, matricule, statusAlerte: 'RECEIVED' };
@@ -158,22 +216,15 @@ async function departManoeuvre(matricule) {
 
 async function reinitialiseManoeuvre() {
     try {
-        const sheets = await getSheetsAuth();
-        
-        // Vider Manoeuvre_info à partir de A2
-        await sheets.spreadsheets.values.clear({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'Manoeuvre_info!A2:C',
-        });
+        // Supprimer les données de manoeuvre dans Firebase
+        const infoRef = db.ref(MANOEUVRE_INFO_PATH);
+        await infoRef.remove();
 
-        // Vider Manoeuvrants à partir de A2
-        await sheets.spreadsheets.values.clear({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'Manoeuvrants!A2:K',
-        });
+        const manoeuvrantsRef = db.ref(MANOEUVRANTS_PATH);
+        await manoeuvrantsRef.remove();
 
-        console.log('Manoeuvre sheets cleared successfully');
-        return { success: true, message: 'Manoeuvre sheets cleared' };
+        console.log('Manoeuvre data cleared successfully from Firebase');
+        return { success: true, message: 'Manoeuvre data cleared from Firebase' };
     } catch (err) {
         console.error('Error reinitialising manoeuvre:', err);
         throw err;
@@ -182,47 +233,29 @@ async function reinitialiseManoeuvre() {
 
 async function declencherOrdreDepart(ordreDepart) {
     try {
-        const sheets = await getSheetsAuth();
-        
-        // Lire toutes les données
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'Manoeuvrants!A:K',
-        });
+        const manoeuvrantsRef = db.ref(MANOEUVRANTS_PATH);
+        const snapshot = await manoeuvrantsRef.once('value');
+        const manoeuvrants = snapshot.val() || {};
 
-        const values = response.data.values || [];
-        if (values.length < 2) {
-            throw new Error('No data found in Manoeuvrants sheet');
-        }
+        // Trouver tous les manoeuvrants correspondant à l'ordre de départ
+        const updates = {};
+        let count = 0;
 
-        // Trouver toutes les lignes correspondant à l'ordre de départ (colonne K, index 10)
-        const rowsToUpdate = [];
-        for (let i = 1; i < values.length; i++) {
-            if (values[i][10] === String(ordreDepart)) {
-                rowsToUpdate.push(i + 1); // +1 car les indices de ligne commencent à 1
+        for (const id in manoeuvrants) {
+            if (String(manoeuvrants[id].ordreDepart) === String(ordreDepart)) {
+                updates[`${MANOEUVRANTS_PATH}/${id}/statusAlerte`] = 'DONE';
+                count++;
             }
         }
 
-        if (rowsToUpdate.length === 0) {
-            throw new Error(`No rows found for ordre depart ${ordreDepart}`);
+        if (count === 0) {
+            throw new Error(`No manoeuvrants found for ordre depart ${ordreDepart}`);
         }
 
-        // Mettre à jour StatusAlerte (colonne J, index 9) pour toutes les lignes trouvées
-        const updates = rowsToUpdate.map(rowIndex => ({
-            range: `Manoeuvrants!J${rowIndex}`,
-            values: [['DONE']],
-        }));
-
-        await sheets.spreadsheets.values.batchUpdate({
-            spreadsheetId: SPREADSHEET_ID,
-            valueInputOption: 'USER_ENTERED',
-            resource: {
-                data: updates,
-            },
-        });
+        await db.ref().update(updates);
 
         console.log(`StatusAlerte updated to DONE for ordre depart ${ordreDepart}`);
-        return { success: true, ordreDepart, rowsUpdated: rowsToUpdate.length, statusAlerte: 'DONE' };
+        return { success: true, ordreDepart, rowsUpdated: count, statusAlerte: 'DONE' };
     } catch (err) {
         console.error('Error in declencherOrdreDepart:', err);
         throw err;
@@ -231,52 +264,46 @@ async function declencherOrdreDepart(ordreDepart) {
 
 async function getManoeuvreDetails() {
     try {
-        const sheets = await getSheetsAuth();
-        
-        // Récupérer les titres des feuilles
-        const meta = await sheets.spreadsheets.get({
-            spreadsheetId: SPREADSHEET_ID,
-            fields: 'sheets.properties.title'
-        });
-        
-        const sheetsMeta = (meta && meta.data && meta.data.sheets) || [];
-        const desiredTitles = ['Manoeuvre_info', 'Manoeuvrants'];
-        const availableTitles = sheetsMeta.map(s => s.properties && s.properties.title ? s.properties.title : '');
-        const titlesToFetch = desiredTitles.filter(t => availableTitles.includes(t));
-        
-        if (titlesToFetch.length === 0) {
-            return {};
+        const infoRef = db.ref(MANOEUVRE_INFO_PATH);
+        const infoSnapshot = await infoRef.once('value');
+        const info = infoSnapshot.val();
+
+        const manoeuvrantsRef = db.ref(MANOEUVRANTS_PATH);
+        const manoeuvrantsSnapshot = await manoeuvrantsRef.once('value');
+        const manoeuvrants = manoeuvrantsSnapshot.val() || {};
+
+        // Convertir les données en format similaire à Google Sheets pour compatibilité
+        const result = {
+            Manoeuvre_info: [],
+            Manoeuvrants: []
+        };
+
+        // Convertir info en format tableau (comme Google Sheets)
+        if (info) {
+            result.Manoeuvre_info = [[
+                info.numManoeuvre || '',
+                info.titleManoeuvre || '',
+                info.adresseManoeuvre || ''
+            ]];
         }
 
-        // Construire les ranges
-        const ranges = titlesToFetch.map(title => {
-            const needsQuotes = /\s|[^A-Za-z0-9_\-]/.test(title);
-            const safeTitle = needsQuotes ? `'${title.replace(/'/g, "\\'")}'` : title;
-            if (title === 'Manoeuvre_info') {
-                return `${safeTitle}!A:Z`;
-            } else {
-                return `${safeTitle}!A:Z`;
-            }
-        });
-
-        // Récupérer les données en batch
-        const batchRes = await sheets.spreadsheets.values.batchGet({
-            spreadsheetId: SPREADSHEET_ID,
-            ranges: ranges,
-        });
-
-        // Mapper les résultats par titre de feuille
-        const result = {};
-        const valueRanges = batchRes.data.valueRanges || [];
-        
-        for (let i = 0; i < titlesToFetch.length; i++) {
-            const title = titlesToFetch[i];
-            const valueRange = valueRanges[i];
-            if (valueRange && valueRange.values) {
-                result[title] = valueRange.values;
-            } else {
-                result[title] = [];
-            }
+        // Convertir manoeuvrants en format tableau (comme Google Sheets)
+        // Structure: matricule, grade, nom, prenom, engin, caserne, gfo, role, statusConnexion, statusAlerte, ordreDepart
+        for (const id in manoeuvrants) {
+            const m = manoeuvrants[id];
+            result.Manoeuvrants.push([
+                m.matricule || '',
+                m.grade || '',
+                m.nom || '',
+                m.prenom || '',
+                m.engin || '',
+                m.caserne || '',
+                m.gfo || '',
+                m.role || '',
+                m.statusConnexion || '',
+                m.statusAlerte || '',
+                m.ordreDepart || ''
+            ]);
         }
 
         return result;
@@ -287,6 +314,7 @@ async function getManoeuvreDetails() {
 }
 
 module.exports = {
+    createManoeuvreInFirebase,
     changeConnexion,
     declenchementManoeuvre,
     departManoeuvre,
@@ -294,4 +322,3 @@ module.exports = {
     getManoeuvreDetails,
     declencherOrdreDepart
 };
-
