@@ -315,7 +315,7 @@ async function giveInterventionType(titre) {
 
     } catch (err) {
         console.error('Error fetching data:', err);
-        throw err;
+        return { type: "Unknown" };
     }
 }
 
