@@ -480,12 +480,9 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
         // Initialiser les agents manquants (sans réinitialiser les colonnes d'emplois)
         csPersList.forEach(initAgent);
 
-        // Récupérer les données d'asup depuis l'API
-        if (!fetch) {
-            fetch = (await import('node-fetch')).default;
-        }
-        const agentsInfo = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup');
-        const agentsData = await agentsInfo.json();
+        // Récupérer les données d'asup depuis la base de données
+        const allAgents = require('./allAgents');
+        const agentsData = await allAgents.getAllAgents();
         const asupMap = new Map();
         agentsData.forEach(agent => {
             asupMap.set(agent.matricule, {
@@ -1065,11 +1062,8 @@ async function insertSmartemisResponse(data) {
     }
     }
     if (data.csPersList){
-        if (!fetch){
-                fetch = (await import('node-fetch')).default;
-            }
-        const agentsInfo = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup');
-        const agentsData = await agentsInfo.json();
+        const allAgents = require('./allAgents');
+        const agentsData = await allAgents.getAllAgents();
         const agentInfoList = data.csPersList.map(person => {
             const agent = agentsData.find(agent => agent.matricule === `${person.persStatutCod}${person.persId}`);
             return {
@@ -1106,10 +1100,17 @@ async function insertSmartemisResponse(data) {
         if (planningCounterList && planningCounterList.length > 0) {
             const dispo = planningCounterList.find(item => item.cod === 'DISPO');
             const depItvPers = planningCounterList.find(item => item.cod === 'DEP_ITV__PERS');
-            const totalAgents = data.csPersList ? data.csPersList.length : 0;
+            const enInterPers = depItvPers ? parseInt(depItvPers.value) || 0 : 0;
+            const totalAgents = enInterPers + (data.csPersList ? data.csPersList.length : 0);
+
+            console.log('totalAgents', totalAgents);
+            console.log('enInterPers', enInterPers);
+            console.log('data.csPersList', data.csPersList.length);
             
             if (dispo) {
                 const dispoTotalValue = parseInt(dispo.totalValue) || 0;
+                console.log('dispoTotalValue', dispoTotalValue);
+                console.log('totalAgents === dispoTotalValue', totalAgents === dispoTotalValue);
                 if (totalAgents === dispoTotalValue) {
                     range2 = 'Feuille 12!A2:F100'; // Mode disponibilité
                 }
@@ -1117,6 +1118,8 @@ async function insertSmartemisResponse(data) {
             
             if (!range2 && depItvPers) {
                 const depItvValue = parseInt(depItvPers.value) || 0;
+                console.log('depItvValue', depItvValue);
+                console.log('totalAgents === depItvValue', totalAgents === depItvValue);
                 if (totalAgents === depItvValue) {
                     range2 = 'Feuille 5!A2:F30'; // Mode intervention
                 }

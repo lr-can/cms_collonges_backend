@@ -174,11 +174,12 @@ async function assignAgentsToVehicles(matricules, codeSinistre, personnalises = 
   const personnalise = personnalises;
   try {
       // Charger les données nécessaires
+      const allAgents = require('./allAgents');
       const [sinistres, engins, emploisGFO, agents] = await Promise.all([
           fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/libelleSinistres').then(res => res.json()),
           fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_COLLONGES').then(res => res.json()),
           fetch('https://opensheet.elk.sh/13y-17sHUSenIoehILJMzuJcpqnRG2CVX9RvDzvaa448/GFO_EMPLOIS').then(res => res.json()),
-          fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsAsup').then(res => res.json())
+          allAgents.getAllAgents()
       ]);
 
       console.log('Données chargées:', { sinistres, engins, emploisGFO, agents });

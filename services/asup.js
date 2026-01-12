@@ -7,14 +7,10 @@ let fetch
 
 
 async function getAsupAgent(matricule) {
-    if (!fetch) {
-        fetch = (await import('node-fetch')).default;
-    };
     try {
-        const agents = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsASUP');
-        const data = await agents.json();
+        const allAgents = require('./allAgents');
+        const agent = await allAgents.getAgentByMatricule(matricule);
         
-        const agent = data.find(agent => agent.matricule === matricule);
         if (!agent) {
             throw new Error('Agent non trouvé');
         }
@@ -525,8 +521,15 @@ async function getVizData(){
 
     const interventions = [...interventionsData1, ...interventionsData2];
 
-    const agents = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/agentsASUP');
-    const agentsData = await agents.json();
+    const allAgents = require('./allAgents');
+    const agentsDataArray = await allAgents.getAllAgents();
+    // Convertir en objet indexé par matricule pour compatibilité
+    const agentsData = {};
+    agentsDataArray.forEach(agent => {
+        if (agent && agent.matricule) {
+            agentsData[agent.matricule] = agent;
+        }
+    });
 
     let twoYearsAgo = new Date();
     twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);

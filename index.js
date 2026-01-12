@@ -63,6 +63,7 @@ const resetRICount = require("./routes/resetRICount");
 const switchArah = require("./routes/switchArah_");
 const sendParrainageData = require("./routes/sendParrainageData");
 const getAllSheetsData = require("./routes/getAllSheetsData");
+const allAgentsSync = require("./routes/allAgentsSync");
 const manoeuvre = require("./routes/manoeuvre");
 
 app.use(cors());
@@ -148,6 +149,7 @@ app.use("/resetRICount", resetRICount);
 app.use("/switchArah", switchArah);
 app.use("/sendParrainageData", sendParrainageData);
 app.use("/getAllSheetsData", getAllSheetsData);
+app.use("/allAgentsSync", allAgentsSync);
 app.use("/", manoeuvre);
 
 // Routes pour les pages HTML
