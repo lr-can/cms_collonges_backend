@@ -1116,11 +1116,11 @@ async function insertSmartemisResponse(data) {
                 }
             }
             
-            if (!range2 && depItvPers) {
+            if (!range2 && depItvPers && parseInt(depItvPers.value) > 0) {
                 const depItvValue = parseInt(depItvPers.value) || 0;
                 console.log('depItvValue', depItvValue);
                 console.log('totalAgents === depItvValue', totalAgents === depItvValue);
-                if (totalAgents === depItvValue) {
+                if (totalAgents > depItvValue) {
                     range2 = 'Feuille 5!A2:F30'; // Mode intervention
                 }
             }
