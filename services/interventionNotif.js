@@ -723,78 +723,85 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                 const logMsg = `Traitement du groupe ${key} avec ${codesGroup.length} code(s): ${codesGroup.map(c => c.cod).join(', ')}`;
                 result.logs.push(logMsg);
                 
-                // Pour chaque code du groupe, réinitialiser ses colonnes et mettre à 1
-                codesGroup.forEach(item => {
-                    const cod = item.cod;
-                    const value = parseInt(item.value) || 0;
-                    
-                    const codeLog = {
-                        cod: cod,
-                        columnsReset: [],
-                        agentsUpdated: []
-                    };
-                    
-                    result.logs.push(`Traitement du code ${cod} - Réinitialisation et mise à jour pour ${csPersList.length} agents`);
-                    
-                    // Obtenir les colonnes concernées par ce code
-                    const columnsToReset = getColumnsForCode(cod);
-                    codeLog.columnsReset = columnsToReset;
-                    result.logs.push(`Colonnes à réinitialiser pour ${cod}: ${columnsToReset.join(', ')}`);
-                    
-                    // Réinitialiser les colonnes concernées pour TOUS les agents dans la feuille (pas seulement csPersList)
-                    let resetCount = 0;
-                    agentsMap.forEach((agentRow, matricule) => {
-                        // Réinitialiser les colonnes concernées à 0 pour tous les agents
-                        columnsToReset.forEach(colName => {
-                            const colIndex = getColIndex(colName);
-                            if (colIndex >= 0) {
-                                const oldValue = agentRow.data[colIndex];
-                                if (oldValue != 0 && oldValue != '0' && oldValue != '') {
-                                    updateCell(agentRow.data, colIndex, 0);
-                                    resetCount++;
-                                    // Logger seulement pour les agents qui avaient une valeur non nulle
-                                    if (resetCount <= 10) { // Limiter les logs
-                                        result.logs.push(`Réinitialisé ${colName} pour ${matricule} (ancienne valeur: ${oldValue})`);
-                                    }
-                                } else {
-                                    // S'assurer que c'est bien 0 même si c'était déjà vide
-                                    updateCell(agentRow.data, colIndex, 0);
+                // Si le groupe contient plusieurs codes (ambiguïté), ne rien modifier
+                if (codesGroup.length > 1) {
+                    const ambiguousCodes = codesGroup.map(c => c.cod).join(', ');
+                    result.logs.push(`⚠️ Ambiguïté détectée pour le groupe ${key} avec les codes: ${ambiguousCodes}. Aucune modification effectuée.`);
+                    result.errors.push(`Ambiguïté: plusieurs codes (${ambiguousCodes}) ont les mêmes valeurs (value=${codesGroup[0].value}, totalValue=${codesGroup[0].totalValue}). Aucune modification effectuée.`);
+                    return; // Ne rien faire pour ce groupe
+                }
+                
+                // Si un seul code dans le groupe, le traiter normalement
+                const item = codesGroup[0];
+                const cod = item.cod;
+                const value = parseInt(item.value) || 0;
+                
+                const codeLog = {
+                    cod: cod,
+                    columnsReset: [],
+                    agentsUpdated: []
+                };
+                
+                result.logs.push(`Traitement du code ${cod} - Réinitialisation et mise à jour pour ${csPersList.length} agents`);
+                
+                // Obtenir les colonnes concernées par ce code
+                const columnsToReset = getColumnsForCode(cod);
+                codeLog.columnsReset = columnsToReset;
+                result.logs.push(`Colonnes à réinitialiser pour ${cod}: ${columnsToReset.join(', ')}`);
+                
+                // Réinitialiser les colonnes concernées pour TOUS les agents dans la feuille (pas seulement csPersList)
+                let resetCount = 0;
+                agentsMap.forEach((agentRow, matricule) => {
+                    // Réinitialiser les colonnes concernées à 0 pour tous les agents
+                    columnsToReset.forEach(colName => {
+                        const colIndex = getColIndex(colName);
+                        if (colIndex >= 0) {
+                            const oldValue = agentRow.data[colIndex];
+                            if (oldValue != 0 && oldValue != '0' && oldValue != '') {
+                                updateCell(agentRow.data, colIndex, 0);
+                                resetCount++;
+                                // Logger seulement pour les agents qui avaient une valeur non nulle
+                                if (resetCount <= 10) { // Limiter les logs
+                                    result.logs.push(`Réinitialisé ${colName} pour ${matricule} (ancienne valeur: ${oldValue})`);
                                 }
+                            } else {
+                                // S'assurer que c'est bien 0 même si c'était déjà vide
+                                updateCell(agentRow.data, colIndex, 0);
                             }
-                        });
-                    });
-                    result.logs.push(`${resetCount} colonnes réinitialisées pour le code ${cod} (sur tous les agents de la feuille)`);
-                    
-                    // Mettre à 1 pour TOUS les agents de csPersList (pas seulement les disponibles)
-                    csPersList.forEach(person => {
-                        const matricule = `${person.persStatutCod}${person.persId}`;
-                        const agentRow = agentsMap.get(matricule);
-                        if (!agentRow) return;
-
-                        const asupInfo = asupMap.get(matricule);
-                        const asup1 = asupInfo && asupInfo.asup1;
-                        const grade = agentRow.data[getColIndex('grade')] || asupInfo?.grade || '';
-
-                        // Appliquer les correspondances (mettre à 1)
-                        applyCorrespondance(cod, agentRow, asup1, grade);
-                        
-                        // Vérifier que les valeurs ont bien été mises à jour
-                        const cdgIndex = getColIndex('CDG_cdg');
-                        if (cod === 'CDG' && cdgIndex >= 0) {
-                            const cdgValue = agentRow.data[cdgIndex];
-                            result.logs.push(`Agent ${matricule} - CDG_cdg après mise à jour: ${cdgValue}`);
                         }
-                        
-                        codeLog.agentsUpdated.push({
-                            matricule: matricule,
-                            nom: person.nom,
-                            prenom: person.prenom
-                        });
                     });
-                    
-                    result.logs.push(`${codeLog.agentsUpdated.length} agents mis à jour pour le code ${cod}`);
-                    result.updatedAgents.push(codeLog);
                 });
+                result.logs.push(`${resetCount} colonnes réinitialisées pour le code ${cod} (sur tous les agents de la feuille)`);
+                
+                // Mettre à 1 pour TOUS les agents de csPersList (pas seulement les disponibles)
+                csPersList.forEach(person => {
+                    const matricule = `${person.persStatutCod}${person.persId}`;
+                    const agentRow = agentsMap.get(matricule);
+                    if (!agentRow) return;
+
+                    const asupInfo = asupMap.get(matricule);
+                    const asup1 = asupInfo && asupInfo.asup1;
+                    const grade = agentRow.data[getColIndex('grade')] || asupInfo?.grade || '';
+
+                    // Appliquer les correspondances (mettre à 1)
+                    applyCorrespondance(cod, agentRow, asup1, grade);
+                    
+                    // Vérifier que les valeurs ont bien été mises à jour
+                    const cdgIndex = getColIndex('CDG_cdg');
+                    if (cod === 'CDG' && cdgIndex >= 0) {
+                        const cdgValue = agentRow.data[cdgIndex];
+                        result.logs.push(`Agent ${matricule} - CDG_cdg après mise à jour: ${cdgValue}`);
+                    }
+                    
+                    codeLog.agentsUpdated.push({
+                        matricule: matricule,
+                        nom: person.nom,
+                        prenom: person.prenom
+                    });
+                });
+                
+                result.logs.push(`${codeLog.agentsUpdated.length} agents mis à jour pour le code ${cod}`);
+                result.updatedAgents.push(codeLog);
             });
         }
 
