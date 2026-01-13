@@ -669,6 +669,13 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
         if (mode === 'disponibilite' || mode === 'intervention') {
             result.logs.push(`Mode ${mode} détecté, pas de traitement des emplois`);
         } else {
+            // Vérifier si csPersList est vide (personne de disponible)
+            if (totalAgentsCount === 0 || csPersList.length === 0) {
+                result.logs.push(`⚠️ Aucun agent disponible (csPersList.length = ${csPersList.length}). Aucune modification effectuée.`);
+                result.errors.push(`Aucun agent disponible pour la catégorie. Aucune modification effectuée.`);
+                result.success = true; // Pas d'erreur, juste rien à faire
+                return result;
+            }
             
             // Mode emplois : traiter les codes d'emplois (un code par requête)
             const codesToProcess = planningCounterList.filter(item => 
