@@ -730,12 +730,88 @@ async function updateAgentsEmplois(csPersList, planningCounterList) {
                 const logMsg = `Traitement du groupe ${key} avec ${codesGroup.length} code(s): ${codesGroup.map(c => c.cod).join(', ')}`;
                 result.logs.push(logMsg);
                 
-                // Si le groupe contient plusieurs codes (ambiguïté), ne rien modifier
+                // Si le groupe contient plusieurs codes (ambiguïté)
                 if (codesGroup.length > 1) {
-                    const ambiguousCodes = codesGroup.map(c => c.cod).join(', ');
-                    result.logs.push(`⚠️ Ambiguïté détectée pour le groupe ${key} avec les codes: ${ambiguousCodes}. Aucune modification effectuée.`);
-                    result.errors.push(`Ambiguïté: plusieurs codes (${ambiguousCodes}) ont les mêmes valeurs (value=${codesGroup[0].value}, totalValue=${codesGroup[0].totalValue}). Aucune modification effectuée.`);
-                    return; // Ne rien faire pour ce groupe
+                    // Exception spéciale : si le groupe contient CASAP et CADIV, traiter les deux
+                    const hasCASAP = codesGroup.some(c => c.cod === 'CASAP');
+                    const hasCADIV = codesGroup.some(c => c.cod === 'CADIV');
+                    
+                    if (hasCASAP && hasCADIV && codesGroup.length === 2) {
+                        // Cas spécial : traiter les deux codes CASAP et CADIV
+                        result.logs.push(`⚠️ Cas spécial détecté : CASAP et CADIV ont les mêmes valeurs. Traitement des deux codes.`);
+                        
+                        // Traiter CASAP
+                        codesGroup.forEach(item => {
+                            if (item.cod === 'CASAP' || item.cod === 'CADIV') {
+                                const cod = item.cod;
+                                const value = parseInt(item.value) || 0;
+                                
+                                const codeLog = {
+                                    cod: cod,
+                                    columnsReset: [],
+                                    agentsUpdated: []
+                                };
+                                
+                                result.logs.push(`Traitement du code ${cod} - Réinitialisation et mise à jour pour ${csPersList.length} agents`);
+                                
+                                // Obtenir les colonnes concernées par ce code
+                                const columnsToReset = getColumnsForCode(cod);
+                                codeLog.columnsReset = columnsToReset;
+                                result.logs.push(`Colonnes à réinitialiser pour ${cod}: ${columnsToReset.join(', ')}`);
+                                
+                                // Réinitialiser les colonnes concernées pour TOUS les agents dans la feuille
+                                let resetCount = 0;
+                                agentsMap.forEach((agentRow, matricule) => {
+                                    columnsToReset.forEach(colName => {
+                                        const colIndex = getColIndex(colName);
+                                        if (colIndex >= 0) {
+                                            const oldValue = agentRow.data[colIndex];
+                                            if (oldValue != 0 && oldValue != '0' && oldValue != '') {
+                                                updateCell(agentRow.data, colIndex, 0);
+                                                resetCount++;
+                                                if (resetCount <= 10) {
+                                                    result.logs.push(`Réinitialisé ${colName} pour ${matricule} (ancienne valeur: ${oldValue})`);
+                                                }
+                                            } else {
+                                                updateCell(agentRow.data, colIndex, 0);
+                                            }
+                                        }
+                                    });
+                                });
+                                result.logs.push(`${resetCount} colonnes réinitialisées pour le code ${cod} (sur tous les agents de la feuille)`);
+                                
+                                // Mettre à 1 pour TOUS les agents de csPersList
+                                csPersList.forEach(person => {
+                                    const matricule = `${person.persStatutCod}${person.persId}`;
+                                    const agentRow = agentsMap.get(matricule);
+                                    if (!agentRow) return;
+
+                                    const asupInfo = asupMap.get(matricule);
+                                    const asup1 = asupInfo && asupInfo.asup1;
+                                    const grade = agentRow.data[getColIndex('grade')] || asupInfo?.grade || '';
+
+                                    // Appliquer les correspondances (mettre à 1)
+                                    applyCorrespondance(cod, agentRow, asup1, grade);
+                                    
+                                    codeLog.agentsUpdated.push({
+                                        matricule: matricule,
+                                        nom: person.nom,
+                                        prenom: person.prenom
+                                    });
+                                });
+                                
+                                result.logs.push(`${codeLog.agentsUpdated.length} agents mis à jour pour le code ${cod}`);
+                                result.updatedAgents.push(codeLog);
+                            }
+                        });
+                        return; // On a traité les deux codes, on sort
+                    } else {
+                        // Autre ambiguïté : ne rien modifier
+                        const ambiguousCodes = codesGroup.map(c => c.cod).join(', ');
+                        result.logs.push(`⚠️ Ambiguïté détectée pour le groupe ${key} avec les codes: ${ambiguousCodes}. Aucune modification effectuée.`);
+                        result.errors.push(`Ambiguïté: plusieurs codes (${ambiguousCodes}) ont les mêmes valeurs (value=${codesGroup[0].value}, totalValue=${codesGroup[0].totalValue}). Aucune modification effectuée.`);
+                        return; // Ne rien faire pour ce groupe
+                    }
                 }
                 
                 // Si un seul code dans le groupe, le traiter normalement
