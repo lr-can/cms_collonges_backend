@@ -106,26 +106,60 @@ ORDER BY s.datePeremption;
       meta
     }
   }
-  async function create(new_materiel){
+  async function create(materiels){
+    // Accepter soit un tableau, soit un seul objet (pour rétrocompatibilité)
+    const materielsList = Array.isArray(materiels) ? materiels : [materiels];
+    
+    if (materielsList.length === 0) {
+      return {message: 'Aucun matériel à créer.'};
+    }
+
     let currentDate = new Date();
     let mysqlFormattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
-    let mysqlFormattedPeremptionDate;
-    let peremptionDate = new Date(new_materiel.datePeremption);
-    mysqlFormattedPeremptionDate = peremptionDate.toISOString().slice(0, 19).replace('T', ' ');
-    const result = await db.query(
-      `INSERT INTO stock
+
+    // Préparer les valeurs pour l'insertion multiple
+    const values = [];
+    const params = [];
+
+    for (const materiel of materielsList) {
+      let mysqlFormattedPeremptionDate;
+      if (materiel.datePeremption) {
+        const peremptionDate = new Date(materiel.datePeremption);
+        mysqlFormattedPeremptionDate = peremptionDate.toISOString().slice(0, 19).replace('T', ' ');
+      } else {
+        mysqlFormattedPeremptionDate = null;
+      }
+
+      values.push('(?, ?, ?, ?, ?, ?, ?)');
+      params.push(
+        materiel.idStock,
+        materiel.idMateriel || '',
+        materiel.idStatut || 1,
+        materiel.idAgent || '',
+        mysqlFormattedDate,
+        materiel.numLot || '',
+        mysqlFormattedPeremptionDate
+      );
+    }
+
+    const query = `INSERT INTO stock
       (idStock, idMateriel, idStatut, idAgent, dateCreation, numLot, datePeremption) 
-      VALUES 
-      (${new_materiel.idStock}, '${new_materiel.idMateriel}', ${new_materiel.idStatut}, '${new_materiel.idAgent}', '${mysqlFormattedDate}', '${new_materiel.numLot}', '${mysqlFormattedPeremptionDate}')`
-    );
+      VALUES ${values.join(', ')}`;
+
+    const result = await db.query(query, params);
   
     let message = 'Il y a eu une erreur lors de la création du matériel dans la base de données.';
+    const itemsCount = materielsList.length;
   
-    if (result.affectedRows) {
-      message = 'Le matériel a bien été créé.';
+    if (result.affectedRows > 0) {
+      if (itemsCount === 1) {
+        message = 'Le matériel a bien été créé.';
+      } else {
+        message = `${result.affectedRows} matériel(s) ont bien été créé(s).`;
+      }
     }
   
-    return {message};
+    return {message, inserted: result.affectedRows || 0};
   }
 
   async function todayCreated(page = 1, idMateriel){
