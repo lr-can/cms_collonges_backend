@@ -463,6 +463,29 @@ ORDER BY s.datePeremption;
         }
       };
 
+      async function getNextAvailableIds(count) {
+        try {
+          // Récupérer le max idStock de la table stock
+          const result = await db.query('SELECT MAX(idStock) as maxId FROM stock');
+          const maxId = result[0]?.maxId || 0;
+          
+          // Générer les count prochains IDs disponibles
+          const nextIds = [];
+          for (let i = 1; i <= count; i++) {
+            nextIds.push(parseInt(maxId) + i);
+          }
+          
+          return {
+            maxId: parseInt(maxId),
+            nextIds: nextIds,
+            count: count
+          };
+        } catch (error) {
+          console.error('Erreur lors de la récupération des prochains IDs:', error);
+          throw error;
+        }
+      }
+
   
   module.exports = {
     getPeremption,
@@ -486,5 +509,6 @@ ORDER BY s.datePeremption;
     reinitialiserRetourInter,
     exportDataBase,
     getPeremptionAndCount,
-    materielRIChecked
+    materielRIChecked,
+    getNextAvailableIds
   }
