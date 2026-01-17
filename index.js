@@ -65,6 +65,7 @@ const sendParrainageData = require("./routes/sendParrainageData");
 const getAllSheetsData = require("./routes/getAllSheetsData");
 const allAgentsSync = require("./routes/allAgentsSync");
 const nextAvailableIds = require("./routes/nextAvailableIds");
+const getAuthInfo = require("./routes/getAuthInfo");
 const manoeuvre = require("./routes/manoeuvre");
 
 app.use(cors());
@@ -152,6 +153,7 @@ app.use("/sendParrainageData", sendParrainageData);
 app.use("/getAllSheetsData", getAllSheetsData);
 app.use("/allAgentsSync", allAgentsSync);
 app.use("/nextAvailableIds", nextAvailableIds);
+app.use("/getAuthInfo", getAuthInfo);
 app.use("/", manoeuvre);
 
 // Routes pour les pages HTML
