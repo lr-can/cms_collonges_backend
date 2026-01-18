@@ -26,32 +26,53 @@ async function getPeremption(page = 1){
   }
 }
 
-async function getPeremptionAndCount(){
+async function getPeremptionAndCount() {
   const datePeremptionOneMonth = new Date();
   datePeremptionOneMonth.setMonth(datePeremptionOneMonth.getMonth() + 2);
   datePeremptionOneMonth.setDate(1);
   let datePeremptionOneMonthString = datePeremptionOneMonth.toISOString().slice(0, 19).replace('T', ' ');
+
+  // Query grouped results
   const rows = await db.query(
-    `SELECT COUNT(s.idStock) as Nombre, m.nomMateriel, s2.nomStatut, s2.idStatut, s.numLot, s.datePeremption
-FROM stock s
-INNER JOIN materiels m ON s.idMateriel = m.idMateriel
-INNER JOIN statuts s2 ON s2.idStatut = s.idStatut
-WHERE s.datePeremption < '${datePeremptionOneMonthString}' AND s.idStatut != 3
-GROUP BY s.idMateriel, s2.idStatut, s.numLot, s.datePeremption
-ORDER BY s.datePeremption;
-`
+    `SELECT COUNT(s.idStock) as Nombre, m.nomMateriel, s2.nomStatut, s2.idStatut, s.numLot, s.datePeremption,
+            s.idMateriel
+     FROM stock s
+     INNER JOIN materiels m ON s.idMateriel = m.idMateriel
+     INNER JOIN statuts s2 ON s2.idStatut = s.idStatut
+     WHERE s.datePeremption < '${datePeremptionOneMonthString}' AND s.idStatut != 3
+     GROUP BY s.idMateriel, s2.idStatut, s.numLot, s.datePeremption
+     ORDER BY s.datePeremption;`
   );
-  const rowsDate = rows.map((row) => {
-    const date = new Date(row.datePeremption);
-    date.setHours(date.getHours() + 1);
+
+  // For every row, get the corresponding id_list
+  const augmentedRows = await Promise.all(rows.map(async (row) => {
+    // Query to get idStock for given group
+    const idsResult = await db.query(
+      `SELECT s.idStock
+       FROM stock s
+       WHERE s.idMateriel = '${row.idMateriel}'
+         AND s.idStatut = '${row.idStatut}'
+         AND s.numLot = '${row.numLot}'
+         AND s.datePeremption = '${row.datePeremption.toISOString().slice(0,19).replace('T',' ')}'
+         AND s.datePeremption < '${datePeremptionOneMonthString}'
+         AND s.idStatut != 3`
+    );
+    const id_list = idsResult.map(r => r.idStock);
+
+    // Convert date
+    const dateObj = new Date(row.datePeremption);
+    dateObj.setHours(dateObj.getHours() + 1);
+
     return {
       ...row,
-      datePeremption: date.toLocaleDateString("fr-FR")
+      datePeremption: dateObj.toLocaleDateString("fr-FR"),
+      id_list
     };
-  });
-  const data = helper.emptyOrRows(rowsDate);
-  return data;
+  }));
 
+  const data = helper.emptyOrRows(augmentedRows);
+
+  return data;
 }
 
   async function getPeremptionids(page = 1, idMateriel){
