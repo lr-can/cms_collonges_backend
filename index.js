@@ -67,6 +67,7 @@ const allAgentsSync = require("./routes/allAgentsSync");
 const nextAvailableIds = require("./routes/nextAvailableIds");
 const getAuthInfo = require("./routes/getAuthInfo");
 const manoeuvre = require("./routes/manoeuvre");
+const inventaireVehicule = require("./routes/inventaireVehicule");
 
 app.use(cors());
 app.use(express.json());
@@ -154,6 +155,7 @@ app.use("/getAllSheetsData", getAllSheetsData);
 app.use("/allAgentsSync", allAgentsSync);
 app.use("/nextAvailableIds", nextAvailableIds);
 app.use("/getAuthInfo", getAuthInfo);
+app.use("/inventaireVehicule", inventaireVehicule);
 app.use("/", manoeuvre);
 
 // Routes pour les pages HTML
