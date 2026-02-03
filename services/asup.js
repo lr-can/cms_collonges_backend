@@ -142,7 +142,7 @@ async function getInventaireAsup(codeMateriel, vsav, page = 1) {
 
     const rows = await db.query(
         `SELECT * FROM asupStock 
-         WHERE idMedicament = '${codeMateriel}' AND affectationVSAV = ${affectationVSAV}`
+         WHERE idMedicament = '${codeMateriel}' AND affectationVSAV = ${affectationVSAV} AND idStatutAsup != 4 AND idStatutAsup != 2`
     );
     
     const data = helper.emptyOrRows(rows);
