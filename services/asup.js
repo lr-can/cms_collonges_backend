@@ -127,6 +127,33 @@ async function getMedicamentsforCare(care, affectationVSAV, page = 1){
       }
 }
 
+async function getInventaireAsup(codeMateriel, vsav, page = 1) {
+    // Convertir VSAV en minuscules et déterminer affectationVSAV
+    const vsavLower = vsav.toLowerCase();
+    let affectationVSAV;
+    
+    if (vsavLower === 'vsav1') {
+        affectationVSAV = 1;
+    } else if (vsavLower === 'vsav2') {
+        affectationVSAV = 2;
+    } else {
+        throw new Error('VSAV invalide. Doit être "vsav1" ou "vsav2"');
+    }
+
+    const rows = await db.query(
+        `SELECT * FROM asupStock 
+         WHERE idMedicament = '${codeMateriel}' AND affectationVSAV = ${affectationVSAV}`
+    );
+    
+    const data = helper.emptyOrRows(rows);
+    const meta = { page };
+
+    return {
+        data,
+        meta
+    };
+}
+
 async function newInterventionAsup(formData) {
     const currentidUtilisation = await db.query(
         `SELECT MAX(idUtilisation) FROM utilisationsASUP;`
@@ -1215,5 +1242,6 @@ module.exports = {
     getMedicamentsWithoutVsav,
     affectVsav,
     getVizData,
-    generatePDF
+    generatePDF,
+    getInventaireAsup
 };
