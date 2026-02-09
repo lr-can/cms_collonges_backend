@@ -70,6 +70,7 @@ const getAuthInfo = require("./routes/getAuthInfo");
 const manoeuvre = require("./routes/manoeuvre");
 const inventaireVehicule = require("./routes/inventaireVehicule");
 const getInventaireAsup = require("./routes/getInventaireAsup");
+const inventaireRecap = require("./routes/inventaireRecap");
 
 app.use(cors());
 app.use(express.json());
@@ -160,6 +161,7 @@ app.use("/nextAvailableIds", nextAvailableIds);
 app.use("/getAuthInfo", getAuthInfo);
 app.use("/inventaireVehicule", inventaireVehicule);
 app.use("/getInventaireAsup", getInventaireAsup);
+app.use("/inventaireRecap", inventaireRecap);
 app.use("/", manoeuvre);
 
 // Routes pour les pages HTML
