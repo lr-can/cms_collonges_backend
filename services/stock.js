@@ -500,6 +500,14 @@ async function getPeremptionAndCount() {
       return {message};
     }
 
+    async function performedECG(){
+      await db.query(
+        `UPDATE retourIntervention SET statutRI = 1 WHERE idMateriel = 'electrECG'`
+      );
+      let message = "fait."
+      return {message};
+    }
+
       async function exportDataBase(page = 1) {
         const stockData = await db.query('SELECT * FROM stock');
         const retourInterventionData = await db.query('SELECT * FROM retourIntervention');
@@ -565,5 +573,6 @@ async function getPeremptionAndCount() {
     exportDataBase,
     getPeremptionAndCount,
     materielRIChecked,
+    performedECG,
     getNextAvailableIds
   }
