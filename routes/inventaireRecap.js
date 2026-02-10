@@ -7,6 +7,12 @@ const INVENTAIRE_SHEET_ID = '1AkAJTVzypZMMuoQUZ25vWjohQpi_0kJyCAql0cdQNr0';
 const HISTORIQUE_SHEET = 'Historique';
 const AGENTS_SHEET_ID = '1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI';
 const AGENTS_SHEET = 'agentsASUP';
+const AVAILABILITY_SHEET_ID = '1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE';
+const AVAILABILITY_SHEET = 'Feuille 12';
+const LOGO_URL =
+  'https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/logoTitle.png?raw=true';
+const ICONS_BASE_URL =
+  'https://raw.githubusercontent.com/lr-can/affichageCT2/ae51ac88d6e6a82647a3d3e069db5a96d6e893db/src/assets/vehiculeViewIcons/';
 const GRADE_BASE_URL =
   'https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/';
 
