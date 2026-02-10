@@ -4,7 +4,8 @@ const { google } = require('googleapis');
 const config = require('../config');
 
 const SPREADSHEET_ID = '1AkAJTVzypZMMuoQUZ25vWjohQpi_0kJyCAql0cdQNr0';
-const SHEETS_TO_FETCH = ['VSAV1', 'VSAV2', 'FPTL', 'VTUTP', 'BPSM', 'Historique'];
+const ACTIVE_ENGINS_SHEET = 'ActiveEngins';
+const DEFAULT_ENGIN_STATUS = 'ACTIVATED';
 
 // Fonction helper pour authentifier avec Google Sheets
 function getGoogleSheetsAuth() {
@@ -16,6 +17,51 @@ function getGoogleSheetsAuth() {
         ['https://www.googleapis.com/auth/spreadsheets']
     );
     return auth;
+}
+
+function buildSheetRange(title, columns = 'A:Z') {
+    const needsQuotes = /\s|[^A-Za-z0-9_\-]/.test(title);
+    const safeTitle = needsQuotes ? `'${title.replace(/'/g, "\\'")}'` : title;
+    return `${safeTitle}!${columns}`;
+}
+
+function normalizeStatus(value) {
+    const normalized = String(value || '').trim().toUpperCase();
+    return normalized || DEFAULT_ENGIN_STATUS;
+}
+
+function parseActiveEngins(values) {
+    if (!Array.isArray(values) || values.length === 0) {
+        return [];
+    }
+
+    let startIndex = 0;
+    const firstRow = values[0] || [];
+    const firstColHeader = String(firstRow[0] || '').trim().toUpperCase();
+    const secondColHeader = String(firstRow[1] || '').trim().toUpperCase();
+
+    if (firstColHeader === 'ENGIN' && secondColHeader === 'STATUS') {
+        startIndex = 1;
+    }
+
+    const parsed = [];
+    const seen = new Set();
+
+    for (let i = startIndex; i < values.length; i++) {
+        const row = values[i] || [];
+        const engin = String(row[0] || '').trim();
+        if (!engin || seen.has(engin)) {
+            continue;
+        }
+        seen.add(engin);
+
+        parsed.push({
+            engin,
+            status: normalizeStatus(row[1]),
+        });
+    }
+
+    return parsed;
 }
 
 // GET - Récupérer toutes les données des feuilles spécifiées
@@ -33,29 +79,49 @@ router.get('/', async function(req, res, next) {
         const sheetsMeta = (meta && meta.data && meta.data.sheets) || [];
         const availableTitles = sheetsMeta.map(s => s.properties && s.properties.title ? s.properties.title : '');
 
-        // Filtrer pour ne garder que les feuilles demandées qui existent
-        const titlesToFetch = SHEETS_TO_FETCH.filter(t => availableTitles.includes(t));
-        
-        if (titlesToFetch.length === 0) {
-            return res.json({ message: 'Aucune feuille trouvée', data: {} });
+        if (!availableTitles.includes(ACTIVE_ENGINS_SHEET)) {
+            return res.status(404).json({
+                message: `Feuille ${ACTIVE_ENGINS_SHEET} introuvable`,
+                enginsStatus: [],
+            });
         }
 
-        // Construire les ranges pour chaque feuille
-        const ranges = titlesToFetch.map(title => {
-            const needsQuotes = /\s|[^A-Za-z0-9_\-]/.test(title);
-            const safeTitle = needsQuotes ? `'${title.replace(/'/g, "\\'")}'` : title;
-            return `${safeTitle}!A:Z`;
+        // Source dynamique des engins à exporter + statuts
+        const activeEnginsRes = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: buildSheetRange(ACTIVE_ENGINS_SHEET, 'A:B'),
         });
 
-        // Récupérer toutes les données en batch
-        const batchRes = await sheets.spreadsheets.values.batchGet({
-            spreadsheetId: SPREADSHEET_ID,
-            ranges: ranges,
-        });
+        const activeEnginsValues = (activeEnginsRes && activeEnginsRes.data && activeEnginsRes.data.values) || [];
+        const enginsConfig = parseActiveEngins(activeEnginsValues);
+
+        if (enginsConfig.length === 0) {
+            return res.json({
+                message: `Aucun engin configuré dans ${ACTIVE_ENGINS_SHEET}`,
+                enginsStatus: [],
+            });
+        }
+
+        // Feuilles à lire: toutes sauf celles masquées (HIDDEN)
+        const titlesToFetch = enginsConfig
+            .filter(({ engin, status }) => status !== 'HIDDEN' && availableTitles.includes(engin))
+            .map(({ engin }) => engin);
+
+        // Construire les ranges pour chaque feuille
+        const ranges = titlesToFetch.map(title => buildSheetRange(title, 'A:Z'));
+
+        let valueRanges = [];
+        if (ranges.length > 0) {
+            // Récupérer toutes les données en batch
+            const batchRes = await sheets.spreadsheets.values.batchGet({
+                spreadsheetId: SPREADSHEET_ID,
+                ranges: ranges,
+            });
+            valueRanges = batchRes.data.valueRanges || [];
+        }
 
         // Mapper les résultats par nom de feuille
         const valuesByTitle = {};
-        const valueRanges = batchRes.data.valueRanges || [];
         
         for (let i = 0; i < valueRanges.length; i++) {
             const vr = valueRanges[i];
@@ -66,11 +132,24 @@ router.get('/', async function(req, res, next) {
             valuesByTitle[titlePart] = vr.values || [];
         }
 
-        // Construire la réponse avec toutes les feuilles
+        // Compatibilité: garder les données par clé d'engin + ajouter la liste des statuts
         const response = {};
-        titlesToFetch.forEach(title => {
-            response[title] = valuesByTitle[title] || [];
+        const enginsStatus = enginsConfig.map(({ engin, status }) => {
+            const hidden = status === 'HIDDEN';
+            const sheetFound = availableTitles.includes(engin);
+
+            if (!hidden && sheetFound) {
+                response[engin] = valuesByTitle[engin] || [];
+            }
+
+            return {
+                engin,
+                status,
+                hidden,
+                sheetFound,
+            };
         });
+        response.enginsStatus = enginsStatus;
 
         res.json(response);
     } catch (err) {
