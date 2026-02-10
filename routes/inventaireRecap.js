@@ -45,6 +45,23 @@ function formatComment(value = '') {
   return escaped.replace(/\s*\|\s*/g, '<br />').replace(/\n/g, '<br />');
 }
 
+function normalizeHexColor(value = '') {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return '';
+  return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+}
+
+function getReadableTextColor(hexColor) {
+  if (!hexColor) return '#111';
+  const hex = hexColor.replace('#', '');
+  if (hex.length !== 6) return '#111';
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 140 ? '#111' : '#fff';
+}
+
 function normalizeName(value = '') {
   return String(value)
     .toLowerCase()
@@ -96,6 +113,21 @@ function parseTimeToMinutes(value = '') {
   return hours * 60 + minutes;
 }
 
+function toTimestamp(isoDate, timeValue, fallbackIndex = 0) {
+  if (!isoDate) return null;
+  const parts = isoDate.split('-');
+  if (parts.length !== 3) return null;
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+    return null;
+  }
+  const minutes = parseTimeToMinutes(timeValue) ?? 0;
+  const base = Date.UTC(year, month - 1, day, 0, 0, 0);
+  return base + minutes * 60000 + fallbackIndex;
+}
+
 function computeDuration(startTime, endTime) {
   const start = parseTimeToMinutes(startTime);
   const end = parseTimeToMinutes(endTime);
@@ -113,6 +145,139 @@ function getGroupKey(code = '') {
   if (/^\d+$/.test(trimmed)) return 'ASUP';
   const match = trimmed.match(/^[a-zA-Z]+/);
   return match ? match[0].toUpperCase() : 'AUTRES';
+}
+
+function toFlag(value) {
+  return parseInt(String(value || '0'), 10) === 1;
+}
+
+function buildEmplois(agent) {
+  if (!agent) return [];
+  const emplois = [];
+
+  if (toFlag(agent.CDG_cdg)) {
+    emplois.push({ icon: `${ICONS_BASE_URL}CDG.png`, name: 'CDG', chip: 'CDG' });
+  }
+
+  if (toFlag(agent.INFAMU_inf)) {
+    emplois.push({
+      icon: `${ICONS_BASE_URL}INFAMU.svg`,
+      name: 'INFAMU',
+      chip: 'PISU',
+    });
+  }
+
+  if (toFlag(agent.SAP_ca)) {
+    emplois.push({
+      icon: `${ICONS_BASE_URL}SUAP.svg`,
+      name: 'SUAP',
+      chip: 'CA',
+    });
+  } else if (toFlag(agent.SAP_eq)) {
+    emplois.push({
+      icon: `${ICONS_BASE_URL}SUAP.svg`,
+      name: 'SUAP',
+      chip: 'EQ',
+    });
+  }
+
+  if (toFlag(agent.DIV_ca)) {
+    emplois.push({
+      icon: `${ICONS_BASE_URL}PPBE.svg`,
+      name: 'PPBE',
+      chip: 'CA',
+    });
+  } else if (toFlag(agent.DIV_eq)) {
+    emplois.push({
+      icon: `${ICONS_BASE_URL}PPBE.svg`,
+      name: 'PPBE',
+      chip: 'EQ',
+    });
+  }
+
+  if (toFlag(agent.INC_ca)) {
+    emplois.push({
+      icon: `${ICONS_BASE_URL}INC.svg`,
+      name: 'INC',
+      chip: 'CA',
+    });
+  } else if (toFlag(agent.INC_ce)) {
+    emplois.push({
+      icon: `${ICONS_BASE_URL}INC.svg`,
+      name: 'INC',
+      chip: 'CE',
+    });
+  } else if (toFlag(agent.INC_eq)) {
+    emplois.push({
+      icon: `${ICONS_BASE_URL}INC.svg`,
+      name: 'INC',
+      chip: 'EQ',
+    });
+  }
+
+  if (toFlag(agent.BATO_ca)) {
+    emplois.push({
+      icon: `${ICONS_BASE_URL}BATO.svg`,
+      name: 'BATO',
+      chip: 'CA',
+    });
+  } else if (toFlag(agent.BATO_eq)) {
+    emplois.push({
+      icon: `${ICONS_BASE_URL}BATO.svg`,
+      name: 'BATO',
+      chip: 'EQ',
+    });
+  }
+
+  if (toFlag(agent.AQUA_ca)) {
+    emplois.push({ icon: `${ICONS_BASE_URL}SAV.svg`, name: 'SAV', chip: null });
+  }
+
+  return emplois;
+}
+
+function buildPermis(agent) {
+  if (!agent) return [];
+  const permis = [];
+  if (toFlag(agent.INFAMU_cd)) {
+    permis.push({ icon: `${ICONS_BASE_URL}B.svg`, name: 'B' });
+  }
+  if (toFlag(agent.SAP_cd)) {
+    permis.push({ icon: `${ICONS_BASE_URL}BTARS.svg`, name: 'BTARS' });
+  }
+  if (toFlag(agent.INC_cd)) {
+    permis.push({ icon: `${ICONS_BASE_URL}CCOD1.png`, name: 'CCOD1' });
+  }
+  if (toFlag(agent.BATO_ca)) {
+    permis.push({ icon: `${ICONS_BASE_URL}CCOD4.png`, name: 'CCOD4' });
+  }
+  return permis;
+}
+
+function buildAgentProfile(matricule, agent, availability) {
+  const base = agent || {};
+  const availabilityData = availability || {};
+  const nomAgent = base.nomAgent || availabilityData.nom || base.nom || '';
+  const prenomAgent =
+    base.prenomAgent || availabilityData.prenom || base.prenom || '';
+  const grade = base.grade || availabilityData.grade || '';
+  const email =
+    base.email ||
+    base.mail ||
+    base.emailAgent ||
+    availabilityData.email ||
+    '';
+  return {
+    matricule,
+    nomAgent,
+    prenomAgent,
+    grade,
+    email,
+    status: availabilityData.status || base.status || 'N/C',
+    statusColor: availabilityData.statusColor || base.statusColor || '',
+    emplois: buildEmplois(base),
+    permis: buildPermis(base),
+  };
 }
 
 function buildIssuesMap(inventaireObj) {
@@ -164,39 +329,64 @@ function renderPersonCard(person) {
   const matricule = person.matricule || '-';
   const grade = person.grade || 'Grade inconnu';
   const role = person.role || '';
+  const status = person.status || 'N/C';
+  const statusColor = normalizeHexColor(person.statusColor) || '#e2e8f0';
+  const statusTextColor = getReadableTextColor(statusColor);
+  const modalData = {
+    matricule,
+    nom: person.nomAgent || '',
+    prenom: person.prenomAgent || '',
+    grade,
+    role,
+    status,
+    statusColor,
+    email: person.email || '',
+    emplois: person.emplois || [],
+    permis: person.permis || [],
+    gradeIcon: gradeUrl || '',
+  };
+  const encodedData = encodeURIComponent(JSON.stringify(modalData));
 
   return `
-    <div class="person-card">
-      ${
-        gradeUrl
-          ? `<img class="grade-icon" src="${gradeUrl}" alt="${escapeHtml(
-              grade
-            )}" />`
-          : `<div class="grade-fallback">?</div>`
-      }
-      <div class="person-details">
-        <div class="person-name">
-          ${escapeHtml(name)}
-          <span class="chip chip-neutral">${escapeHtml(matricule)}</span>
+    <div class="person-card" role="button" tabindex="0" data-agent="${encodedData}" aria-label="Voir fiche ${escapeHtml(name)}">
+      <div class="person-main">
+        ${
+          gradeUrl
+            ? `<img class="grade-icon" src="${gradeUrl}" alt="${escapeHtml(
+                grade
+              )}" />`
+            : `<div class="grade-fallback">?</div>`
+        }
+        <div class="person-details">
+          <div class="person-name">
+            ${escapeHtml(name)}
+            <span class="chip chip-neutral">${escapeHtml(matricule)}</span>
+          </div>
+          <div class="person-role">${escapeHtml(role)}</div>
         </div>
-        <div class="person-role">${escapeHtml(role)}</div>
-        <div class="person-grade">${escapeHtml(grade)}</div>
       </div>
+      <span class="status-chip" style="background-color: ${statusColor}; color: ${statusTextColor};">
+        ${escapeHtml(status)}
+      </span>
     </div>
   `;
 }
 
-function renderStateItem(label, value, ok, comment) {
+function renderStateItem(label, value, ok, comment, options = {}) {
+  const showStatus = options.showStatus !== false;
   const statusClass = ok === true ? 'ok' : ok === false ? 'warning' : 'neutral';
   const statusLabel = ok === true ? 'OK' : ok === false ? 'KO' : 'N/A';
   const commentHtml = comment
     ? `<div class="state-comment">${formatComment(comment)}</div>`
     : '';
+  const statusHtml = showStatus
+    ? `<span class="chip chip-${statusClass}">${statusLabel}</span>`
+    : '';
   return `
     <div class="state-card">
       <div class="state-label">${escapeHtml(label)}</div>
       <div class="state-value">${escapeHtml(value || '-')}</div>
-      <span class="chip chip-${statusClass}">${statusLabel}</span>
+      ${statusHtml}
       ${commentHtml}
     </div>
   `;
@@ -332,17 +522,31 @@ function renderUnmatchedIssues(issues, matchedIssueKeys) {
   `;
 }
 
-function renderRecord(record, agentsMap, inventoryList) {
+function renderRecord(record, agentsMap, inventoryList, recordId) {
   const vehicule = record.Vehicule || record.vehicule || 'Engin';
-  const recordDateIso = toIsoDate(record.Date || record.date || '');
+  const recordDateIso = record.__isoDate || toIsoDate(record.Date || record.date || '');
   const recordDateLabel = formatDateFr(recordDateIso);
   const heureDebut = record.HeureDebut || record.heureDebut || '-';
   const heureFin = record.HeureFin || record.heureFin || '-';
   const duree = computeDuration(heureDebut, heureFin);
 
-  const inventaireObj = parseJson(record.Inventaire);
-  const etatVehicule = parseJson(record.EtatVehicule);
+  const inventaireObj = record.__inventaire || parseJson(record.Inventaire);
+  const etatVehicule = record.__etatVehicule || parseJson(record.EtatVehicule);
   const commentaire = record.Commentaire || record.commentaire || '';
+  const kilometrageValue =
+    record.__kilometrage != null && !Number.isNaN(record.__kilometrage)
+      ? record.__kilometrage
+      : null;
+  const kilometrageDelta =
+    record.__kilometrageDelta != null && record.__kilometrageDelta >= 0
+      ? record.__kilometrageDelta
+      : null;
+  const kilometrageText =
+    kilometrageDelta != null
+      ? `${kilometrageDelta} km depuis le dernier inventaire`
+      : kilometrageValue != null
+        ? `${kilometrageValue} km`
+        : 'Non renseigné';
 
   const { issues, map: issuesMap } = buildIssuesMap(inventaireObj);
   const matchedIssueKeys = new Set();
@@ -423,8 +627,10 @@ function renderRecord(record, agentsMap, inventoryList) {
         )}
         ${renderStateItem(
           'Kilométrage',
-          etatVehicule.kilometrage != null ? `${etatVehicule.kilometrage} km` : '-',
-          null
+          kilometrageText,
+          null,
+          '',
+          { showStatus: false }
         )}
       </div>
       <div class="fuel-card">
@@ -445,7 +651,7 @@ function renderRecord(record, agentsMap, inventoryList) {
     : '<div class="empty">État véhicule non renseigné.</div>';
 
   return `
-    <section class="record">
+    <section class="record" id="${escapeHtml(recordId || '')}">
       <div class="record-hero">
         <div>
           <div class="record-title">Inventaire ${escapeHtml(vehicule)}</div>
@@ -526,7 +732,7 @@ function renderRecord(record, agentsMap, inventoryList) {
   `;
 }
 
-function renderPage({ date, recordsHtml, hasData }) {
+function renderPage({ date, recordsHtml, hasData, menuHtml }) {
   const title = hasData
     ? `Inventaire du ${formatDateFr(date)}`
     : `Aucun inventaire pour le ${formatDateFr(date)}`;
@@ -589,6 +795,21 @@ function renderPage({ date, recordsHtml, hasData }) {
             margin-bottom: 28px;
           }
 
+          .hero-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+          }
+
+          .hero-logo {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 6px;
+          }
+
           .hero h1 {
             font-size: 28px;
             margin: 0 0 6px;
@@ -629,6 +850,43 @@ function renderPage({ date, recordsHtml, hasData }) {
             box-shadow: var(--shadow);
             margin-bottom: 18px;
             border: 1px solid var(--border);
+          }
+
+          .inventory-menu {
+            margin-top: -6px;
+          }
+
+          .inventory-menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+          }
+
+          .inventory-link {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            text-decoration: none;
+            color: var(--text);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+          }
+
+          .inventory-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+          }
+
+          .inventory-link-title {
+            font-weight: 600;
+          }
+
+          .inventory-link-sub {
+            font-size: 12px;
+            color: var(--muted);
           }
 
           .section-title {
@@ -703,12 +961,31 @@ function renderPage({ date, recordsHtml, hasData }) {
 
           .person-card {
             display: flex;
-            gap: 12px;
             align-items: center;
+            justify-content: space-between;
+            gap: 12px;
             padding: 14px;
             background: #f8fafc;
             border-radius: 14px;
             border: 1px solid var(--border);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+          }
+
+          .person-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+          }
+
+          .person-card:focus {
+            outline: 2px solid rgba(25, 118, 210, 0.4);
+            outline-offset: 2px;
+          }
+
+          .person-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
           }
 
           .grade-icon {
@@ -746,10 +1023,13 @@ function renderPage({ date, recordsHtml, hasData }) {
             margin-top: 4px;
           }
 
-          .person-grade {
+          .status-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
             font-size: 12px;
-            color: var(--primary);
-            margin-top: 2px;
+            font-weight: 600;
           }
 
           .comment-box {
@@ -905,6 +1185,155 @@ function renderPage({ date, recordsHtml, hasData }) {
             margin-top: 4px;
           }
 
+          .modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+          }
+
+          .modal.open {
+            display: flex;
+          }
+
+          .modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(6px);
+          }
+
+          .modal-content {
+            position: relative;
+            z-index: 2;
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            width: min(520px, 92vw);
+            box-shadow: 0 30px 60px rgba(15, 23, 42, 0.2);
+          }
+
+          .modal-close {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            border: none;
+            background: #e2e8f0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            color: #475569;
+          }
+
+          .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+          }
+
+          .modal-grade {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            padding: 6px;
+            object-fit: contain;
+          }
+
+          .modal-header-text {
+            flex: 1;
+          }
+
+          .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+          }
+
+          .modal-subtitle {
+            font-size: 13px;
+            color: var(--primary);
+            margin-top: 2px;
+          }
+
+          .modal-role {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+          }
+
+          .modal-section {
+            margin-bottom: 16px;
+          }
+
+          .modal-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+          }
+
+          .modal-icons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+          }
+
+          .emploi-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 8px;
+            border: 1px solid var(--border);
+          }
+
+          .emploi-item img {
+            width: 26px;
+            height: 26px;
+            object-fit: contain;
+          }
+
+          .emploi-chip {
+            font-size: 10px;
+            font-weight: 700;
+            color: #111;
+          }
+
+          .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 8px;
+          }
+
+          .mail-button {
+            background: var(--primary);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+          }
+
+          .mail-button.disabled {
+            background: #cbd5f5;
+            color: #64748b;
+            pointer-events: none;
+          }
+
+          .modal-empty {
+            margin-top: 6px;
+            font-size: 12px;
+          }
+
           @media (max-width: 760px) {
             .hero {
               flex-direction: column;
@@ -924,18 +1353,176 @@ function renderPage({ date, recordsHtml, hasData }) {
       <body>
         <div class="page">
           <div class="hero">
-            <div>
-              <h1>Inventaire récapitulatif</h1>
-              <p>${escapeHtml(title)}</p>
+            <div class="hero-content">
+              <img class="hero-logo" src="${LOGO_URL}" alt="CMS Collonges" />
+              <div>
+                <h1>Inventaire récapitulatif</h1>
+                <p>${escapeHtml(title)}</p>
+              </div>
             </div>
             <span class="chip chip-neutral">${escapeHtml(date)}</span>
           </div>
+          ${menuHtml || ''}
           ${
             hasData
               ? recordsHtml
               : `<div class="card"><div class="empty">Aucun inventaire trouvé pour cette date.</div></div>`
           }
         </div>
+        <div class="modal" id="agentModal" aria-hidden="true">
+          <div class="modal-backdrop" data-modal-close="true"></div>
+          <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <button class="modal-close" type="button" data-modal-close="true">×</button>
+            <div class="modal-header">
+              <img class="modal-grade" src="" alt="" data-modal-grade />
+              <div class="modal-header-text">
+                <div class="modal-title" id="modalTitle" data-modal-name></div>
+                <div class="modal-subtitle" data-modal-grade-label></div>
+                <div class="modal-role" data-modal-role></div>
+              </div>
+              <span class="status-chip" data-modal-status></span>
+            </div>
+            <div class="modal-section">
+              <div class="modal-section-title">Emplois</div>
+              <div class="modal-icons" data-modal-emplois></div>
+              <div class="empty modal-empty" data-modal-emplois-empty>Aucun emploi renseigné.</div>
+            </div>
+            <div class="modal-section">
+              <div class="modal-section-title">Permis</div>
+              <div class="modal-icons" data-modal-permis></div>
+              <div class="empty modal-empty" data-modal-permis-empty>Aucun permis renseigné.</div>
+            </div>
+            <div class="modal-actions">
+              <a class="mail-button" data-modal-email href="#" target="_blank" rel="noopener">Envoyer un mail</a>
+            </div>
+          </div>
+        </div>
+        <script>
+          (function () {
+            const modal = document.getElementById('agentModal');
+            if (!modal) return;
+            const nameEl = modal.querySelector('[data-modal-name]');
+            const gradeEl = modal.querySelector('[data-modal-grade-label]');
+            const roleEl = modal.querySelector('[data-modal-role]');
+            const statusEl = modal.querySelector('[data-modal-status]');
+            const gradeImg = modal.querySelector('[data-modal-grade]');
+            const emploisEl = modal.querySelector('[data-modal-emplois]');
+            const permisEl = modal.querySelector('[data-modal-permis]');
+            const emploisEmpty = modal.querySelector('[data-modal-emplois-empty]');
+            const permisEmpty = modal.querySelector('[data-modal-permis-empty]');
+            const emailButton = modal.querySelector('[data-modal-email]');
+
+            const getTextColor = function (hex) {
+              if (!hex || hex.length !== 7) return '#111';
+              const r = parseInt(hex.substring(1, 3), 16);
+              const g = parseInt(hex.substring(3, 5), 16);
+              const b = parseInt(hex.substring(5, 7), 16);
+              const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+              return yiq >= 140 ? '#111' : '#fff';
+            };
+
+            const openModal = function (data) {
+              const fullName = ((data.nom || '') + ' ' + (data.prenom || '')).trim();
+              nameEl.textContent = fullName || 'Agent';
+              gradeEl.textContent = data.grade || 'Grade non renseigné';
+              roleEl.textContent = data.role || '';
+              const statusColor = data.statusColor || '#e2e8f0';
+              statusEl.textContent = data.status || 'N/C';
+              statusEl.style.backgroundColor = statusColor;
+              statusEl.style.color = getTextColor(statusColor);
+              if (data.gradeIcon) {
+                gradeImg.src = data.gradeIcon;
+                gradeImg.alt = data.grade || '';
+                gradeImg.style.display = 'block';
+              } else {
+                gradeImg.style.display = 'none';
+              }
+
+              const emplois = Array.isArray(data.emplois) ? data.emplois : [];
+              const permis = Array.isArray(data.permis) ? data.permis : [];
+              emploisEl.innerHTML = emplois
+                .map(function (emploi) {
+                  const chip = emploi.chip
+                    ? '<span class="emploi-chip">' + emploi.chip + '</span>'
+                    : '';
+                  return (
+                    '<div class="emploi-item">' +
+                    '<img src="' +
+                    emploi.icon +
+                    '" alt="' +
+                    (emploi.name || '') +
+                    '" />' +
+                    chip +
+                    '</div>'
+                  );
+                })
+                .join('');
+              permisEl.innerHTML = permis
+                .map(function (permit) {
+                  return (
+                    '<div class="emploi-item">' +
+                    '<img src="' +
+                    permit.icon +
+                    '" alt="' +
+                    (permit.name || '') +
+                    '" />' +
+                    '</div>'
+                  );
+                })
+                .join('');
+              emploisEmpty.style.display = emplois.length ? 'none' : 'block';
+              permisEmpty.style.display = permis.length ? 'none' : 'block';
+
+              if (data.email) {
+                emailButton.textContent = 'Envoyer un mail';
+                emailButton.href = 'mailto:' + data.email;
+                emailButton.classList.remove('disabled');
+              } else {
+                emailButton.textContent = 'Email indisponible';
+                emailButton.href = '#';
+                emailButton.classList.add('disabled');
+              }
+
+              modal.classList.add('open');
+              modal.setAttribute('aria-hidden', 'false');
+            };
+
+            const closeModal = function () {
+              modal.classList.remove('open');
+              modal.setAttribute('aria-hidden', 'true');
+            };
+
+            document.querySelectorAll('.person-card').forEach(function (card) {
+              const open = function () {
+                const encoded = card.getAttribute('data-agent');
+                if (!encoded) return;
+                try {
+                  const data = JSON.parse(decodeURIComponent(encoded));
+                  openModal(data);
+                } catch (err) {
+                  console.error(err);
+                }
+              };
+              card.addEventListener('click', open);
+              card.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  open();
+                }
+              });
+            });
+
+            modal.querySelectorAll('[data-modal-close="true"]').forEach(function (el) {
+              el.addEventListener('click', closeModal);
+            });
+
+            document.addEventListener('keydown', function (event) {
+              if (event.key === 'Escape' && modal.classList.contains('open')) {
+                closeModal();
+              }
+            });
+          })();
+        </script>
       </body>
     </html>
   `;
@@ -949,26 +1536,103 @@ router.get('/:date', async function (req, res, next) {
         date: requestedDate,
         recordsHtml: '',
         hasData: false,
+        menuHtml: '',
       })
     );
     return;
   }
 
   try {
-    const [historique, agents] = await Promise.all([
+    const [historique, agents, availability] = await Promise.all([
       fetchSheet(INVENTAIRE_SHEET_ID, HISTORIQUE_SHEET),
       fetchSheet(AGENTS_SHEET_ID, AGENTS_SHEET),
+      fetchSheet(AVAILABILITY_SHEET_ID, AVAILABILITY_SHEET),
     ]);
+
+    const availabilityMap = {};
+    availability.forEach((row) => {
+      if (row && row.matricule) {
+        availabilityMap[row.matricule] = row;
+      }
+    });
 
     const agentsMap = {};
     agents.forEach((agent) => {
       if (agent && agent.matricule) {
-        agentsMap[agent.matricule] = agent;
+        agentsMap[agent.matricule] = buildAgentProfile(
+          agent.matricule,
+          agent,
+          availabilityMap[agent.matricule]
+        );
       }
     });
 
-    const filtered = historique.filter(
-      (row) => toIsoDate(row.Date) === requestedDate
+    Object.keys(availabilityMap).forEach((matricule) => {
+      if (!agentsMap[matricule]) {
+        agentsMap[matricule] = buildAgentProfile(
+          matricule,
+          {},
+          availabilityMap[matricule]
+        );
+      }
+    });
+
+    const historiqueWithMeta = historique.map((row, index) => {
+      const isoDate = toIsoDate(row.Date || row.date || '');
+      const timeValue = row.HeureDebut || row.HeureFin || '';
+      const timestamp = toTimestamp(isoDate, timeValue, index);
+      const etatVehicule = parseJson(row.EtatVehicule);
+      const inventaire = parseJson(row.Inventaire);
+      const kilometrage =
+        etatVehicule && etatVehicule.kilometrage != null
+          ? Number(etatVehicule.kilometrage)
+          : null;
+      return {
+        ...row,
+        __index: index,
+        __isoDate: isoDate,
+        __timestamp: timestamp,
+        __etatVehicule: etatVehicule,
+        __inventaire: inventaire,
+        __kilometrage: Number.isNaN(kilometrage) ? null : kilometrage,
+      };
+    });
+
+    const recordsByVehicule = new Map();
+    historiqueWithMeta.forEach((record) => {
+      const vehicule = record.Vehicule || record.vehicule;
+      if (!vehicule) return;
+      if (!recordsByVehicule.has(vehicule)) {
+        recordsByVehicule.set(vehicule, []);
+      }
+      recordsByVehicule.get(vehicule).push(record);
+    });
+
+    recordsByVehicule.forEach((records) => {
+      records.sort((a, b) => {
+        const timeA = a.__timestamp ?? Number.MAX_SAFE_INTEGER;
+        const timeB = b.__timestamp ?? Number.MAX_SAFE_INTEGER;
+        if (timeA !== timeB) return timeA - timeB;
+        return a.__index - b.__index;
+      });
+      let lastKilometrage = null;
+      records.forEach((record) => {
+        if (record.__kilometrage != null) {
+          if (lastKilometrage != null) {
+            const delta = record.__kilometrage - lastKilometrage;
+            record.__kilometrageDelta = delta >= 0 ? delta : null;
+          } else {
+            record.__kilometrageDelta = null;
+          }
+          lastKilometrage = record.__kilometrage;
+        } else {
+          record.__kilometrageDelta = null;
+        }
+      });
+    });
+
+    const filtered = historiqueWithMeta.filter(
+      (row) => row.__isoDate === requestedDate
     );
 
     if (!filtered.length) {
@@ -977,14 +1641,28 @@ router.get('/:date', async function (req, res, next) {
           date: requestedDate,
           recordsHtml: '',
           hasData: false,
+          menuHtml: '',
         })
       );
       return;
     }
 
+    filtered.sort((a, b) => {
+      const timeA = a.__timestamp ?? Number.MAX_SAFE_INTEGER;
+      const timeB = b.__timestamp ?? Number.MAX_SAFE_INTEGER;
+      if (timeA !== timeB) return timeA - timeB;
+      return a.__index - b.__index;
+    });
+
+    filtered.forEach((record, index) => {
+      record.__recordId = `inventaire-${index + 1}`;
+    });
+
     const uniqueVehicules = [
       ...new Set(
-        filtered.map((row) => row.Vehicule).filter((vehicule) => vehicule)
+        filtered
+          .map((row) => row.Vehicule || row.vehicule)
+          .filter((vehicule) => vehicule)
       ),
     ];
 
@@ -1004,10 +1682,56 @@ router.get('/:date', async function (req, res, next) {
       inventoryMap[vehicule] = items;
     });
 
+    const menuHtml =
+      filtered.length > 1
+        ? `
+        <div class="card inventory-menu">
+          <div class="section-title">
+            <span class="material-icons">list_alt</span>
+            Inventaires de la journée
+          </div>
+          <div class="inventory-menu-grid">
+            ${filtered
+              .map((row) => {
+                const vehicule = row.Vehicule || row.vehicule || 'Engin';
+                const start = row.HeureDebut || '';
+                const end = row.HeureFin || '';
+                const timeLabel =
+                  start && end
+                    ? `${start} - ${end}`
+                    : start || end || 'Horaire non renseigné';
+                const status = row.Status || row.status || 'Inventaire';
+                return `
+                  <a class="inventory-link" href="#${escapeHtml(
+                    row.__recordId
+                  )}">
+                    <span class="inventory-link-title">${escapeHtml(
+                      vehicule
+                    )}</span>
+                    <span class="inventory-link-sub">${escapeHtml(
+                      timeLabel
+                    )}</span>
+                    <span class="chip chip-neutral">${escapeHtml(
+                      status
+                    )}</span>
+                  </a>
+                `;
+              })
+              .join('')}
+          </div>
+        </div>
+      `
+        : '';
+
     const recordsHtml = filtered
       .map((row) => {
         const vehicule = row.Vehicule || row.vehicule;
-        return renderRecord(row, agentsMap, inventoryMap[vehicule] || []);
+        return renderRecord(
+          row,
+          agentsMap,
+          inventoryMap[vehicule] || [],
+          row.__recordId
+        );
       })
       .join('');
 
@@ -1017,6 +1741,7 @@ router.get('/:date', async function (req, res, next) {
         date: requestedDate,
         recordsHtml,
         hasData: true,
+        menuHtml,
       })
     );
   } catch (err) {
