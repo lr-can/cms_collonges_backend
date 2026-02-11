@@ -3,7 +3,124 @@ const helper = require('../helper');
 const config = require('../config');
 const { google } = require('googleapis');
 const fs = require('fs');
-let fetch
+let fetch;
+
+const RPPS_SHORT_HEADERS = [
+    'identifiantRPPS',
+    'nomExercice',
+    'prenomExercice',
+    'civiliteExercice',
+    'profession',
+    'specialites',
+    'modesExercice',
+    'roles',
+    'secteursActivite',
+    'structures',
+    'telephones',
+    'adressePrincipale',
+    'codesPostaux',
+    'communes',
+    'pays',
+    'sourceDonnees'
+];
+const RPPS_SHORT_HEADER_RANGE = 'RPPS_short!A1:P1';
+const RPPS_SHORT_APPEND_RANGE = 'RPPS_short!A:P';
+
+function normalizeValue(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    return String(value).trim();
+}
+
+function uniqueNonEmpty(values) {
+    return [...new Set(values.map((value) => normalizeValue(value)).filter(Boolean))];
+}
+
+function joinUnique(values) {
+    return uniqueNonEmpty(values).join(' | ');
+}
+
+function formatRppsAddress(entry = {}) {
+    const addressParts = uniqueNonEmpty([
+        entry['Complément destinataire (coord. structure)'],
+        entry['Numéro Voie (coord. structure)'],
+        entry['Libellé type de voie (coord. structure)'] || entry['Code type de voie (coord. structure)'],
+        entry['Libellé Voie (coord. structure)'],
+        entry['Mention distribution (coord. structure)'],
+        entry['Bureau cedex (coord. structure)']
+    ]);
+
+    const cityPart = uniqueNonEmpty([
+        entry['Code postal (coord. structure)'],
+        entry['Libellé commune (coord. structure)']
+    ]).join(' ');
+
+    if (cityPart) {
+        addressParts.push(cityPart);
+    }
+
+    const country = normalizeValue(entry['Libellé pays (coord. structure)']);
+    if (country) {
+        addressParts.push(country);
+    }
+
+    return addressParts.join(', ');
+}
+
+function buildDoctorFromRppsEntries(entries, fallbackRPPS, sourceDonnees) {
+    const safeEntries = Array.isArray(entries) ? entries : [];
+    const baseEntry = safeEntries.find((entry) =>
+        normalizeValue(entry["Nom d'exercice"]) || normalizeValue(entry["Prénom d'exercice"])
+    ) || safeEntries[0] || {};
+
+    const addresses = uniqueNonEmpty(safeEntries.map((entry) => formatRppsAddress(entry)));
+
+    return {
+        identifiantRPPS: normalizeValue(baseEntry['Identifiant PP']) || normalizeValue(baseEntry.identifiantRPPS) || normalizeValue(fallbackRPPS),
+        nomExercice: normalizeValue(baseEntry["Nom d'exercice"]) || normalizeValue(baseEntry.nomExercice),
+        prenomExercice: normalizeValue(baseEntry["Prénom d'exercice"]) || normalizeValue(baseEntry.prenomExercice),
+        civiliteExercice: normalizeValue(baseEntry["Libellé civilité d'exercice"]) || normalizeValue(baseEntry.civiliteExercice),
+        profession: joinUnique(safeEntries.map((entry) => entry['Libellé profession'] || entry.profession)),
+        specialites: joinUnique(safeEntries.map((entry) => entry['Libellé savoir-faire'] || entry.specialites)),
+        modesExercice: joinUnique(safeEntries.map((entry) => entry['Libellé mode exercice'] || entry.modesExercice)),
+        roles: joinUnique(safeEntries.map((entry) => entry['Libellé rôle'] || entry.roles)),
+        secteursActivite: joinUnique(safeEntries.map((entry) => entry["Libellé secteur d'activité"] || entry.secteursActivite)),
+        structures: joinUnique(safeEntries.flatMap((entry) => [entry['Raison sociale site'], entry['Enseigne commerciale site'], entry.structures])),
+        telephones: joinUnique(safeEntries.flatMap((entry) => [entry['Téléphone (coord. structure)'], entry['Téléphone 2 (coord. structure)'], entry.telephones])),
+        adressePrincipale: addresses[0] || normalizeValue(baseEntry.adressePrincipale),
+        codesPostaux: joinUnique(safeEntries.map((entry) => entry['Code postal (coord. structure)'] || entry.codesPostaux)),
+        communes: joinUnique(safeEntries.map((entry) => entry['Libellé commune (coord. structure)'] || entry.communes)),
+        pays: joinUnique(safeEntries.map((entry) => entry['Libellé pays (coord. structure)'] || entry.pays)),
+        sourceDonnees: normalizeValue(sourceDonnees) || normalizeValue(baseEntry.sourceDonnees) || 'unknown'
+    };
+}
+
+function buildDoctorFromShortData(shortDoctor, fallbackRPPS) {
+    return buildDoctorFromRppsEntries([shortDoctor], fallbackRPPS, shortDoctor.sourceDonnees || 'RPPS_short');
+}
+
+async function appendDoctorToRppsShort(sheets, spreadsheetId, doctorData) {
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: RPPS_SHORT_HEADER_RANGE,
+        valueInputOption: 'RAW',
+        resource: {
+            values: [RPPS_SHORT_HEADERS]
+        }
+    });
+
+    await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: RPPS_SHORT_APPEND_RANGE,
+        valueInputOption: 'USER_ENTERED',
+        resource: {
+            values: [
+                RPPS_SHORT_HEADERS.map((header) => normalizeValue(doctorData[header]))
+            ]
+        }
+    });
+}
 
 
 async function getAsupAgent(matricule) {
@@ -25,7 +142,31 @@ async function getAsupAgent(matricule) {
 async function getDoctor(RPPS) {
     if (!fetch) {
         fetch = (await import('node-fetch')).default;
-    };
+    }
+
+    const normalizedRPPS = normalizeValue(RPPS).replace(/\s+/g, '');
+    if (!/^\d+$/.test(normalizedRPPS)) {
+        throw new Error('RPPS invalide.');
+    }
+
+    let shortData = [];
+    try {
+        const shortDataResponse = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/RPPS_short');
+        if (shortDataResponse.ok) {
+            const payload = await shortDataResponse.json();
+            shortData = Array.isArray(payload) ? payload : [];
+        } else {
+            console.error(`Erreur lecture RPPS_short (${shortDataResponse.status})`);
+        }
+    } catch (error) {
+        console.error('Erreur lors de la lecture de RPPS_short:', error);
+    }
+
+    const doctorInShortData = shortData.find((doc) => normalizeValue(doc.identifiantRPPS) === normalizedRPPS);
+    if (doctorInShortData) {
+        return buildDoctorFromShortData(doctorInShortData, normalizedRPPS);
+    }
+
     const privateKey = config.google.private_key.replace(/\\n/g, '\n');
     const auth = new google.auth.JWT(
         config.google.client_email,
@@ -33,82 +174,107 @@ async function getDoctor(RPPS) {
         privateKey,
         ['https://www.googleapis.com/auth/spreadsheets']
     );
-    const shortDataResponse = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/RPPS_short');
-    const shortData = await shortDataResponse.json();
-    const doctor = shortData.find(doc => doc.identifiantRPPS === RPPS);
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = config.google.spreadsheetId2;
 
-    if (doctor) {
-        return {
-            identifiantRPPS: doctor.identifiantRPPS,
-            nomExercice: doctor.nomExercice,
-            prenomExercice: doctor.prenomExercice
-        };
-    } else {
-        const sheets = google.sheets({ version: 'v4', auth });
-        const spreadsheetId = config.google.spreadsheetId2;
-        const rppsNumber = RPPS;
-        const range = 'recherche_RPPS!A2';
+    try {
+        const tabularApiUrl = new URL('https://tabular-api.data.gouv.fr/api/resources/fffda7e9-0ea2-4c35-bba0-4496f3af935d/data/');
+        tabularApiUrl.searchParams.set('Identifiant PP__exact', normalizedRPPS);
 
-        try {
-            // Append the new row to the spreadsheet
-            await sheets.spreadsheets.values.update({
-                spreadsheetId,
-                range,
-                valueInputOption: 'USER_ENTERED',
-                resource: {
-                    values: [
-                        [
-                            `=MATCH(${rppsNumber}; RPPS!A:A; 0)`
-                        ]
-                    ],
-                },
-            });
-            await new Promise(resolve => setTimeout(resolve, 2500));
+        const tabularResponse = await fetch(tabularApiUrl.toString());
+        if (tabularResponse.ok) {
+            const tabularPayload = await tabularResponse.json();
+            const tabularRows = Array.isArray(tabularPayload.data) ? tabularPayload.data : [];
 
-        } catch (err) {
-            console.error('Error appending row:', err);
-            throw err; // Renvoie l'erreur pour être gérée par l'appelant
-        }
-        try {
-            const response = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/recherche_RPPS');
-            const data = await response.json();
-
-            const rowNumber = data[0].RowNumber;
-
-            const range = `RPPS!A${rowNumber}:C${rowNumber}`;
-
-            const response2 = await sheets.spreadsheets.values.get({
-                spreadsheetId,
-                range,
-            });
-
-            console.log(response);
-
-            const values = response2.data.values;
-
-            if (!values || values.length === 0) {
-                throw new Error('No data found in the specified row.');
+            if (tabularRows.length > 0) {
+                const doctorFromTabular = buildDoctorFromRppsEntries(tabularRows, normalizedRPPS, 'tabular_api');
+                try {
+                    await appendDoctorToRppsShort(sheets, spreadsheetId, doctorFromTabular);
+                } catch (appendError) {
+                    console.error('Impossible de mettre en cache le médecin dans RPPS_short:', appendError);
+                }
+                return doctorFromTabular;
             }
-
-            const [identifiantRPPS, nomExercice, prenomExercice] = values[0];
-
-            await sheets.spreadsheets.values.append({
-                spreadsheetId,
-                range: 'RPPS_short!A:C',
-                valueInputOption: 'USER_ENTERED',
-                resource: {
-                    values: [
-                        [identifiantRPPS, nomExercice, prenomExercice]
-                    ],
-                },
-            });
-
-            return { identifiantRPPS, nomExercice, prenomExercice };
-
-        } catch (error) {
-            console.error(error);
-            throw new Error(error);
+        } else {
+            console.error(`Erreur appel API RPPS tabulaire (${tabularResponse.status})`);
         }
+    } catch (error) {
+        console.error('Erreur lors de la recherche RPPS sur tabular-api.data.gouv.fr:', error);
+    }
+
+    const rechercheRange = 'recherche_RPPS!A2';
+    try {
+        await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: rechercheRange,
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: [
+                    [
+                        `=MATCH(${normalizedRPPS}; RPPS!A:A; 0)`
+                    ]
+                ]
+            }
+        });
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+    } catch (err) {
+        console.error('Erreur lors de la recherche RPPS via Google Sheets:', err);
+        throw err;
+    }
+
+    try {
+        const response = await fetch('https://opensheet.elk.sh/1ottTPiBjgBXSZSj8eU8jYcatvQaXLF64Ppm3qOfYbbI/recherche_RPPS');
+        if (!response.ok) {
+            throw new Error(`Erreur opensheet recherche_RPPS (${response.status})`);
+        }
+        const data = await response.json();
+        const rowNumber = data && data[0] ? data[0].RowNumber : null;
+
+        if (!rowNumber) {
+            throw new Error(`RPPS ${normalizedRPPS} introuvable dans la feuille RPPS.`);
+        }
+
+        const headersResponse = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'RPPS!A1:AZ1'
+        });
+        const rowResponse = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: `RPPS!A${rowNumber}:AZ${rowNumber}`
+        });
+
+        const headers = headersResponse.data.values ? headersResponse.data.values[0] : [];
+        const rowValues = rowResponse.data.values ? rowResponse.data.values[0] : null;
+
+        if (!rowValues || rowValues.length === 0) {
+            throw new Error('Aucune donnée trouvée dans la ligne RPPS ciblée.');
+        }
+
+        const rowAsObject = {};
+        headers.forEach((header, index) => {
+            if (header) {
+                rowAsObject[header] = rowValues[index] || '';
+            }
+        });
+
+        let doctorFromGoogleSheet = buildDoctorFromRppsEntries([rowAsObject], normalizedRPPS, 'google_sheet');
+        doctorFromGoogleSheet = {
+            ...doctorFromGoogleSheet,
+            identifiantRPPS: doctorFromGoogleSheet.identifiantRPPS || normalizeValue(rowValues[0]) || normalizedRPPS,
+            nomExercice: doctorFromGoogleSheet.nomExercice || normalizeValue(rowValues[1]),
+            prenomExercice: doctorFromGoogleSheet.prenomExercice || normalizeValue(rowValues[2])
+        };
+
+        try {
+            await appendDoctorToRppsShort(sheets, spreadsheetId, doctorFromGoogleSheet);
+        } catch (appendError) {
+            console.error('Impossible de mettre en cache le médecin (fallback Google) dans RPPS_short:', appendError);
+        }
+
+        return doctorFromGoogleSheet;
+    } catch (error) {
+        console.error(error);
+        throw new Error(error.message || String(error));
     }
 }
 
