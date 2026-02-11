@@ -162,6 +162,7 @@ router.get('/', async function(req, res, next) {
 router.post('/', async function(req, res, next) {
     try {
         const {
+            Vehicule: vehiculeInput,
             Date: date,
             HeureDebut,
             HeureFin,
@@ -171,13 +172,27 @@ router.post('/', async function(req, res, next) {
             Inventaireur3,
             Inventaire,
             EtatVehicule,
-            Status = 'PENDING'
+            CommentaireInventaire,
+            Commentaire,
+            Status: statusInput = 'PENDING'
         } = req.body;
 
+        const vehicule = String(vehiculeInput || req.body.vehicule || '').trim();
+        const commentaire = String(
+            CommentaireInventaire ??
+            req.body.commentaireInventaire ??
+            req.body.CommentaireInvententaire ??
+            req.body.commentaireInvententaire ??
+            Commentaire ??
+            req.body.commentaire ??
+            ''
+        ).trim();
+        const status = String(statusInput || req.body.status || 'PENDING').trim() || 'PENDING';
+
         // Validation des champs requis
-        if (!date || !HeureDebut || !HeureFin || !ChefDeGarde || !Inventaireur1 || !Inventaireur2 || !Inventaireur3) {
+        if (!vehicule || !date || !HeureDebut || !HeureFin || !ChefDeGarde || !Inventaireur1 || !Inventaireur2 || !Inventaireur3) {
             return res.status(400).json({ 
-                message: 'Champs manquants. Requis: Date, HeureDebut, HeureFin, ChefDeGarde, Inventaireur1, Inventaireur2, Inventaireur3' 
+                message: 'Champs manquants. Requis: Vehicule, Date, HeureDebut, HeureFin, ChefDeGarde, Inventaireur1, Inventaireur2, Inventaireur3' 
             });
         }
 
@@ -217,10 +232,11 @@ router.post('/', async function(req, res, next) {
         const auth = getGoogleSheetsAuth();
         const sheets = google.sheets({ version: 'v4', auth });
 
-        const range = 'Historique!A:J';
+        const range = 'Historique!A:L';
 
         // Préparer les valeurs à insérer
         const values = [[
+            vehicule,
             date,
             HeureDebut,
             HeureFin,
@@ -230,7 +246,8 @@ router.post('/', async function(req, res, next) {
             Inventaireur3,
             inventaireStr,
             etatVehiculeStr,
-            Status
+            commentaire,
+            status
         ]];
 
         // Ajouter la ligne dans la feuille Historique

@@ -86,6 +86,101 @@ function parseJson(value) {
   }
 }
 
+function firstNonEmpty(...values) {
+  for (let i = 0; i < values.length; i += 1) {
+    const value = values[i];
+    if (value === undefined || value === null) continue;
+    const text = String(value).trim();
+    if (text) return text;
+  }
+  return '';
+}
+
+function normalizeStatusToken(value = '') {
+  return String(value)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function resolveStatusMeta(rawStatus, fallbackLabel = 'N/C') {
+  const label = String(rawStatus || '').trim();
+  if (!label) {
+    return { label: fallbackLabel, chipClass: 'neutral', isProblem: false, explicit: false };
+  }
+
+  const token = normalizeStatusToken(label);
+  if (
+    token === 'ok' ||
+    token === 'conforme' ||
+    token === 'present' ||
+    token === 'verifie' ||
+    token === 'valide'
+  ) {
+    return { label: 'OK', chipClass: 'ok', isProblem: false, explicit: true };
+  }
+
+  if (
+    token === 'ko' ||
+    token === 'nok' ||
+    token.includes('probleme') ||
+    token.includes('anomalie') ||
+    token.includes('manquant') ||
+    token.includes('absent') ||
+    token.includes('defaut') ||
+    token === 'hs'
+  ) {
+    return { label: 'Problème', chipClass: 'warning', isProblem: true, explicit: true };
+  }
+
+  if (token.includes('pending') || token.includes('attente') || token.includes('encours')) {
+    return { label, chipClass: 'neutral', isProblem: false, explicit: true };
+  }
+
+  return { label, chipClass: 'neutral', isProblem: false, explicit: true };
+}
+
+function getIssueMaterialName(issue) {
+  if (!issue || typeof issue !== 'object') return '';
+  return firstNonEmpty(issue.nomMateriel, issue.NomMateriel, issue.Nom, issue.nom);
+}
+
+function getIssueComment(issue) {
+  if (!issue || typeof issue !== 'object') return '';
+  return firstNonEmpty(
+    issue.CommentaireInventaire,
+    issue.commentaireInventaire,
+    issue.Commentaire,
+    issue.commentaire
+  );
+}
+
+function getIssueStatusMeta(issue) {
+  if (!issue || typeof issue !== 'object') {
+    return resolveStatusMeta('', 'N/C');
+  }
+  const rawStatus = firstNonEmpty(
+    issue.status,
+    issue.Status,
+    issue['Status.'],
+    issue.statut,
+    issue.Statut
+  );
+  return resolveStatusMeta(rawStatus, 'N/C');
+}
+
+function getRecordStatusMeta(record, fallbackLabel = 'Inventaire') {
+  const rawStatus = firstNonEmpty(
+    record && record.Status,
+    record && record.status,
+    record && record['Status.'],
+    record && record.Statut,
+    record && record.statut
+  );
+  return resolveStatusMeta(rawStatus, fallbackLabel);
+}
+
 function toIsoDate(value = '') {
   const trimmed = String(value).trim();
   if (!trimmed) return null;
@@ -298,7 +393,7 @@ function buildIssuesMap(inventaireObj) {
 
   const map = new Map();
   issues.forEach((issue) => {
-    const key = normalizeName(issue.nomMateriel);
+    const key = normalizeName(getIssueMaterialName(issue));
     if (!key) return;
     if (!map.has(key)) {
       map.set(key, []);
@@ -412,21 +507,44 @@ function renderInventoryRows(items, issuesMap, matchedIssueKeys) {
 
       if (issues && issues.length > 0) {
         issues.forEach((issue) => {
-          if (issue && issue.nomMateriel) {
-            matchedIssueKeys.add(normalizeName(issue.nomMateriel));
+          const issueName = getIssueMaterialName(issue);
+          if (issueName) {
+            matchedIssueKeys.add(normalizeName(issueName));
           }
         });
       }
 
-      const status = issues && issues.length > 0 ? 'Problème' : 'OK';
-      const statusClass = issues && issues.length > 0 ? 'warning' : 'ok';
+      const statusMetaList = (issues || []).map((issue) => getIssueStatusMeta(issue));
+      const explicitStatusList = statusMetaList.filter((meta) => meta.explicit);
+      const hasProblemStatus = explicitStatusList.some((meta) => meta.isProblem);
+      const neutralStatus = explicitStatusList.find(
+        (meta) => !meta.isProblem && meta.chipClass === 'neutral'
+      );
+
+      let statusMeta;
+      if (explicitStatusList.length > 0) {
+        if (hasProblemStatus) {
+          statusMeta = { label: 'Problème', chipClass: 'warning' };
+        } else if (neutralStatus) {
+          statusMeta = neutralStatus;
+        } else {
+          statusMeta = { label: 'OK', chipClass: 'ok' };
+        }
+      } else if (issues && issues.length > 0) {
+        // Compatibilité historique: entrée inventaire sans statut explicite = anomalie.
+        statusMeta = { label: 'Problème', chipClass: 'warning' };
+      } else {
+        statusMeta = { label: 'OK', chipClass: 'ok' };
+      }
+
       const issueComment = issues
         ? issues
             .map((issue) => {
               const zone = issue.zone ? `${issue.zone} — ` : '';
-              const comment = issue.commentaire || 'Anomalie signalée';
-              return `${zone}${comment}`;
+              const comment = getIssueComment(issue);
+              return comment ? `${zone}${comment}` : '';
             })
+            .filter(Boolean)
             .join(' | ')
         : '';
 
@@ -436,8 +554,8 @@ function renderInventoryRows(items, issuesMap, matchedIssueKeys) {
           )}</div>`
         : '';
       const issueCommentHtml = issueComment
-        ? `<div class="inventory-comment inventory-comment-warning">
-            <span class="material-icons">warning</span>
+        ? `<div class="inventory-comment inventory-comment-${statusMeta.chipClass === 'warning' ? 'warning' : 'ok'}">
+            <span class="material-icons">${statusMeta.chipClass === 'warning' ? 'warning' : 'chat_bubble_outline'}</span>
             <span>${formatComment(issueComment)}</span>
           </div>`
         : '';
@@ -447,7 +565,7 @@ function renderInventoryRows(items, issuesMap, matchedIssueKeys) {
           <div class="inventory-cell inventory-name">${escapeHtml(itemName)}</div>
           <div class="inventory-cell">${escapeHtml(quantity)}</div>
           <div class="inventory-cell">
-            <span class="chip chip-${statusClass}">${status}</span>
+            <span class="chip chip-${statusMeta.chipClass}">${escapeHtml(statusMeta.label)}</span>
           </div>
           <div class="inventory-cell">
             ${issueCommentHtml || baseCommentHtml || ''}
@@ -498,16 +616,22 @@ function renderInventoryGroups(items, issuesMap, matchedIssueKeys) {
 }
 
 function renderUnmatchedIssues(issues, matchedIssueKeys) {
-  const remaining = issues.filter(
-    (issue) => !matchedIssueKeys.has(normalizeName(issue.nomMateriel))
-  );
+  const remaining = issues.filter((issue) => {
+    const statusMeta = getIssueStatusMeta(issue);
+    const isLegacyAnomaly = !statusMeta.explicit;
+    const isProblem = statusMeta.explicit ? statusMeta.isProblem : isLegacyAnomaly;
+    return (
+      isProblem &&
+      !matchedIssueKeys.has(normalizeName(getIssueMaterialName(issue)))
+    );
+  });
   if (!remaining.length) return '';
 
   const rows = remaining
     .map((issue) => {
-      const label = issue.nomMateriel || 'Matériel inconnu';
+      const label = getIssueMaterialName(issue) || 'Matériel inconnu';
       const zone = issue.zone ? `(${issue.zone})` : '';
-      const comment = issue.commentaire || 'Anomalie signalée';
+      const comment = getIssueComment(issue) || 'Anomalie signalée';
       return `
         <div class="unmatched-row">
           <div class="unmatched-name">${escapeHtml(label)} ${escapeHtml(zone)}</div>
@@ -530,6 +654,7 @@ function renderUnmatchedIssues(issues, matchedIssueKeys) {
 
 function renderRecord(record, agentsMap, inventoryList, recordId) {
   const vehicule = record.Vehicule || record.vehicule || 'Engin';
+  const recordStatus = getRecordStatusMeta(record, 'Inventaire');
   const recordDateIso = record.__isoDate || toIsoDate(record.Date || record.date || '');
   const recordDateLabel = formatDateFr(recordDateIso);
   const heureDebut = record.HeureDebut || record.heureDebut || '-';
@@ -538,7 +663,12 @@ function renderRecord(record, agentsMap, inventoryList, recordId) {
 
   const inventaireObj = record.__inventaire || parseJson(record.Inventaire);
   const etatVehicule = record.__etatVehicule || parseJson(record.EtatVehicule);
-  const commentaire = record.Commentaire || record.commentaire || '';
+  const commentaire = firstNonEmpty(
+    record.Commentaire,
+    record.commentaire,
+    record.CommentaireInventaire,
+    record.commentaireInventaire
+  );
   const kilometrageValue =
     record.__kilometrage != null && !Number.isNaN(record.__kilometrage)
       ? record.__kilometrage
@@ -663,9 +793,7 @@ function renderRecord(record, agentsMap, inventoryList, recordId) {
           <div class="record-title">Inventaire ${escapeHtml(vehicule)}</div>
           <div class="record-subtitle">${escapeHtml(recordDateLabel)}</div>
         </div>
-        <span class="chip chip-neutral">${escapeHtml(
-          record.Status || record.status || 'Inventaire'
-        )}</span>
+        <span class="chip chip-${recordStatus.chipClass}">${escapeHtml(recordStatus.label)}</span>
       </div>
 
       <div class="card">
@@ -1706,7 +1834,7 @@ router.get('/:date', async function (req, res, next) {
                   start && end
                     ? `${start} - ${end}`
                     : start || end || 'Horaire non renseigné';
-                const status = row.Status || row.status || 'Inventaire';
+                const statusMeta = getRecordStatusMeta(row, 'Inventaire');
                 return `
                   <a class="inventory-link" href="#${escapeHtml(
                     row.__recordId
@@ -1717,8 +1845,8 @@ router.get('/:date', async function (req, res, next) {
                     <span class="inventory-link-sub">${escapeHtml(
                       timeLabel
                     )}</span>
-                    <span class="chip chip-neutral">${escapeHtml(
-                      status
+                    <span class="chip chip-${statusMeta.chipClass}">${escapeHtml(
+                      statusMeta.label
                     )}</span>
                   </a>
                 `;
