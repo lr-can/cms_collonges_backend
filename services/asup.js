@@ -540,11 +540,15 @@ async function getVizData(){
         fetch = (await import('node-fetch')).default;
     };
 
-    const interventions1 = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201');
-    const interventions2 = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%202');
+    const [interventions1, interventions2] = await Promise.all([
+        fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201'),
+        fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%202')
+    ]);
 
-    const interventionsData1 = await interventions1.json();
-    const interventionsData2 = await interventions2.json();
+    const [interventionsData1, interventionsData2] = await Promise.all([
+        interventions1.json(),
+        interventions2.json()
+    ]);
 
     const interventions = [...interventionsData1, ...interventionsData2];
 
@@ -586,18 +590,52 @@ async function getVizData(){
     );
 
     const rows4B = helper.emptyOrRows(rows4A);
+    const requestedStockIds = Array.from(
+        new Set(
+            rows4B.flatMap((row) => {
+                if (typeof row.idMedicamentsList !== 'string' || row.idMedicamentsList.trim() === '') {
+                    return [];
+                }
 
-    const rows4 = await Promise.all(rows4B.map(async (row) => {
-        if (row.idMedicamentsList) {
-            const medicamentIds = row.idMedicamentsList.split(',');
-            const medicaments = await Promise.all(medicamentIds.map(async (id) => {
-                const medicamentData = await db.query(`SELECT medicaments.nomMedicament, asupStock.datePeremption, asupStock.numLot FROM asupStock
-                    INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
-                    WHERE idStockAsup = ${id}`);
-                return medicamentData[0];
-            }));
-            row.idMedicamentsList = medicaments;
+                return row.idMedicamentsList
+                    .split(',')
+                    .map((id) => Number.parseInt(id.trim(), 10))
+                    .filter((id) => Number.isInteger(id));
+            })
+        )
+    );
+
+    const medicamentsByStockId = new Map();
+    if (requestedStockIds.length > 0) {
+        const placeholders = requestedStockIds.map(() => '?').join(', ');
+        const medicamentsData = await db.query(
+            `SELECT asupStock.idStockAsup, medicaments.nomMedicament, asupStock.datePeremption, asupStock.numLot
+            FROM asupStock
+            INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
+            WHERE asupStock.idStockAsup IN (${placeholders})`,
+            requestedStockIds
+        );
+
+        medicamentsData.forEach((medicament) => {
+            medicamentsByStockId.set(String(medicament.idStockAsup), {
+                nomMedicament: medicament.nomMedicament,
+                datePeremption: medicament.datePeremption,
+                numLot: medicament.numLot
+            });
+        });
+    }
+
+    const doctorCache = {};
+    const rows4 = [];
+
+    for (const row of rows4B) {
+        if (typeof row.idMedicamentsList === 'string' && row.idMedicamentsList.trim() !== '') {
+            row.idMedicamentsList = row.idMedicamentsList
+                .split(',')
+                .map((id) => medicamentsByStockId.get(id.trim()))
+                .filter(Boolean);
         }
+
         const intervention = interventions.find(intervention => {
             const validDate = intervention.notificationDate.includes('/') ? 
                 intervention.notificationDate.split('/').reverse().join('-') : 
@@ -629,17 +667,13 @@ async function getVizData(){
                 notification: "Pas de notif associée"
             };
         }
-        const doctorCache = {};
 
         if (row.medecinPrescripteur) {
-            if (doctorCache[row.medecinPrescripteur]) {
-                row.medecinPrescripteur = doctorCache[row.medecinPrescripteur];
-            } else {
-                const doctor = await getDoctor(row.medecinPrescripteur);
-                doctorCache[row.medecinPrescripteur] = doctor;
-                row.medecinPrescripteur = doctor;
+            if (!doctorCache[row.medecinPrescripteur]) {
+                doctorCache[row.medecinPrescripteur] = await getDoctor(row.medecinPrescripteur);
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
+            row.medecinPrescripteur = doctorCache[row.medecinPrescripteur];
         }
 
         if (row.matriculeAgent) {
@@ -650,9 +684,9 @@ async function getVizData(){
                 agentsData[row.matriculeAgent] = agent;
                 row.agent = agent;
             }
-        }    
-        return row;
-    }));
+        }
+        rows4.push(row);
+    }
 
     const rows5A = await db.query(
         `SELECT medicaments.nomMedicament, COUNT(asupStock.idStockAsup) as count, asupStock.affectationVSAV, asupStock.matriculeCreateur, asupStock.matriculeRemplaceur, asupStock.datePeremption, asupStock.numLot, medicaments.acteSoin
