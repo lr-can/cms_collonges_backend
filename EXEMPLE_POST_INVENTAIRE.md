@@ -19,6 +19,7 @@ Content-Type: application/json
 ### Body (raw JSON)
 ```json
 {
+  "Vehicule": "VSAV",
   "Date": "15/12/2024",
   "HeureDebut": "08:00",
   "HeureFin": "12:30",
@@ -38,24 +39,29 @@ Content-Type: application/json
     "etatGeneral": "Bon",
     "remarques": "Véhicule en bon état général"
   },
+  "CommentaireInventaire": "Commentaire global de l'inventaire",
+  "Commentaire": "Commentaire global de l'inventaire",
   "Status": "PENDING"
 }
 ```
 
 ## Notes importantes
 
+- **Vehicule** : Requis (ex: `VSAV`, `VSR`, `FPT`)
 - **Date** : Format obligatoire `JJ/MM/YYYY` (ex: `15/12/2024`)
 - **HeureDebut** : Format obligatoire `HH:mm` (ex: `08:00`)
 - **HeureFin** : Format obligatoire `HH:mm` (ex: `12:30`)
 - **ChefDeGarde, Inventaireur1, Inventaireur2, Inventaireur3** : Chaînes de caractères (strings)
 - **Inventaire** : Objet/dictionnaire JSON (peut être vide `{}` ou omis)
 - **EtatVehicule** : Objet/dictionnaire JSON (peut être vide `{}` ou omis)
+- **CommentaireInventaire / Commentaire** : Optionnel. Le backend priorise `CommentaireInventaire`, sinon `Commentaire`
 - **Status** : Par défaut `PENDING` si non spécifié
 
 ## Exemple minimal (sans Inventaire et EtatVehicule)
 
 ```json
 {
+  "Vehicule": "VSAV",
   "Date": "15/12/2024",
   "HeureDebut": "08:00",
   "HeureFin": "12:30",
