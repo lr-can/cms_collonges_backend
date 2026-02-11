@@ -181,6 +181,8 @@ router.post('/', async function(req, res, next) {
         const commentaire = String(
             CommentaireInventaire ??
             req.body.commentaireInventaire ??
+            req.body.CommentaireInvententaire ??
+            req.body.commentaireInvententaire ??
             Commentaire ??
             req.body.commentaire ??
             ''

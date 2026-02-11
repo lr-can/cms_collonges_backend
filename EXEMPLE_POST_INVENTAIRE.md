@@ -54,7 +54,7 @@ Content-Type: application/json
 - **ChefDeGarde, Inventaireur1, Inventaireur2, Inventaireur3** : Chaînes de caractères (strings)
 - **Inventaire** : Objet/dictionnaire JSON (peut être vide `{}` ou omis)
 - **EtatVehicule** : Objet/dictionnaire JSON (peut être vide `{}` ou omis)
-- **CommentaireInventaire / Commentaire** : Optionnel. Le backend priorise `CommentaireInventaire`, sinon `Commentaire`
+- **CommentaireInventaire / Commentaire** : Optionnel. Le backend priorise `CommentaireInventaire`, sinon `Commentaire` (et accepte aussi `CommentaireInvententaire` en compatibilité)
 - **Status** : Par défaut `PENDING` si non spécifié
 
 ## Exemple minimal (sans Inventaire et EtatVehicule)
