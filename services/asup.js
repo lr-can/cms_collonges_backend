@@ -320,6 +320,172 @@ async function getInventaireAsup(codeMateriel, vsav, page = 1) {
     };
 }
 
+function toSafeNumber(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function buildAsupActesSummary(prefixCounts = {}) {
+    const getCount = (prefix) => toSafeNumber(prefixCounts[prefix]);
+
+    const nyxoid = getCount('Nyxoid');
+    const anapen150 = getCount('Anapen150');
+    const anapen300 = getCount('Anapen300');
+    const anapen500 = getCount('Anapen500');
+    const anapenTotal = anapen150 + anapen300 + anapen500;
+
+    const salbutamolEnfant = getCount('Salbuta25mg25ml');
+    const salbutamolAdulte = getCount('Salbuta5mg25ml');
+    const ipratropiumEnfant = getCount('Ipra025mgml');
+    const ipratropiumAdulte = getCount('Ipra05mg25ml');
+    const chlorureSodium = getCount('NaCl');
+
+    const brumisationEnfant = Math.min(salbutamolEnfant, ipratropiumEnfant, chlorureSodium);
+    const brumisationAdulte = Math.min(salbutamolAdulte, ipratropiumAdulte, chlorureSodium);
+
+    // Le NaCl est commun aux dosages enfant et adulte.
+    const brumisationTotalMax = Math.min(
+        chlorureSodium,
+        Math.min(salbutamolEnfant, ipratropiumEnfant) + Math.min(salbutamolAdulte, ipratropiumAdulte)
+    );
+
+    return {
+        stockUtilisable: {
+            nyxoid,
+            anapen150,
+            anapen300,
+            anapen500,
+            anapenTotal,
+            salbutamolEnfant,
+            salbutamolAdulte,
+            ipratropiumEnfant,
+            ipratropiumAdulte,
+            chlorureSodium
+        },
+        gestesDisponiblesParActe: {
+            naloxone: {
+                acteSoin: 'naloxone',
+                regle: '1 Nyxoid = 1 geste',
+                gestesDisponibles: nyxoid
+            },
+            allergie: {
+                acteSoin: 'allergie',
+                regle: '1 Anapen = 1 geste',
+                detailAnapen: {
+                    anapen150,
+                    anapen300,
+                    anapen500
+                },
+                gestesDisponibles: anapenTotal
+            },
+            brumisationEnfant: {
+                acteSoin: 'asthme',
+                regle: '1 Salbutamol 2,5 mg/2,5 mL + 1 NaCl + 1 Ipratropium 0,25 mg/mL',
+                gestesDisponibles: brumisationEnfant
+            },
+            brumisationAdulte: {
+                acteSoin: 'asthme',
+                regle: '1 Salbutamol 5 mg/2,5 mL + 1 NaCl + 1 Ipratropium 0,5 mg/2,5 mL',
+                gestesDisponibles: brumisationAdulte
+            },
+            brumisationTotalMax: {
+                acteSoin: 'asthme',
+                regle: 'Maximum de brumisations (adulte + enfant) avec partage du NaCl',
+                gestesDisponibles: brumisationTotalMax
+            }
+        }
+    };
+}
+
+async function getAvailableAsupDetails(page = 1) {
+    const medicamentsRows = await db.query(
+        `SELECT idMedicament, nomMedicament, acteSoin, prefixApp
+         FROM medicaments
+         ORDER BY nomMedicament;`
+    );
+
+    const stockRows = await db.query(
+        `SELECT
+            asupStock.idStockAsup,
+            asupStock.idMedicament,
+            asupStock.idStatutAsup,
+            asupStock.timestampCreation,
+            asupStock.datePeremption,
+            asupStock.idUtilisationAsup,
+            asupStock.matriculeCreateur,
+            asupStock.matriculeRemplaceur,
+            asupStock.numLot,
+            asupStock.affectationVSAV,
+            medicaments.nomMedicament,
+            medicaments.acteSoin,
+            medicaments.prefixApp
+         FROM asupStock
+         LEFT JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
+         ORDER BY asupStock.affectationVSAV, asupStock.idStockAsup;`
+    );
+
+    const availableStockRows = await db.query(
+        `SELECT
+            asupStock.affectationVSAV,
+            medicaments.prefixApp,
+            COUNT(*) AS stockCount
+         FROM asupStock
+         INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
+         WHERE asupStock.affectationVSAV IN (1, 2)
+           AND asupStock.idStatutAsup IN (1, 3)
+           AND (asupStock.datePeremption IS NULL OR DATE(asupStock.datePeremption) >= CURDATE())
+         GROUP BY asupStock.affectationVSAV, medicaments.prefixApp
+         ORDER BY asupStock.affectationVSAV, medicaments.prefixApp;`
+    );
+
+    const prefixCountsByVsav = {
+        vsav1: {},
+        vsav2: {}
+    };
+    const totalPrefixCounts = {};
+
+    for (const row of availableStockRows) {
+        const vsavKey = `vsav${row.affectationVSAV}`;
+        const prefix = row.prefixApp;
+        const stockCount = toSafeNumber(row.stockCount);
+
+        if (!prefixCountsByVsav[vsavKey]) {
+            prefixCountsByVsav[vsavKey] = {};
+        }
+        prefixCountsByVsav[vsavKey][prefix] = stockCount;
+        totalPrefixCounts[prefix] = (totalPrefixCounts[prefix] || 0) + stockCount;
+    }
+
+    const data = {
+        medicaments: helper.emptyOrRows(medicamentsRows),
+        stockAsup: helper.emptyOrRows(stockRows),
+        disponibiliteGestesAsup1: {
+            reglesCalcul: {
+                naloxone: '1 Nyxoid = 1 geste',
+                allergie: '1 Anapen = 1 geste',
+                brumisationEnfant: '1 Salbutamol 2,5 mg/2,5 mL + 1 NaCl + 1 Ipratropium 0,25 mg/mL',
+                brumisationAdulte: '1 Salbutamol 5 mg/2,5 mL + 1 NaCl + 1 Ipratropium 0,5 mg/2,5 mL'
+            },
+            contraintes: {
+                affectationVSAV: [1, 2],
+                statutsPrisEnCompte: [1, 3],
+                datePeremptionMinimum: '>= date du jour'
+            },
+            parVSAV: {
+                vsav1: buildAsupActesSummary(prefixCountsByVsav.vsav1),
+                vsav2: buildAsupActesSummary(prefixCountsByVsav.vsav2)
+            },
+            totalTousVSAV: buildAsupActesSummary(totalPrefixCounts)
+        }
+    };
+    const meta = { page, message: 'Disponibilite des gestes ASUP par VSAV et par acte' };
+
+    return {
+        data,
+        meta
+    };
+}
+
 async function newInterventionAsup(formData) {
     const currentidUtilisation = await db.query(
         `SELECT MAX(idUtilisation) FROM utilisationsASUP;`
@@ -1443,5 +1609,6 @@ module.exports = {
     affectVsav,
     getVizData,
     generatePDF,
-    getInventaireAsup
+    getInventaireAsup,
+    getAvailableAsupDetails
 };
