@@ -325,20 +325,32 @@ function toSafeNumber(value) {
     return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function buildAsupActesSummary(prefixCounts = {}) {
-    const getCount = (prefix) => toSafeNumber(prefixCounts[prefix]);
+const ASUP_MEDICAMENT_IDS = {
+    NYXOID: '3400930181393',
+    ANAPEN_150: '3400936157361',
+    ANAPEN_300: '3400936157422',
+    ANAPEN_500: '3400930166116',
+    BRUMI_IPRA_ENFANT: '3400938940091',
+    BRUMI_SALBU_ENFANT: '3400938953688',
+    BRUMI_NACL: '3400936693821',
+    BRUMI_IPRA_ADULTE: '3400938940671',
+    BRUMI_SALBU_ADULTE: '3400938954111'
+};
 
-    const nyxoid = getCount('Nyxoid');
-    const anapen150 = getCount('Anapen150');
-    const anapen300 = getCount('Anapen300');
-    const anapen500 = getCount('Anapen500');
+function buildAsupActesSummary(medicamentCounts = {}) {
+    const getCountById = (idMedicament) => toSafeNumber(medicamentCounts[idMedicament]);
+
+    const nyxoid = getCountById(ASUP_MEDICAMENT_IDS.NYXOID);
+    const anapen150 = getCountById(ASUP_MEDICAMENT_IDS.ANAPEN_150);
+    const anapen300 = getCountById(ASUP_MEDICAMENT_IDS.ANAPEN_300);
+    const anapen500 = getCountById(ASUP_MEDICAMENT_IDS.ANAPEN_500);
     const anapenTotal = anapen150 + anapen300 + anapen500;
 
-    const salbutamolEnfant = getCount('Salbuta25mg25ml');
-    const salbutamolAdulte = getCount('Salbuta5mg25ml');
-    const ipratropiumEnfant = getCount('Ipra025mgml');
-    const ipratropiumAdulte = getCount('Ipra05mg25ml');
-    const chlorureSodium = getCount('NaCl');
+    const salbutamolEnfant = getCountById(ASUP_MEDICAMENT_IDS.BRUMI_SALBU_ENFANT);
+    const salbutamolAdulte = getCountById(ASUP_MEDICAMENT_IDS.BRUMI_SALBU_ADULTE);
+    const ipratropiumEnfant = getCountById(ASUP_MEDICAMENT_IDS.BRUMI_IPRA_ENFANT);
+    const ipratropiumAdulte = getCountById(ASUP_MEDICAMENT_IDS.BRUMI_IPRA_ADULTE);
+    const chlorureSodium = getCountById(ASUP_MEDICAMENT_IDS.BRUMI_NACL);
 
     const brumisationEnfant = Math.min(salbutamolEnfant, ipratropiumEnfant, chlorureSodium);
     const brumisationAdulte = Math.min(salbutamolAdulte, ipratropiumAdulte, chlorureSodium);
@@ -427,33 +439,32 @@ async function getAvailableAsupDetails(page = 1) {
     const availableStockRows = await db.query(
         `SELECT
             asupStock.affectationVSAV,
-            medicaments.prefixApp,
+            asupStock.idMedicament,
             COUNT(*) AS stockCount
          FROM asupStock
-         INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
          WHERE asupStock.affectationVSAV IN (1, 2)
            AND asupStock.idStatutAsup IN (1, 3)
            AND (asupStock.datePeremption IS NULL OR DATE(asupStock.datePeremption) >= CURDATE())
-         GROUP BY asupStock.affectationVSAV, medicaments.prefixApp
-         ORDER BY asupStock.affectationVSAV, medicaments.prefixApp;`
+         GROUP BY asupStock.affectationVSAV, asupStock.idMedicament
+         ORDER BY asupStock.affectationVSAV, asupStock.idMedicament;`
     );
 
-    const prefixCountsByVsav = {
+    const medicamentCountsByVsav = {
         vsav1: {},
         vsav2: {}
     };
-    const totalPrefixCounts = {};
+    const totalMedicamentCounts = {};
 
     for (const row of availableStockRows) {
         const vsavKey = `vsav${row.affectationVSAV}`;
-        const prefix = row.prefixApp;
+        const idMedicament = String(row.idMedicament);
         const stockCount = toSafeNumber(row.stockCount);
 
-        if (!prefixCountsByVsav[vsavKey]) {
-            prefixCountsByVsav[vsavKey] = {};
+        if (!medicamentCountsByVsav[vsavKey]) {
+            medicamentCountsByVsav[vsavKey] = {};
         }
-        prefixCountsByVsav[vsavKey][prefix] = stockCount;
-        totalPrefixCounts[prefix] = (totalPrefixCounts[prefix] || 0) + stockCount;
+        medicamentCountsByVsav[vsavKey][idMedicament] = stockCount;
+        totalMedicamentCounts[idMedicament] = (totalMedicamentCounts[idMedicament] || 0) + stockCount;
     }
 
     const data = {
@@ -466,16 +477,32 @@ async function getAvailableAsupDetails(page = 1) {
                 brumisationEnfant: '1 Salbutamol 2,5 mg/2,5 mL + 1 NaCl + 1 Ipratropium 0,25 mg/mL',
                 brumisationAdulte: '1 Salbutamol 5 mg/2,5 mL + 1 NaCl + 1 Ipratropium 0,5 mg/2,5 mL'
             },
+            correspondanceIdMedicament: {
+                nyxoid: ASUP_MEDICAMENT_IDS.NYXOID,
+                anapen150: ASUP_MEDICAMENT_IDS.ANAPEN_150,
+                anapen300: ASUP_MEDICAMENT_IDS.ANAPEN_300,
+                anapen500: ASUP_MEDICAMENT_IDS.ANAPEN_500,
+                brumisationEnfant: {
+                    ipratropium: ASUP_MEDICAMENT_IDS.BRUMI_IPRA_ENFANT,
+                    salbutamol: ASUP_MEDICAMENT_IDS.BRUMI_SALBU_ENFANT,
+                    chlorureSodium: ASUP_MEDICAMENT_IDS.BRUMI_NACL
+                },
+                brumisationAdulte: {
+                    ipratropium: ASUP_MEDICAMENT_IDS.BRUMI_IPRA_ADULTE,
+                    salbutamol: ASUP_MEDICAMENT_IDS.BRUMI_SALBU_ADULTE,
+                    chlorureSodium: ASUP_MEDICAMENT_IDS.BRUMI_NACL
+                }
+            },
             contraintes: {
                 affectationVSAV: [1, 2],
                 statutsPrisEnCompte: [1, 3],
                 datePeremptionMinimum: '>= date du jour'
             },
             parVSAV: {
-                vsav1: buildAsupActesSummary(prefixCountsByVsav.vsav1),
-                vsav2: buildAsupActesSummary(prefixCountsByVsav.vsav2)
+                vsav1: buildAsupActesSummary(medicamentCountsByVsav.vsav1),
+                vsav2: buildAsupActesSummary(medicamentCountsByVsav.vsav2)
             },
-            totalTousVSAV: buildAsupActesSummary(totalPrefixCounts)
+            totalTousVSAV: buildAsupActesSummary(totalMedicamentCounts)
         }
     };
     const meta = { page, message: 'Disponibilite des gestes ASUP par VSAV et par acte' };
