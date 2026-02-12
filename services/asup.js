@@ -486,6 +486,181 @@ async function getAvailableAsupDetails(page = 1) {
     };
 }
 
+function buildManualInterventionDetails(row) {
+    const dateActe = new Date(row.dateActe);
+    const hasValidDate = !Number.isNaN(dateActe.getTime());
+    const formattedDate = hasValidDate
+        ? `${dateActe.getDate()}/${dateActe.getMonth() + 1}/${dateActe.getFullYear()}`
+        : '';
+    const formattedTime = hasValidDate ? dateActe.toISOString().slice(11, 16) : '';
+
+    return {
+        identifiant: '',
+        numeroInter: row.numIntervention,
+        notificationDate: formattedDate,
+        notificationHeure: formattedTime,
+        notificationTitre: 'Entrée manuelle',
+        notificationAdresse: 'Aucune adresse trouvée',
+        notificationLon: '4.8448856',
+        notificationLat: '45.8172792',
+        notificationEngins: '0',
+        notificationVille: 'Aucune ville trouvée',
+        notification: 'Pas de notif associée'
+    };
+}
+
+function findInterventionDetails(interventions, row) {
+    return interventions.find((intervention) => {
+        if (!intervention || intervention.numeroInter === undefined || !intervention.notificationDate) {
+            return false;
+        }
+
+        const validDate = intervention.notificationDate.includes('/')
+            ? intervention.notificationDate.split('/').reverse().join('-')
+            : intervention.notificationDate;
+
+        const interventionYear = new Date(validDate).getFullYear();
+        const acteYear = new Date(row.dateActe).getFullYear();
+
+        return intervention.numeroInter.toString() === row.numIntervention.toString() && interventionYear === acteYear;
+    });
+}
+
+async function getLastAsupGestures(page = 1) {
+    if (!fetch) {
+        fetch = (await import('node-fetch')).default;
+    }
+
+    const rowsRaw = await db.query(
+        `SELECT * FROM utilisationsASUP ORDER BY dateActe DESC, idUtilisation DESC LIMIT 3;`
+    );
+    const rows = helper.emptyOrRows(rowsRaw);
+
+    let interventions = [];
+    try {
+        const [interventions1, interventions2] = await Promise.all([
+            fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201'),
+            fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%202')
+        ]);
+
+        const [interventionsData1, interventionsData2] = await Promise.all([
+            interventions1.ok ? interventions1.json() : [],
+            interventions2.ok ? interventions2.json() : []
+        ]);
+
+        interventions = [
+            ...(Array.isArray(interventionsData1) ? interventionsData1 : []),
+            ...(Array.isArray(interventionsData2) ? interventionsData2 : [])
+        ];
+    } catch (error) {
+        console.error('Erreur lors de la récupération des interventions SMARTEMIS:', error);
+    }
+
+    const requestedStockIds = Array.from(
+        new Set(
+            rows.flatMap((row) => {
+                if (typeof row.idMedicamentsList !== 'string' || row.idMedicamentsList.trim() === '') {
+                    return [];
+                }
+
+                return row.idMedicamentsList
+                    .split(',')
+                    .map((id) => Number.parseInt(id.trim(), 10))
+                    .filter((id) => Number.isInteger(id));
+            })
+        )
+    );
+
+    const medicamentsByStockId = new Map();
+    if (requestedStockIds.length > 0) {
+        const placeholders = requestedStockIds.map(() => '?').join(', ');
+        const medicamentsData = await db.query(
+            `SELECT asupStock.idStockAsup, medicaments.nomMedicament, asupStock.datePeremption, asupStock.numLot
+             FROM asupStock
+             INNER JOIN medicaments ON asupStock.idMedicament = medicaments.idMedicament
+             WHERE asupStock.idStockAsup IN (${placeholders})`,
+            requestedStockIds
+        );
+
+        medicamentsData.forEach((medicament) => {
+            medicamentsByStockId.set(String(medicament.idStockAsup), {
+                nomMedicament: medicament.nomMedicament,
+                datePeremption: medicament.datePeremption,
+                numLot: medicament.numLot
+            });
+        });
+    }
+
+    const allAgents = require('./allAgents');
+    const agentsDataArray = await allAgents.getAllAgents();
+    const agentsData = {};
+    agentsDataArray.forEach((agent) => {
+        if (agent && agent.matricule) {
+            agentsData[agent.matricule] = agent;
+        }
+    });
+
+    const doctorCache = {};
+
+    for (const row of rows) {
+        if (typeof row.idMedicamentsList === 'string' && row.idMedicamentsList.trim() !== '') {
+            row.idMedicamentsList = row.idMedicamentsList
+                .split(',')
+                .map((id) => medicamentsByStockId.get(id.trim()))
+                .filter(Boolean);
+        } else {
+            row.idMedicamentsList = [];
+        }
+
+        const interventionDetails = findInterventionDetails(interventions, row);
+        row.interventionDetails = interventionDetails || buildManualInterventionDetails(row);
+
+        if (row.medecinPrescripteur) {
+            const doctorIdentifier = normalizeValue(row.medecinPrescripteur);
+            if (doctorIdentifier) {
+                if (!doctorCache[doctorIdentifier]) {
+                    try {
+                        doctorCache[doctorIdentifier] = await getDoctor(doctorIdentifier);
+                        await new Promise((resolve) => setTimeout(resolve, 250));
+                    } catch (error) {
+                        console.error(`Impossible de récupérer le médecin ${doctorIdentifier}:`, error);
+                        doctorCache[doctorIdentifier] = {
+                            identifiantRPPS: doctorIdentifier,
+                            sourceDonnees: 'unavailable',
+                            erreur: error.message || 'Données médecin indisponibles'
+                        };
+                    }
+                }
+                row.medecinPrescripteur = doctorCache[doctorIdentifier];
+            }
+        }
+
+        if (row.matriculeAgent) {
+            if (agentsData[row.matriculeAgent]) {
+                row.agent = agentsData[row.matriculeAgent];
+            } else {
+                try {
+                    const agent = await getAsupAgent(row.matriculeAgent);
+                    agentsData[row.matriculeAgent] = agent;
+                    row.agent = agent;
+                } catch (error) {
+                    console.error(`Impossible de récupérer l'agent ${row.matriculeAgent}:`, error);
+                    row.agent = { matricule: row.matriculeAgent };
+                }
+            }
+        }
+    }
+
+    return {
+        data: rows,
+        meta: {
+            page,
+            limit: 3,
+            message: '3 derniers gestes ASUP réalisés'
+        }
+    };
+}
+
 async function newInterventionAsup(formData) {
     const currentidUtilisation = await db.query(
         `SELECT MAX(idUtilisation) FROM utilisationsASUP;`
@@ -1593,6 +1768,7 @@ module.exports = {
     getAsupAgent,
     getDoctor,
     getMedicamentsforCare,
+    getLastAsupGestures,
     newInterventionAsup,
     sendEmail,
     addDemandePeremption,
