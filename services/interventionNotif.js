@@ -1007,6 +1007,32 @@ async function insertSmartemisResponse(data) {
     const log = (message, extra) => {
         console.log(`[smartemis] ${message}`, extra || {});
     };
+    const parseSmartemisDate = (notificationTxt, now) => {
+        if (!notificationTxt) {
+            return null;
+        }
+        const match = notificationTxt.match(/- (\d{2})\/(\d{2}) (\d{2}):(\d{2}) -/);
+        if (!match) {
+            return null;
+        }
+        const day = Number(match[1]);
+        const month = Number(match[2]);
+        const hour = Number(match[3]);
+        const minute = Number(match[4]);
+        if (!day || !month) {
+            return null;
+        }
+        let year = now.getFullYear();
+        const candidate = new Date(year, month - 1, day, hour, minute, 0, 0);
+        if (isNaN(candidate.getTime())) {
+            return null;
+        }
+        // Gère le passage décembre/janvier (ex: notif du 31/12 reçue début janvier).
+        if (candidate.getTime() > now.getTime() + (6 * 60 * 60 * 1000)) {
+            year -= 1;
+        }
+        return new Date(year, month - 1, day, hour, minute, 0, 0);
+    };
 
     log('insertSmartemisResponse start', {
         keys: Object.keys(data || {}),
@@ -1401,12 +1427,14 @@ async function insertSmartemisResponse(data) {
             const backendNotifications = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201');
             const backendData = await backendNotifications.json();
             const currentTime = new Date().getTime();
+            const nowDate = new Date();
             const fiveHoursInMillis = 5 * 60 * 60 * 1000;
             let insertedCount = 0;
             let skippedExistingCount = 0;
             let skippedOldCount = 0;
             let skippedNonItvCount = 0;
             let skippedExerciseCount = 0;
+            let parsedFallbackCount = 0;
 
              data.notificationList.sort((a, b) => {
                 const dateA = new Date(a.notificationDate.date).getTime();
@@ -1418,8 +1446,20 @@ async function insertSmartemisResponse(data) {
                 if (notification.notificationTyp === "ITV" && !notification.notificationTxt.includes("xercice")) {
                     let notificationTxt_modified = "🚧 " + notification.notificationTxt.replace(/\\n/g, "-");
                     const notificationTime = new Date(notification.notificationDate.date).getTime();
+                    let effectiveTime = notificationTime;
+                    if (isNaN(notificationTime)) {
+                        const parsedDate = parseSmartemisDate(notificationTxt_modified, nowDate);
+                        if (parsedDate) {
+                            effectiveTime = parsedDate.getTime();
+                            parsedFallbackCount += 1;
+                            log('notificationList parsed fallback (invalid payload date)', {
+                                notificationId: notification.notificationId,
+                                parsedDate: parsedDate.toISOString()
+                            });
+                        }
+                    }
 
-                    if (currentTime - notificationTime <= fiveHoursInMillis) {
+                    if (currentTime - effectiveTime <= fiveHoursInMillis) {
                         const existingNotification = backendData.find(item => item.notification === notificationTxt_modified);
 
                         if (!existingNotification) {
@@ -1429,7 +1469,23 @@ async function insertSmartemisResponse(data) {
                             skippedExistingCount += 1;
                         }
                     } else {
-                        skippedOldCount += 1;
+                        const parsedDate = parseSmartemisDate(notificationTxt_modified, nowDate);
+                        if (parsedDate && (currentTime - parsedDate.getTime() <= fiveHoursInMillis)) {
+                            const existingNotification = backendData.find(item => item.notification === notificationTxt_modified);
+                            if (!existingNotification) {
+                                await insertInterventionNotif({ notification: notificationTxt_modified }, "Added with Smartemis App");
+                                insertedCount += 1;
+                                parsedFallbackCount += 1;
+                                log('notificationList parsed fallback (payload too old)', {
+                                    notificationId: notification.notificationId,
+                                    parsedDate: parsedDate.toISOString()
+                                });
+                            } else {
+                                skippedExistingCount += 1;
+                            }
+                        } else {
+                            skippedOldCount += 1;
+                        }
                     }
                 } else {
                     if (notification.notificationTyp !== "ITV") {
@@ -1445,7 +1501,8 @@ async function insertSmartemisResponse(data) {
                 skippedExistingCount,
                 skippedOldCount,
                 skippedNonItvCount,
-                skippedExerciseCount
+                skippedExerciseCount,
+                parsedFallbackCount
             });
         }
     if (data.planningCounterList && data.planningCounterList.length > 0) {
