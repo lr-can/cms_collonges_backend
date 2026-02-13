@@ -1019,6 +1019,21 @@ async function insertSmartemisResponse(data) {
         notificationListLen: safeLen(data && data.notificationList),
         planningCounterListLen: safeLen(data && data.planningCounterList)
     });
+    const hasMainLists = Boolean(
+        (data && data.itvDetail && data.itvDetail.depItvCsList && data.itvDetail.depItvCsList.length > 0) ||
+        (data && Array.isArray(data.histItvList) && data.histItvList.length > 0) ||
+        (data && Array.isArray(data.engList) && data.engList.length > 0) ||
+        (data && Array.isArray(data.localGlobalInstructionList) && data.localGlobalInstructionList.length > 0) ||
+        (data && Array.isArray(data.csPersList) && data.csPersList.length > 0) ||
+        (data && Array.isArray(data.planningCounterList) && data.planningCounterList.length > 0)
+    );
+    if (!hasMainLists && safeLen(data && data.notificationList) > 0) {
+        log('payload warning', {
+            message: 'Payload recu sans listes principales (seulement notificationList)',
+            notificationListLen: safeLen(data && data.notificationList),
+            hasResult: Boolean(data && data.result)
+        });
+    }
     
     const privateKey = config.google.private_key.replace(/\\n/g, '\n');
     const auth = new google.auth.JWT(
@@ -1387,6 +1402,11 @@ async function insertSmartemisResponse(data) {
             const backendData = await backendNotifications.json();
             const currentTime = new Date().getTime();
             const fiveHoursInMillis = 5 * 60 * 60 * 1000;
+            let insertedCount = 0;
+            let skippedExistingCount = 0;
+            let skippedOldCount = 0;
+            let skippedNonItvCount = 0;
+            let skippedExerciseCount = 0;
 
              data.notificationList.sort((a, b) => {
                 const dateA = new Date(a.notificationDate.date).getTime();
@@ -1404,11 +1424,29 @@ async function insertSmartemisResponse(data) {
 
                         if (!existingNotification) {
                             await insertInterventionNotif({ notification: notificationTxt_modified }, "Added with Smartemis App");
+                            insertedCount += 1;
+                        } else {
+                            skippedExistingCount += 1;
                         }
+                    } else {
+                        skippedOldCount += 1;
+                    }
+                } else {
+                    if (notification.notificationTyp !== "ITV") {
+                        skippedNonItvCount += 1;
+                    } else if (notification.notificationTxt.includes("xercice")) {
+                        skippedExerciseCount += 1;
                     }
                 }
             }
-            log('notificationList success', { durationMs: Date.now() - notificationStart });
+            log('notificationList success', {
+                durationMs: Date.now() - notificationStart,
+                insertedCount,
+                skippedExistingCount,
+                skippedOldCount,
+                skippedNonItvCount,
+                skippedExerciseCount
+            });
         }
     if (data.planningCounterList && data.planningCounterList.length > 0) {
         const planningValues = data.planningCounterList.map(item => [
