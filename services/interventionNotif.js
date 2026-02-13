@@ -1002,6 +1002,23 @@ async function insertSmartemisResponse(data) {
         emploisUpdate: null,
         errors: []
     };
+    const startTime = Date.now();
+    const safeLen = (value) => Array.isArray(value) ? value.length : 0;
+    const log = (message, extra) => {
+        console.log(`[smartemis] ${message}`, extra || {});
+    };
+
+    log('insertSmartemisResponse start', {
+        keys: Object.keys(data || {}),
+        itvDetail: Boolean(data && data.itvDetail),
+        depItvCsListLen: data && data.itvDetail ? safeLen(data.itvDetail.depItvCsList) : 0,
+        histItvListLen: safeLen(data && data.histItvList),
+        engListLen: safeLen(data && data.engList),
+        localGlobalInstructionListLen: safeLen(data && data.localGlobalInstructionList),
+        csPersListLen: safeLen(data && data.csPersList),
+        notificationListLen: safeLen(data && data.notificationList),
+        planningCounterListLen: safeLen(data && data.planningCounterList)
+    });
     
     const privateKey = config.google.private_key.replace(/\\n/g, '\n');
     const auth = new google.auth.JWT(
@@ -1021,6 +1038,8 @@ async function insertSmartemisResponse(data) {
         const now = new Date();
         const formattedDate = now.toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
         let range10 = 'Feuille 9!A2:C5';
+        const itvDetailStart = Date.now();
+        log('itvDetail start', { range: range10, depItvCsListLen: data.itvDetail.depItvCsList.length });
         try {
             await sheets.spreadsheets.values.clear({
                 spreadsheetId,
@@ -1042,6 +1061,7 @@ async function insertSmartemisResponse(data) {
                 range: range10,
                 success: true
             });
+            log('itvDetail success', { range: range10, durationMs: Date.now() - itvDetailStart });
         } catch (error) {
             result.operations.push({
                 type: 'itvDetail',
@@ -1051,6 +1071,8 @@ async function insertSmartemisResponse(data) {
             });
             result.errors.push(`Erreur lors de l'insertion de itvDetail: ${error.message}`);
             result.success = false;
+            log('itvDetail error', { range: range10, durationMs: Date.now() - itvDetailStart, error: error.message });
+            console.error(error);
         }
     }
     if (data.histItvList && data.histItvList.length > 0) {
@@ -1060,6 +1082,8 @@ async function insertSmartemisResponse(data) {
         ]);
 
         let rangeHist = 'Feuille 10!A2:C100';
+        const histStart = Date.now();
+        log('histItvList start', { range: rangeHist, rows: histValues.length });
         try {
             await sheets.spreadsheets.values.clear({
                 spreadsheetId,
@@ -1079,6 +1103,7 @@ async function insertSmartemisResponse(data) {
                 success: true,
                 rowsInserted: histValues.length
             });
+            log('histItvList success', { range: rangeHist, durationMs: Date.now() - histStart });
         } catch (error) {
             result.operations.push({
                 type: 'histItvList',
@@ -1088,6 +1113,8 @@ async function insertSmartemisResponse(data) {
             });
             result.errors.push(`Erreur lors de l'insertion de histItvList: ${error.message}`);
             result.success = false;
+            log('histItvList error', { range: rangeHist, durationMs: Date.now() - histStart, error: error.message });
+            console.error(error);
         }
     }
 
@@ -1111,6 +1138,8 @@ async function insertSmartemisResponse(data) {
             const currentTime = new Date().toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
             engValues.forEach(row => row.push(currentTime));
 
+            const engStart = Date.now();
+            log('engList start', { range: range, rows: engValues.length });
             const response = await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range,
@@ -1126,6 +1155,7 @@ async function insertSmartemisResponse(data) {
                 success: true,
                 rowsUpdated: engValues.length
             });
+            log('engList success', { range: range, durationMs: Date.now() - engStart });
         } catch (error) {
             result.operations.push({
                 type: 'engList',
@@ -1135,6 +1165,8 @@ async function insertSmartemisResponse(data) {
             });
             result.errors.push(`Erreur lors de la mise à jour de engList: ${error.message}`);
             result.success = false;
+            log('engList error', { range: range, error: error.message });
+            console.error(error);
         }
     }
     if (data.localGlobalInstructionList && data.localGlobalInstructionList.length >= 0) {
@@ -1147,6 +1179,8 @@ async function insertSmartemisResponse(data) {
             text: item.instructionTxt || ''
         }));
         let rangeInstr = 'Feuille 13!A2:F100';
+        const instructionStart = Date.now();
+        log('localGlobalInstructionList start', { range: rangeInstr, rows: instructionValues.length });
         try {
             await sheets.spreadsheets.values.clear({
                 spreadsheetId,
@@ -1154,6 +1188,8 @@ async function insertSmartemisResponse(data) {
             });
         } catch (error) {
             result.errors.push(`Erreur lors du clear de ${rangeInstr}: ${error.message}`);
+            log('localGlobalInstructionList clear error', { range: rangeInstr, error: error.message });
+            console.error(error);
         }
         if (instructionValues.length > 0) {
         try {
@@ -1178,6 +1214,7 @@ async function insertSmartemisResponse(data) {
                 success: true,
                 rowsInserted: instructionValues.length
             });
+            log('localGlobalInstructionList success', { range: rangeInstr, durationMs: Date.now() - instructionStart });
         } catch (error) {
             result.operations.push({
                 type: 'localGlobalInstructionList',
@@ -1187,6 +1224,8 @@ async function insertSmartemisResponse(data) {
             });
             result.errors.push(`Erreur lors de l'insertion de localGlobalInstructionList: ${error.message}`);
             result.success = false;
+            log('localGlobalInstructionList error', { range: rangeInstr, durationMs: Date.now() - instructionStart, error: error.message });
+            console.error(error);
         }
     }
     }
@@ -1257,6 +1296,8 @@ async function insertSmartemisResponse(data) {
                 
         // Ne mettre à jour la feuille que si on n'est pas en mode emplois
         if (range2) {
+            const csPersStart = Date.now();
+            log('csPersList update start', { range: range2, rows: csPersValues.length });
             try {
                 await sheets.spreadsheets.values.clear({
                     spreadsheetId,
@@ -1275,6 +1316,8 @@ async function insertSmartemisResponse(data) {
                     error: error.message
                 });
                 result.errors.push(`Erreur lors du clear de ${range2}: ${error.message}`);
+                log('csPersList clear error', { range: range2, error: error.message });
+                console.error(error);
             }
             try {
                 const response = await sheets.spreadsheets.values.update({
@@ -1291,6 +1334,7 @@ async function insertSmartemisResponse(data) {
                     success: true,
                     rowsUpdated: csPersValues.length
                 });
+                log('csPersList update success', { range: range2, durationMs: Date.now() - csPersStart });
             } catch (error) {
                 result.operations.push({
                     type: 'update',
@@ -1299,23 +1343,28 @@ async function insertSmartemisResponse(data) {
                     error: error.message
                 });
                 result.errors.push(`Erreur lors de la mise à jour de ${range2}: ${error.message}`);
+                log('csPersList update error', { range: range2, durationMs: Date.now() - csPersStart, error: error.message });
+                console.error(error);
             }
         } else {
             result.operations.push({
                 type: 'info',
                 message: 'Mode emplois détecté - pas de mise à jour de la feuille csPersList'
             });
+            log('csPersList info', { message: 'Mode emplois detecte - pas de mise a jour', rows: csPersValues.length });
         }
 
         // Mettre à jour les emplois des agents si planningCounterList existe
         // (se fait toujours, même en mode disponibilité/intervention, mais la fonction gère le mode)
         if (planningCounterList && planningCounterList.length > 0) {
             try {
+                log('updateAgentsEmplois start', { rows: data.csPersList.length, planningCounterListLen: planningCounterList.length });
                 const emploisResult = await updateAgentsEmplois(data.csPersList, planningCounterList);
                 result.emploisUpdate = emploisResult;
                 if (!emploisResult.success) {
                     result.success = false;
                 }
+                log('updateAgentsEmplois success', { success: emploisResult.success });
             } catch (error) {
                 result.emploisUpdate = {
                     success: false,
@@ -1323,6 +1372,8 @@ async function insertSmartemisResponse(data) {
                 };
                 result.errors.push(`Erreur lors de la mise à jour des emplois: ${error.message}`);
                 result.success = false;
+                log('updateAgentsEmplois error', { error: error.message });
+                console.error(error);
             }
         }
     }
@@ -1330,6 +1381,8 @@ async function insertSmartemisResponse(data) {
             if (!fetch) {
                 fetch = (await import('node-fetch')).default;
             };
+            const notificationStart = Date.now();
+            log('notificationList start', { rows: data.notificationList.length });
             const backendNotifications = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201');
             const backendData = await backendNotifications.json();
             const currentTime = new Date().getTime();
@@ -1355,6 +1408,7 @@ async function insertSmartemisResponse(data) {
                     }
                 }
             }
+            log('notificationList success', { durationMs: Date.now() - notificationStart });
         }
     if (data.planningCounterList && data.planningCounterList.length > 0) {
         const planningValues = data.planningCounterList.map(item => [
@@ -1364,6 +1418,8 @@ async function insertSmartemisResponse(data) {
             item.totalValue || ''
         ]);
         let rangePlanning = 'Feuille 16!A2:D100';
+        const planningStart = Date.now();
+        log('planningCounterList start', { range: rangePlanning, rows: planningValues.length });
         try {
             await sheets.spreadsheets.values.clear({
                 spreadsheetId,
@@ -1371,6 +1427,8 @@ async function insertSmartemisResponse(data) {
             });
         } catch (error) {
             result.errors.push(`Erreur lors du clear de ${rangePlanning}: ${error.message}`);
+            log('planningCounterList clear error', { range: rangePlanning, error: error.message });
+            console.error(error);
         }
         try {
             await sheets.spreadsheets.values.update({
@@ -1387,6 +1445,7 @@ async function insertSmartemisResponse(data) {
                 success: true,
                 rowsInserted: planningValues.length
             });
+            log('planningCounterList success', { range: rangePlanning, durationMs: Date.now() - planningStart });
         } catch (error) {
             result.operations.push({
                 type: 'planningCounterList',
@@ -1396,9 +1455,17 @@ async function insertSmartemisResponse(data) {
             });
             result.errors.push(`Erreur lors de l'insertion de planningCounterList: ${error.message}`);
             result.success = false;
+            log('planningCounterList error', { range: rangePlanning, durationMs: Date.now() - planningStart, error: error.message });
+            console.error(error);
         }
     }
     
+    log('insertSmartemisResponse end', {
+        durationMs: Date.now() - startTime,
+        success: result.success,
+        operations: result.operations.length,
+        errors: result.errors.length
+    });
     return result;
     }
 
