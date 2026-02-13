@@ -5,16 +5,30 @@ const { text } = require('express');
 let fetch
 
 
-async function insertInterventionNotif(data, msg="Added with CMS API") {
+async function insertInterventionNotif(data, msg = "Added with CMS API") {
 
     if (!fetch) {
         fetch = (await import('node-fetch')).default;
     }
 
-    const response = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201');
-    const sheetData = await response.json();
+    const rowData = (data && typeof data.notification === 'string') ? data.notification.trim() : '';
+    if (!rowData) {
+        throw new Error('Notification vide: insertion annulée');
+    }
 
-    const existingNotification = sheetData.find(item => item.notification === data.notification);
+    let existingNotification = null;
+    try {
+        const response = await fetch('https://opensheet.elk.sh/1-S_8VCPQ76y3XTiK1msvjoglv_uJVGmRNvUZMYvmCnE/Feuille%201');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        const sheetData = await response.json();
+        if (Array.isArray(sheetData)) {
+            existingNotification = sheetData.find(item => item.notification === rowData);
+        }
+    } catch (error) {
+        console.error('Impossible de vérifier les doublons, insertion poursuivie :', error.message);
+    }
 
     if (existingNotification) {
         console.log('Notification already exists, doing nothing.');
@@ -30,8 +44,7 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
 
     const sheets = google.sheets({version: 'v4', auth});
     const spreadsheetId = config.google.spreadsheetId;
-    const rowData = data.notification;
-    const range = 'Feuille 1!A1:K';
+    const range = 'Feuille 1!A1:L';
     let enginsInter = "";
     let numInter = "";
     let dateInter = "";
@@ -43,7 +56,8 @@ async function insertInterventionNotif(data, msg="Added with CMS API") {
     let incidentInter = "";
 
     if (rowData.startsWith('🚧')) {
-await clearSmartemisResponse();
+        try {
+            await clearSmartemisResponse();
         let notifPhoneOptions = {
             method: "post",
             headers: {
@@ -115,9 +129,12 @@ await clearSmartemisResponse();
     villeInter = "";
     
     if (parts.length >= 5) {
-        addressInter = parts[3].trim();
+        addressInter = (parts[3] || '').trim();
         
-        if (addressInter.includes('HYDR SAONE')) {
+        if (!addressInter) {
+            longitude = "";
+            latitude = "";
+        } else if (addressInter.includes('HYDR SAONE')) {
             longitude = "4.855327";
             latitude = "45.821767";
         } else {
@@ -127,22 +144,26 @@ await clearSmartemisResponse();
                 latitude = String(coords.lat).replace(',', '.');
             } catch (err) {
                 console.error('Error finding coordinates:', err);
-                throw err;
+                longitude = "";
+                latitude = "";
             }
         }
         let splittedAddress = addressInter.split(' ');
-        if (addressInter.includes("LYON 0")){
+        if (addressInter.includes("LYON 0") && splittedAddress.length >= 2){
             villeInter = splittedAddress[0] + " " + splittedAddress[1].replace("0", "") + "ÈME";
             addressInter = addressInter.replace(/LYON 0\d/, villeInter);
         } else {
-            villeInter = splittedAddress[0];
+            villeInter = splittedAddress[0] || "";
         }
     } else {
         // Fallback to old method if split didn't work
         addressInter = cleanedEntry.match(/(.*) - (\d+) Engins/);
         if (addressInter) {
             addressInter = addressInter[1].replace(/🚧.*?-.*?-.*?-/, '').replace(" ", "");
-            if (addressInter.includes('HYDR SAONE')) {
+            if (!addressInter) {
+                longitude = "";
+                latitude = "";
+            } else if (addressInter.includes('HYDR SAONE')) {
                 longitude = "4.855327";
                 latitude = "45.821767";
             } else {
@@ -152,15 +173,16 @@ await clearSmartemisResponse();
                     latitude = String(coords.lat).replace(',', '.');
                 } catch (err) {
                     console.error('Error finding coordinates:', err);
-                    throw err;
+                    longitude = "";
+                    latitude = "";
                 }
             }
             let splittedAddress = addressInter.split(' ');
-            if (addressInter.includes("LYON 0")){
+            if (addressInter.includes("LYON 0") && splittedAddress.length >= 2){
                 villeInter = splittedAddress[0] + " " + splittedAddress[1].replace("0", "") + "ÈME";
                 addressInter = addressInter.replace(/LYON 0\d/, villeInter);
             } else {
-                villeInter = splittedAddress[0];
+                villeInter = splittedAddress[0] || "";
             }
         } else {
             addressInter = '';
@@ -202,7 +224,19 @@ await clearSmartemisResponse();
             enginsInter = '';
         }
     }
-}
+        } catch (parseError) {
+            console.error('Erreur de parsing de la notification, insertion en mode dégradé :', parseError);
+            enginsInter = "";
+            numInter = "";
+            dateInter = "";
+            heureInter = "";
+            addressInter = "";
+            longitude = "";
+            latitude = "";
+            villeInter = "";
+            incidentInter = "";
+        }
+    }
     
 
     try {
@@ -238,12 +272,16 @@ await clearSmartemisResponse();
             body: JSON.stringify(payload),
             redirect: "follow"
         };
+        try {
             const postResponse = await fetch(process.env.MACRO_TRIGGER, postOptions);
             if (!postResponse.ok) {
                 console.log('Error in post request:', postResponse.statusText);
             } else {
                 console.log('Post request successful!');
             }
+        } catch (postError) {
+            console.error('Erreur lors du post macro, insertion Sheets conservée :', postError);
+        }
 
         return response;
     } catch (err) {
@@ -261,11 +299,12 @@ async function findInterventionCoordinates(adress){
     const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(adress)}&bounds=46.2926,%204.2811%7C45.4225,%205.1137&key=${api_key}`);
     const data = await response.json();
 
-    if (data.status === 'OK') {
+    if (data.status === 'OK' && Array.isArray(data.results) && data.results.length > 0) {
         const location = data.results[0].geometry.location;
         return { lat: location.lat, lng: location.lng };
     } else {
-        throw new Error('Unable to find coordinates for the given address');
+        const details = data.error_message ? ` (${data.error_message})` : '';
+        throw new Error(`Unable to find coordinates for the given address. Status: ${data.status}${details}`);
     }
 }
 function unidecode(str) {
