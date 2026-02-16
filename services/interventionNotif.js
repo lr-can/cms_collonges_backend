@@ -4,6 +4,90 @@ const db = require('./db');
 const { text } = require('express');
 let fetch
 
+const GROUPAMA_STADIUM_COORDS = {
+    lat: '45.768160',
+    lng: '4.981116'
+};
+
+function cleanSmartemisNotificationEntry(entry = '') {
+    return entry
+        .replace(/\n/g, '')
+        .replace(/\r/g, ' ')
+        .replace(/simples - poubelles/g, 'simples | poubelles')
+        .replace(/batiment - structure/g, 'batiment | structure')
+        .replace(/terrain - montee/g, 'terrain | montee')
+        .replace(/Electrisation -/g, 'Electrisation')
+        .replace(/RECO - AVIS/g, 'RECO | AVIS')
+        .replace(/DFU -/g, 'DFU')
+        .replace(/DFE -/g, 'DFE')
+        .replace(/DV -/g, 'DV')
+        .replace(/DVR -/g, 'DVR')
+        .replace(/DFUR -/g, 'DFUR');
+}
+
+function normalizeLocationText(value = '') {
+    return value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/-/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function getForcedCoordinatesFromNotification(notificationText = '', addressText = '') {
+    const normalizedNotification = normalizeLocationText(notificationText);
+    const normalizedAddress = normalizeLocationText(addressText);
+    const combinedText = `${normalizedNotification} ${normalizedAddress}`.trim();
+
+    const isGroupamaStadium = combinedText.includes('groupama stadium');
+    const isSullyDecines = combinedText.includes('10 rue sully') && combinedText.includes('decines charpieu');
+
+    if (isGroupamaStadium || isSullyDecines) {
+        return GROUPAMA_STADIUM_COORDS;
+    }
+
+    return null;
+}
+
+async function resolveInterventionCoordinates(addressInter, notificationText) {
+    const forcedCoordinates = getForcedCoordinatesFromNotification(notificationText, addressInter);
+    if (forcedCoordinates) {
+        return {
+            longitude: forcedCoordinates.lng,
+            latitude: forcedCoordinates.lat
+        };
+    }
+
+    if (!addressInter) {
+        return {
+            longitude: '',
+            latitude: ''
+        };
+    }
+
+    if (addressInter.includes('HYDR SAONE')) {
+        return {
+            longitude: '4.855327',
+            latitude: '45.821767'
+        };
+    }
+
+    try {
+        const coords = await findInterventionCoordinates(addressInter);
+        return {
+            longitude: String(coords.lng).replace(',', '.'),
+            latitude: String(coords.lat).replace(',', '.')
+        };
+    } catch (err) {
+        console.error('Error finding coordinates:', err);
+        return {
+            longitude: '',
+            latitude: ''
+        };
+    }
+}
+
 
 async function insertInterventionNotif(data, msg = "Added with CMS API") {
 
@@ -76,7 +160,7 @@ async function insertInterventionNotif(data, msg = "Added with CMS API") {
         .catch(err => {
             console.log('Error sending phone notification:', err);
         });
-    let cleanedEntry = rowData.replace(/\n/g, '').replace(/\r/g, ' ').replace(/simples - poubelles/g, 'simples | poubelles').replace(/batiment - structure/g, 'batiment | structure').replace(/terrain - montee/g, 'terrain | montee').replace(/RECO - AVIS/g, 'RECO | AVIS').replace(/DFUR -/g, "DFUR");
+    let cleanedEntry = cleanSmartemisNotificationEntry(rowData);
     
     // Parse using split to handle additional dashes in addresses
     // Format: 🚧 N°{num}/1 - {date} {heure} - {titre} - {adresse} - {engins} Engins
@@ -130,24 +214,11 @@ async function insertInterventionNotif(data, msg = "Added with CMS API") {
     
     if (parts.length >= 5) {
         addressInter = (parts[3] || '').trim();
-        
-        if (!addressInter) {
-            longitude = "";
-            latitude = "";
-        } else if (addressInter.includes('HYDR SAONE')) {
-            longitude = "4.855327";
-            latitude = "45.821767";
-        } else {
-            try {
-                const coords = await findInterventionCoordinates(addressInter);
-                longitude = String(coords.lng).replace(',', '.');
-                latitude = String(coords.lat).replace(',', '.');
-            } catch (err) {
-                console.error('Error finding coordinates:', err);
-                longitude = "";
-                latitude = "";
-            }
-        }
+
+        const resolvedCoordinates = await resolveInterventionCoordinates(addressInter, cleanedEntry);
+        longitude = resolvedCoordinates.longitude;
+        latitude = resolvedCoordinates.latitude;
+
         let splittedAddress = addressInter.split(' ');
         if (addressInter.includes("LYON 0") && splittedAddress.length >= 2){
             villeInter = splittedAddress[0] + " " + splittedAddress[1].replace("0", "") + "ÈME";
@@ -160,23 +231,11 @@ async function insertInterventionNotif(data, msg = "Added with CMS API") {
         addressInter = cleanedEntry.match(/(.*) - (\d+) Engins/);
         if (addressInter) {
             addressInter = addressInter[1].replace(/🚧.*?-.*?-.*?-/, '').replace(" ", "");
-            if (!addressInter) {
-                longitude = "";
-                latitude = "";
-            } else if (addressInter.includes('HYDR SAONE')) {
-                longitude = "4.855327";
-                latitude = "45.821767";
-            } else {
-                try {
-                    const coords = await findInterventionCoordinates(addressInter);
-                    longitude = String(coords.lng).replace(',', '.');
-                    latitude = String(coords.lat).replace(',', '.');
-                } catch (err) {
-                    console.error('Error finding coordinates:', err);
-                    longitude = "";
-                    latitude = "";
-                }
-            }
+
+            const resolvedCoordinates = await resolveInterventionCoordinates(addressInter, cleanedEntry);
+            longitude = resolvedCoordinates.longitude;
+            latitude = resolvedCoordinates.latitude;
+
             let splittedAddress = addressInter.split(' ');
             if (addressInter.includes("LYON 0") && splittedAddress.length >= 2){
                 villeInter = splittedAddress[0] + " " + splittedAddress[1].replace("0", "") + "ÈME";
