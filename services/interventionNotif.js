@@ -245,6 +245,9 @@ async function insertInterventionNotif(data, msg = "Added with CMS API") {
             }
         } else {
             addressInter = '';
+            const resolvedCoordinates = await resolveInterventionCoordinates(addressInter, cleanedEntry);
+            longitude = resolvedCoordinates.longitude;
+            latitude = resolvedCoordinates.latitude;
         }
     }
 
