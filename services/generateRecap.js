@@ -2,6 +2,7 @@ const helper = require('../helper');
 const dataBase = require('./db');
 const fs = require('fs');
 const axios = require('axios');
+const kit = require('./kit');
 
 async function generatePDFRecap() {
     const rowsRealCount = await dataBase.query(
@@ -303,5 +304,26 @@ body {-webkit-print-color-adjust: exact;}
         return pdfContent;
 }
 
+/**
+ * Données pour la création de commande : matériel classique + matériel manquant des kits (objectif 4 kits)
+ */
+async function getRecapCommande() {
+    const [classique, manquantKits] = await Promise.all([
+        dataBase.query(
+            `SELECT stock.idMateriel, materiels.nomMateriel,
+                    COUNT(stock.idStock) AS realTotalCount,
+                    materiels.nbReserve AS expectedReserveCount, materiels.nbVSAV AS expectedVsavCount,
+                    (materiels.nbReserve + materiels.nbVSAV) AS totalExpectedCount
+             FROM stock INNER JOIN materiels ON stock.idMateriel = materiels.idMateriel
+             WHERE stock.idStatut != '3'
+             GROUP BY stock.idMateriel`
+        ),
+        kit.getMaterielManquantKits(4)
+    ]);
+    return {
+        materielsClassiques: helper.emptyOrRows(classique),
+        materielManquantKits: manquantKits || []
+    };
+}
 
-module.exports = {generatePDFRecap};
+module.exports = { generatePDFRecap, getRecapCommande };

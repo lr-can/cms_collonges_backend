@@ -2,6 +2,7 @@ const db = require('./db');
 const helper = require('../helper');
 const config = require('../config');
 const fs = require('fs');
+const kit = require('./kit');
 
 async function getPeremption(page = 1){
   const offset = helper.getOffset(page, config.listPerPage);
@@ -127,6 +128,17 @@ async function getPeremptionAndCount() {
       meta
     }
   }
+  /**
+   * Détecte si idMateriel correspond à un matériel kit (int) ou classique (string).
+   * Materiel kit : id numérique (materielKit.id).
+   * Materiel classique : id chaîne (materiels.idMateriel, ex: "gantL", "controleGluco").
+   */
+  function isMaterielKit(idMateriel) {
+    if (idMateriel == null) return false;
+    const v = String(idMateriel).trim();
+    return /^\d+$/.test(v);
+  }
+
   async function create(materiels){
     // Accepter soit un tableau, soit un seul objet (pour rétrocompatibilité)
     const materielsList = Array.isArray(materiels) ? materiels : [materiels];
@@ -135,52 +147,91 @@ async function getPeremptionAndCount() {
       return {message: 'Aucun matériel à créer.'};
     }
 
-    let currentDate = new Date();
-    let mysqlFormattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
+    // Séparation : matériels classiques (stock) vs matériels kit (stockKit)
+    const materielsClassiques = [];
+    const materielsKit = [];
 
-    // Préparer les valeurs pour l'insertion multiple
-    const values = [];
-    const params = [];
-
-    for (const materiel of materielsList) {
-      let mysqlFormattedPeremptionDate;
-      if (materiel.datePeremption) {
-        const peremptionDate = new Date(materiel.datePeremption);
-        mysqlFormattedPeremptionDate = peremptionDate.toISOString().slice(0, 19).replace('T', ' ');
+    for (const m of materielsList) {
+      if (isMaterielKit(m.idMateriel)) {
+        if (!m.completKitId) {
+          throw new Error(`Pour le matériel kit (idMateriel=${m.idMateriel}), completKitId est requis.`);
+        }
+        materielsKit.push(m);
       } else {
-        mysqlFormattedPeremptionDate = null;
-      }
-
-      values.push('(?, ?, ?, ?, ?, ?, ?)');
-      params.push(
-        materiel.idStock,
-        materiel.idMateriel || '',
-        materiel.idStatut || 1,
-        materiel.idAgent || '',
-        mysqlFormattedDate,
-        materiel.numLot || '',
-        mysqlFormattedPeremptionDate
-      );
-    }
-
-    const query = `INSERT INTO stock
-      (idStock, idMateriel, idStatut, idAgent, dateCreation, numLot, datePeremption) 
-      VALUES ${values.join(', ')}`;
-
-    const result = await db.query(query, params);
-  
-    let message = 'Il y a eu une erreur lors de la création du matériel dans la base de données.';
-    const itemsCount = materielsList.length;
-  
-    if (result.affectedRows > 0) {
-      if (itemsCount === 1) {
-        message = 'Le matériel a bien été créé.';
-      } else {
-        message = `${result.affectedRows} matériel(s) ont bien été créé(s).`;
+        materielsClassiques.push(m);
       }
     }
-  
-    return {message, inserted: result.affectedRows || 0};
+
+    let insertedStock = 0;
+    let insertedStockKit = 0;
+    const messages = [];
+
+    // 1. Matériels classiques → table stock
+    if (materielsClassiques.length > 0) {
+      let currentDate = new Date();
+      let mysqlFormattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
+      const values = [];
+      const params = [];
+
+      for (const materiel of materielsClassiques) {
+        let mysqlFormattedPeremptionDate;
+        if (materiel.datePeremption) {
+          const peremptionDate = new Date(materiel.datePeremption);
+          mysqlFormattedPeremptionDate = peremptionDate.toISOString().slice(0, 19).replace('T', ' ');
+        } else {
+          mysqlFormattedPeremptionDate = null;
+        }
+
+        values.push('(?, ?, ?, ?, ?, ?, ?)');
+        params.push(
+          materiel.idStock,
+          materiel.idMateriel || '',
+          materiel.idStatut || 1,
+          materiel.idAgent || '',
+          mysqlFormattedDate,
+          materiel.numLot || '',
+          mysqlFormattedPeremptionDate
+        );
+      }
+
+      const query = `INSERT INTO stock
+        (idStock, idMateriel, idStatut, idAgent, dateCreation, numLot, datePeremption) 
+        VALUES ${values.join(', ')}`;
+
+      const result = await db.query(query, params);
+      insertedStock = result.affectedRows || 0;
+      if (insertedStock > 0) {
+        messages.push(insertedStock === 1 ? '1 matériel ajouté au stock.' : `${insertedStock} matériels ajoutés au stock.`);
+      }
+    }
+
+    // 2. Matériels kit → table stockKit
+    for (const m of materielsKit) {
+      try {
+        await kit.ajouterMaterielStockKit({
+          completKitId: m.completKitId,
+          materielKitId: Number(m.idMateriel),
+          quantiteReelle: m.quantiteReelle ?? m.quantite ?? 1,
+          dateArticle: m.dateArticle || m.datePeremption,
+          numeroLot: m.numLot || null,
+          datePeremption: m.datePeremption || null
+        });
+        insertedStockKit++;
+      } catch (err) {
+        throw new Error(`Erreur ajout matériel kit (materielKitId=${m.idMateriel}) : ${err.message}`);
+      }
+    }
+    if (insertedStockKit > 0) {
+      messages.push(insertedStockKit === 1 ? '1 matériel ajouté au stock kit.' : `${insertedStockKit} matériels ajoutés au stock kit.`);
+    }
+
+    const message = messages.length > 0 ? messages.join(' ') : 'Aucun enregistrement effectué.';
+    return {
+      message,
+      inserted: insertedStock + insertedStockKit,
+      insertedStock,
+      insertedStockKit
+    };
   }
 
   async function todayCreated(page = 1, idMateriel){

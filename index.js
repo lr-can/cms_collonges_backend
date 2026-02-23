@@ -76,6 +76,8 @@ const manoeuvre = require("./routes/manoeuvre");
 const inventaireVehicule = require("./routes/inventaireVehicule");
 const getInventaireAsup = require("./routes/getInventaireAsup");
 const inventaireRecap = require("./routes/inventaireRecap");
+const kits = require("./routes/kits");
+const infoKit = require("./routes/infoKit");
 
 app.use(cors());
 app.use(express.json());
@@ -185,6 +187,10 @@ app.get('/manoeuvreDisplay', (req, res) => {
 
 app.get('/manoeuvreAgent', (req, res) => {
     res.sendFile(__dirname + '/public/manoeuvreAgent.html');
+});
+
+app.get('/kitDetail', (req, res) => {
+    res.sendFile(__dirname + '/public/kitDetail.html');
 });
 
 
