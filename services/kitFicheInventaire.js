@@ -4,7 +4,7 @@
  */
 const kit = require('./kit');
 
-function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, observations }) {
+function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, observations, datePeremption }) {
   const today = dateEdition || new Date().toLocaleDateString('fr-FR');
   const qrUrl = `https://api.cms-collonges.fr/infoKit/${idKit}`;
   const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(qrUrl)}`;
@@ -146,7 +146,7 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
         <div class="kit-title-banner">${escapeHtml(nomKit || '')}</div>
         <div class="peremption-block">
           <span class="peremption-label">Date de péremption :&nbsp;</span>
-          <span class="peremption-value">${datePeremption ? escapeHtml(datePeremption) : '&nbsp;'}</span>
+          <span class="peremption-value">${(datePeremption != null && datePeremption !== '') ? escapeHtml(String(datePeremption)) : '&nbsp;'}</span>
         </div>
       </div>
     </div>
@@ -215,13 +215,18 @@ async function getFicheInventaireHTML(idKit, agent = {}) {
   const data = await kit.getDonneesFicheInventaire(idKit);
   if (!data) return null;
 
+  const datePeremption =
+    data.datePeremption != null && data.datePeremption !== ''
+      ? data.datePeremption
+      : null;
+
   return generateKitFicheHTML({
     agent,
-    nomKit: data.nomKit,
-    itemsKit: data.itemsKit,
-    idKit: data.idKit,
-    observations: data.observations,
-    datePeremption: data.datePeremption
+    nomKit: data.nomKit || '',
+    itemsKit: data.itemsKit || [],
+    idKit: data.idKit || idKit,
+    observations: data.observations || '',
+    datePeremption
   });
 }
 

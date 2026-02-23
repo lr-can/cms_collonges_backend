@@ -390,6 +390,7 @@ async function getContenuKitComplet(idKitOrId) {
     const inKit = byMaterielKitId[m.id];
     return {
       materielKitId: m.id,
+      idMateriel: m.idMateriel,
       nomCommande: m.nomCommande,
       nomCommun: m.nomCommun,
       quantiteTheorique: m.quantite ?? 0,
