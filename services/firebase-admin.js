@@ -1,28 +1,40 @@
 const admin = require('firebase-admin');
 
-let serviceAccount;
-let databaseURL = "https://cms-collonges-default-rtdb.europe-west1.firebasedatabase.app";
+let db;
 
-if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-  // ⭐ En production (Heroku) - utilise la variable d'environnement
-  console.log('🔥 Using Firebase credentials from environment variable');
-  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-} else {
-  // ⭐ En local - utilise le fichier config.js
-  console.log('🔥 Using Firebase credentials from config.js');
-  const config = require('../config');
-  serviceAccount = {
-    projectId: "cms-collonges",
-    clientEmail: config.google.client_email,
-    privateKey: config.google.private_key.replace(/\\n/g, '\n')
-  };
+try {
+  let serviceAccount;
+  const databaseURL = "https://cms-collonges-default-rtdb.europe-west1.firebasedatabase.app";
+
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    console.log('🔥 Using Firebase credentials from environment variable');
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else {
+    const config = require('../config');
+    const pk = config.google && config.google.private_key;
+    if (!pk) {
+      throw new Error('Credentials manquantes: définir FIREBASE_SERVICE_ACCOUNT (Heroku) ou GG_private_key (local)');
+    }
+    console.log('🔥 Using Firebase credentials from config.js');
+    serviceAccount = {
+      projectId: 'cms-collonges',
+      clientEmail: config.google.client_email,
+      privateKey: String(pk).replace(/\\n/g, '\n')
+    };
+  }
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: databaseURL
+  });
+  db = admin.database();
+} catch (err) {
+  console.error('🔥 Firebase init failed:', err.message);
+  db = new Proxy({}, {
+    get() {
+      throw new Error('Firebase non initialisé. Vérifier FIREBASE_SERVICE_ACCOUNT sur Heroku.');
+    }
+  });
 }
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: databaseURL
-});
-
-const db = admin.database();
 
 module.exports = { db };

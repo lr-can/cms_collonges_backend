@@ -386,7 +386,7 @@ async function getInfoKit(idKit) {
  * Met à jour completKit.datePeremption = MIN des datePeremption des items du kit
  */
 async function updateCompletKitDatePeremption(completKitId) {
-  const [r] = await db.query(
+  const rows = await db.query(
     `SELECT MIN(sk.datePeremption) AS minPeremption
      FROM stockKit sk
      WHERE sk.completKitId = ? AND sk.datePeremption IS NOT NULL`,
@@ -427,6 +427,51 @@ async function ajouterMaterielStockKit(body) {
   }
   await updateCompletKitDatePeremption(completKitId);
   return { inserted: qte };
+}
+
+/**
+ * Matériel manquant pour atteindre N kits de chaque type (statut 1 ou 2)
+ */
+async function getMaterielManquantKits(nbKitsCible = 4) {
+  const nomsKits = await db.query(`SELECT DISTINCT nomKit FROM materielKit ORDER BY nomKit`);
+  const result = [];
+  for (const { nomKit } of nomsKits || []) {
+    const modeles = await db.query(
+      `SELECT id, nomCommande, nomCommun, quantite FROM materielKit WHERE nomKit = ?`,
+      [nomKit]
+    );
+    const nbKitsExistants = await db.query(
+      `SELECT COUNT(DISTINCT ck.id) AS nb FROM completKit ck WHERE ck.nomKit = ? AND ck.statut IN (1, 2)`,
+      [nomKit]
+    );
+    const nbExist = nbKitsExistants && nbKitsExistants[0] ? nbKitsExistants[0].nb : 0;
+    for (const m of modeles || []) {
+      const totalRequis = nbKitsCible * m.quantite;
+      const enStock = await db.query(
+        `SELECT COUNT(*) AS nb FROM stockKit sk
+         JOIN completKit ck ON ck.id = sk.completKitId
+         WHERE sk.materielKitId = ? AND ck.nomKit = ? AND ck.statut IN (1, 2)`,
+        [m.id, nomKit]
+      );
+      const nbEnStock = enStock && enStock[0] ? enStock[0].nb : 0;
+      const manquant = Math.max(0, totalRequis - nbEnStock);
+      if (manquant > 0) {
+        result.push({
+          nomKit,
+          materielKitId: m.id,
+          nomCommande: m.nomCommande,
+          nomCommun: m.nomCommun,
+          quantiteParKit: m.quantite,
+          nbKitsExistants: nbExist,
+          nbKitsCible,
+          nbUnitesRequis: totalRequis,
+          nbUnitesEnStock: nbEnStock,
+          manquant
+        });
+      }
+    }
+  }
+  return result;
 }
 
 /**

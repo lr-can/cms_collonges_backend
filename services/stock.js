@@ -2,7 +2,12 @@ const db = require('./db');
 const helper = require('../helper');
 const config = require('../config');
 const fs = require('fs');
-const kit = require('./kit');
+let kit;
+try {
+  kit = require('./kit');
+} catch (e) {
+  kit = null;
+}
 
 async function getPeremption(page = 1){
   const offset = helper.getOffset(page, config.listPerPage);
@@ -207,6 +212,7 @@ async function getPeremptionAndCount() {
 
     // 2. Matériels kit → table stockKit
     for (const m of materielsKit) {
+      if (!kit) throw new Error('Module kit non disponible (tables materielKit/stockKit/completKit absentes?)');
       try {
         await kit.ajouterMaterielStockKit({
           completKitId: m.completKitId,

@@ -76,8 +76,16 @@ const manoeuvre = require("./routes/manoeuvre");
 const inventaireVehicule = require("./routes/inventaireVehicule");
 const getInventaireAsup = require("./routes/getInventaireAsup");
 const inventaireRecap = require("./routes/inventaireRecap");
-const kits = require("./routes/kits");
-const infoKit = require("./routes/infoKit");
+
+let kits, infoKit;
+try {
+  kits = require("./routes/kits");
+  infoKit = require("./routes/infoKit");
+} catch (err) {
+  console.warn("Modules kits/infoKit non chargés (tables kit absentes?):", err.message);
+  kits = null;
+  infoKit = null;
+}
 
 app.use(cors());
 app.use(express.json());
@@ -174,6 +182,8 @@ app.use("/getAgetByMatricule", getAgetByMatricule);
 app.use("/inventaireVehicule", inventaireVehicule);
 app.use("/getInventaireAsup", getInventaireAsup);
 app.use("/inventaireRecap", inventaireRecap);
+if (kits) app.use("/kits", kits);
+if (infoKit) app.use("/infoKit", infoKit);
 app.use("/", manoeuvre);
 
 // Routes pour les pages HTML
