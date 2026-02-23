@@ -128,14 +128,28 @@ async function getPeremptionAndCount() {
     }
   }
   /**
-   * Détecte si idMateriel correspond à un matériel kit (int) ou classique (string).
-   * Materiel kit : id numérique (materielKit.id).
-   * Materiel classique : id chaîne (materiels.idMateriel, ex: "gantL", "controleGluco").
+   * Détecte si la valeur ressemble à un id materielKit (numérique).
    */
-  function isMaterielKit(idMateriel) {
-    if (idMateriel == null) return false;
-    const v = String(idMateriel).trim();
+  function isMaterielKitId(value) {
+    if (value == null) return false;
+    const v = String(value).trim();
     return /^\d+$/.test(v);
+  }
+
+  /**
+   * Résout idMateriel : si c'est un materielKit.id (numérique), retourne materielKit.idMateriel (lien vers materiels).
+   * Sinon retourne la valeur telle quelle.
+   */
+  async function resolveMaterielKitIdToMateriel(idOrMaterielKitId) {
+    if (idOrMaterielKitId == null || idOrMaterielKitId === '') return null;
+    const v = String(idOrMaterielKitId).trim();
+    if (!/^\d+$/.test(v)) return v;
+    const rows = await db.query(
+      `SELECT idMateriel FROM materielKit WHERE id = ? LIMIT 1`,
+      [parseInt(v, 10)]
+    );
+    if (rows && rows[0] && rows[0].idMateriel) return rows[0].idMateriel;
+    return v;
   }
 
   /**
@@ -166,7 +180,7 @@ async function getPeremptionAndCount() {
     const materielsList = Array.isArray(materiels) ? materiels : [materiels];
     if (materielsList.length === 0) return { message: 'Aucun matériel à créer.' };
 
-    const materielsClassiques = materielsList.filter(m => !isMaterielKit(m.idMateriel));
+    const materielsClassiques = materielsList.filter(m => !isMaterielKitId(m.idMateriel));
     if (materielsClassiques.length === 0) return { message: 'Aucun matériel classique à créer.', inserted: 0 };
 
     let insertedStock = 0;

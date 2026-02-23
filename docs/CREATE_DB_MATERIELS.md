@@ -1,5 +1,9 @@
 # POST /createDB - Réception de matériel
 
+Deux flux supportés :
+- **Matériel classique** : insertion dans `stock` (idMateriel = chaîne, ex. "dakin")
+- **Matériel kit** : insertion dans `stockKit` (idMateriel = entier = materielKit.id) — nécessite `completKitId`
+
 ## Erreurs fréquentes et solutions
 
 ### 1. Foreign key `idMateriel` invalide
@@ -48,3 +52,28 @@ Retourne `{ nextIds: [1, 2, 3, ...], count }`.
 - `idAgent` : matricule (6 caractères)
 - `numLot` : optionnel
 - `datePeremption` : format ISO ou YYYY-MM-DD
+
+### Matériel kit (stockKit)
+
+**Body avec completKitId :**
+```json
+{
+  "completKitId": 1,
+  "materiels": [
+    { "idMateriel": 24, "quantiteReelle": 1 },
+    { "idMateriel": 24, "quantiteReelle": 2 }
+  ]
+}
+```
+
+**Ou array + query :** `POST /createDB?completKitId=1`
+```json
+[
+  { "idMateriel": 24, "idStock": "K21", "numLot": "test" },
+  { "idMateriel": 24, "idStock": "K22", "numLot": "test" }
+]
+```
+
+- `idMateriel` : entier = materielKit.id (ex. 24)
+- `completKitId` : obligatoire pour le flux kit (body ou query)
+- `quantiteReelle` : optionnel, défaut 1 par ligne
