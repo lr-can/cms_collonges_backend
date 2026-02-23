@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const kit = require('../services/kit');
 const stock = require('../services/stock');
+const kitFicheInventaire = require('../services/kitFicheInventaire');
 
 /* GET catalogue materielKit (optionnel: ?nomKit=xxx) */
 router.get('/materielKit', async (req, res, next) => {
