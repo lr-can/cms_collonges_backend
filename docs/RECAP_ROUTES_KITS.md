@@ -1,10 +1,18 @@
 # Récapitulatif des routes et fonctionnalités – Gestion des kits
 
-## Base de données utilisée
+## Base de données (schéma v2 – matrice par type de kit)
 
-- **materielKit** : catalogue des articles par type de kit (nomKit, nomCommande, nomCommun, quantite)
-- **completKit** : kits physiques (idKit, nomKit, createurId, createurNom, statut, datePeremption, historique)
-- **stockKit** : 1 ligne par item physique (completKitId, materielKitId, dateArticle, numeroLot, datePeremption). Quantités = COUNT(*). Date péremption kit = MIN(datePeremption) des items.
+- **materielKit** : Matrice des articles. 1 ligne par article, avec booléens et quantités par type de kit :
+  - `kitAccouchement`, `kitMembreSectionne`, `kitAESAEV` (BOOLEAN)
+  - `quantiteAccouchement`, `quantiteMembreSectionne`, `quantiteAESAEV` (quantités théoriques)
+  - Même référence (ex. Gant T7) = mêmes matériels, affectables à plusieurs kits via les booléens.
+- **completKit** : Kits physiques (idKit, nomKit, createurId, datePeremption, historique). Pas de statut.
+- **stockKit** : 1 ligne par article par kit physique. `id` VARCHAR (K1, K2...), `completKitId`, `materielKitId`, `statut`, `dateArticle`, `numeroLot`, `creator`.
+- **v_materielKits** : Vue de la matrice (articles + booléens + quantités par kit).
+- **v_stockKit** : Vue détaillée du contenu des kits (stockKit + completKit + materielKit).
+- **v_kitsPerimantBientot** : Kits dont la date de péremption est dans moins de 2 mois.
+
+**Types de kits fixes :** `KIT ACCOUCHEMENT`, `KIT MEMBRE SECTIONNE`, `KIT AES / AEV`
 
 ---
 
@@ -13,41 +21,74 @@
 ### 1. `GET /infoKit/:idKit`
 
 **Méthode :** GET  
-**Paramètres :** `idKit` dans l’URL (ex. `KIT-ACC-2025-001`)
-
-**Données attendues :** aucune (URL uniquement)
+**Paramètres :** `idKit` dans l’URL (ex. `KIT-ACCOUCHE-2026-001`)
 
 **Rôle :** Endpoint public pour le QR code. Retourne les infos de base du kit.
 
 **Réponse :**  
 ```json
 {
-  "idKit": "KIT-ACC-2025-001",
+  "idKit": "KIT-ACCOUCHE-2026-001",
   "nomKit": "KIT ACCOUCHEMENT",
-  "statut": "Reserve pharmacie",
-  "datePeremption": "2025-12-31",
-  "createurNom": "DUPONT Jean"
+  "datePeremption": "2026-12-31",
+  "createurId": "V26371"
 }
 ```
 
 ---
 
-### 2. `GET /kits/materielKit`
+### 2. `GET /kits/stockDisponible`
 
 **Méthode :** GET  
-**Query :** `nomKit` (optionnel) – filtre par type de kit
+**Query :** `idMateriel` (optionnel) – filtre par matériel
 
-**Rôle :** Liste du catalogue `materielKit` (articles des kits).
+**Rôle :** Liste du stock disponible (table `stock`, pool pharmacie). Items non affectés aux kits.  
+*Note : nécessite la colonne `stock.completKitId` (migration kits_use_stock_commun).*
+
+**Réponse :** tableau d’objets  
+```json
+[
+  { "idStock": 123, "idMateriel": "dakin", "nomMateriel": "Dakin", "numLot": "LOT1", "datePeremption": "2026-06-15", "dateCreation": "...", "idStatut": 1 }
+]
+```
+
+---
+
+### 3. `GET /kits/stockDisponibleParMateriel`
+
+**Méthode :** GET  
+**Rôle :** Stock disponible agrégé par matériel (quantités).
+
+**Réponse :** tableau  
+```json
+[
+  { "idMateriel": "dakin", "nomMateriel": "Dakin", "quantiteDisponible": 5, "datePeremptionMin": "2026-06-15" }
+]
+```
+
+---
+
+### 4. `GET /kits/materielKit`
+
+**Méthode :** GET  
+**Query :** `nomKit` ou `kitPour` (optionnel) – filtre par type de kit (`KIT ACCOUCHEMENT`, `KIT MEMBRE SECTIONNE`, `KIT AES / AEV`)
+
+**Rôle :** Liste du catalogue materielKit. Si `nomKit` fourni, ne retourne que les articles présents dans ce kit (booléen = true).
 
 **Réponse :** tableau d’objets  
 ```json
 [
   {
     "id": 1,
-    "nomKit": "KIT ACCOUCHEMENT",
     "nomCommande": "ALESE",
     "nomCommun": "Alese",
-    "quantite": 2,
+    "kitAccouchement": true,
+    "kitMembreSectionne": false,
+    "kitAESAEV": false,
+    "quantiteAccouchement": 2,
+    "quantiteMembreSectionne": 0,
+    "quantiteAESAEV": 0,
+    "idMateriel": null,
     "createdAt": "...",
     "updatedAt": "..."
   }
@@ -56,40 +97,38 @@
 
 ---
 
-### 3. `GET /kits/nomsKits`
+### 5. `GET /kits/nomsKits`
 
 **Méthode :** GET  
-**Paramètres :** aucun
 
-**Rôle :** Liste des noms de types de kits distincts.
+**Rôle :** Liste des noms de types de kits (fixe).
 
 **Réponse :**  
 ```json
 [
   { "nomKit": "KIT ACCOUCHEMENT" },
-  { "nomKit": "KIT MEMBRE SECTIONNE" }
+  { "nomKit": "KIT MEMBRE SECTIONNE" },
+  { "nomKit": "KIT AES / AEV" }
 ]
 ```
 
 ---
 
-### 4. `GET /kits/materielKit/:nomKit`
+### 6. `GET /kits/materielKit/:nomKit`
 
 **Méthode :** GET  
-**Paramètres :** `nomKit` dans l’URL
+**Paramètres :** `nomKit` dans l’URL (ex. `KIT ACCOUCHEMENT`)
 
-**Rôle :** Liste des articles d’un type de kit donné.
+**Rôle :** Articles d’un type de kit donné (filtrés par le booléen correspondant), avec la quantité théorique.
 
-**Réponse :** tableau d’articles du catalogue pour ce kit.
+**Réponse :** tableau d’articles pour ce kit.
 
 ---
 
-### 5. `GET /kits/completKit`
+### 7. `GET /kits/completKit`
 
 **Méthode :** GET  
-**Query :**  
-- `nomKit` (optionnel)  
-- `statut` (optionnel) : 1 = Reserve pharmacie, 2 = Mis en kit, 3 = Archive
+**Query :** `nomKit` (optionnel)
 
 **Rôle :** Liste des kits physiques (completKit).
 
@@ -98,13 +137,10 @@
 [
   {
     "id": 1,
-    "idKit": "KIT-ACC-2025-001",
+    "idKit": "KIT-ACCOUCHE-2026-001",
     "nomKit": "KIT ACCOUCHEMENT",
-    "createurId": "12345",
-    "createurNom": "DUPONT Jean",
-    "statut": 1,
-    "statutLabel": "Reserve pharmacie",
-    "datePeremption": "2025-12-31",
+    "createurId": "V26371",
+    "datePeremption": "2026-12-31",
     "historique": "...",
     "createdAt": "...",
     "updatedAt": "..."
@@ -114,25 +150,27 @@
 
 ---
 
-### 6. `GET /kits/completKit/:idKit`
+### 8. `GET /kits/completKit/:idKit`
 
 **Méthode :** GET  
-**Paramètres :**  
-- `idKit` dans l’URL : chaîne (ex. `KIT-ACC-2025-001`) ou id numérique du kit
+**Paramètres :** `idKit` dans l’URL : chaîne (ex. `KIT-ACCOUCHE-2026-001`) ou id numérique du kit
 
-**Rôle :** Détail complet d’un kit avec son contenu (stockKit).
+**Rôle :** Détail complet d’un kit avec son contenu (stockKit agrégé par materielKitId).
 
 **Réponse :**  
 ```json
 {
   "id": 1,
-  "idKit": "KIT-ACC-2025-001",
+  "idKit": "KIT-ACCOUCHE-2026-001",
   "nomKit": "KIT ACCOUCHEMENT",
-  "statutLabel": "Mis en kit",
+  "createurId": "V26371",
+  "datePeremption": "2026-12-31",
   "historique": "remplacement du ...",
   "items": [
     {
-      "id": 10,
+      "id": "K1",
+      "completKitId": 1,
+      "materielKitId": 1,
       "nomCommande": "ALESE",
       "nomCommun": "Alese",
       "quantiteTheorique": 2,
@@ -146,20 +184,21 @@
 
 ---
 
-### 7. `POST /kits/completKit`
+### 9. `POST /kits/completKit`
 
 **Méthode :** POST  
 **Body JSON :**
 ```json
 {
-  "idKit": "KIT-ACC-2025-001",
+  "idKit": "KIT-ACCOUCHE-2026-001",
   "nomKit": "KIT ACCOUCHEMENT",
-  "createurId": "12345",
-  "createurNom": "DUPONT Jean"
+  "createurId": "V26371"
 }
 ```
 
-**Rôle :** Création d’un nouveau kit physique (néo-création, sans contenu).
+**Champs requis :** `idKit`, `nomKit`, `createurId`
+
+**Rôle :** Création d’un nouveau kit physique (sans contenu).
 
 **Réponse :**  
 ```json
@@ -171,16 +210,16 @@
 
 ---
 
-### 8. `PUT /kits/completKit/:id`
+### 10. `PUT /kits/completKit/:id`
 
 **Méthode :** PUT  
 **Paramètres :** `id` (id numérique du completKit) dans l’URL  
 **Body JSON :**
 ```json
 {
-  "statut": 2,
-  "datePeremption": "2025-12-31",
-  "createurNom": "DUPONT Jean"
+  "datePeremption": "2026-12-31",
+  "createurId": "V26371",
+  "historique": "Contrôle effectué..."
 }
 ```
 
@@ -193,19 +232,20 @@
 
 ---
 
-### 9. `POST /kits/realiser`
+### 11. `POST /kits/realiser`
 
 **Méthode :** POST  
 **Body JSON :**
 ```json
 {
-  "idKit": "KIT-ACC-2025-001",
-  "createurId": "12345",
-  "createurNom": "DUPONT Jean"
+  "idKit": "KIT-ACCOUCHE-2026-001",
+  "createurId": "V26371"
 }
 ```
 
-**Rôle :** Réalisation du kit : création des lignes `stockKit` à partir du modèle `materielKit`, mise à jour du statut en « Mis en kit ».
+**Champs requis :** `idKit`, `createurId`
+
+**Rôle :** Réalisation du kit : crée les lignes stockKit à partir de materielKit (articles dont le booléen est true pour ce type de kit, avec les quantités correspondantes).
 
 **Réponse :**  
 ```json
@@ -214,28 +254,27 @@
 
 ---
 
-### 10. `POST /kits/remplacerMateriel`
+### 12. `POST /kits/remplacerMateriel`
 
 **Méthode :** POST  
 **Body JSON :**
 ```json
 {
   "completKitId": 1,
-  "stockKitId": 10,
-  "dateArticle": "2025-02-20",
+  "stockKitId": "K1",
+  "dateArticle": "2026-02-20",
   "numeroLot": "LOT456",
-  "quantiteReelle": 2,
-  "ancienIdStock": "STOCK-001",
-  "nouveauIdStock": "STOCK-002",
+  "ancienIdStock": "K1",
+  "nouveauIdStock": "K42",
   "datePeremptionNouveau": "15/03/2026",
   "nomMateriel": "ALESE"
 }
 ```
 
 **Champs requis :** `completKitId`, `stockKitId`  
-**Champs optionnels :** `dateArticle`, `numeroLot`, `quantiteReelle`, `ancienIdStock`, `nouveauIdStock`, `datePeremptionNouveau`, `nomMateriel`
+**Champs optionnels :** `dateArticle`, `numeroLot`, `ancienIdStock`, `nouveauIdStock`, `datePeremptionNouveau`, `nomMateriel`
 
-**Rôle :** Remplace un matériel dans le kit, met à jour la ligne `stockKit` et enregistre une entrée d’historique (ex. : « remplacement du ALESE STOCK-001 par STOCK-002 (péremption le 15/03/2026) »). L’historique est limité à 500 caractères ; les entrées les plus anciennes sont supprimées si besoin.
+**Rôle :** Met à jour la ligne stockKit (dateArticle, numeroLot) et ajoute une entrée dans l’historique du kit. L’historique est limité à 500 caractères.
 
 **Réponse :**  
 ```json
@@ -244,20 +283,19 @@
 
 ---
 
-### 11. `PUT /kits/stockKit/:id`
+### 13. `PUT /kits/stockKit/:id`
 
 **Méthode :** PUT  
-**Paramètres :** `id` (id de la ligne stockKit) dans l’URL  
+**Paramètres :** `id` dans l’URL – identifiant de la ligne stockKit (format `K1`, `K2`, …)  
 **Body JSON :**
 ```json
 {
-  "quantiteReelle": 2,
-  "dateArticle": "2025-02-20",
+  "dateArticle": "2026-02-20",
   "numeroLot": "LOT456"
 }
 ```
 
-**Rôle :** Mise à jour d’une ligne de contenu du kit sans enregistrer d’historique de remplacement.
+**Rôle :** Mise à jour d’une ligne stockKit (date, lot).
 
 **Réponse :**  
 ```json
@@ -266,14 +304,14 @@
 
 ---
 
-### 12. `POST /kits/observation/:completKitId`
+### 14. `POST /kits/observation/:completKitId`
 
 **Méthode :** POST  
 **Paramètres :** `completKitId` dans l’URL  
 **Body JSON :**
 ```json
 {
-  "observation": "Contrôle effectué le 20/02/2025"
+  "observation": "Contrôle effectué le 20/02/2026"
 }
 ```
 
@@ -286,28 +324,28 @@
 
 ---
 
-### 13. `GET /kits/nextIdKit`
+### 15. `GET /kits/nextIdKit`
 
 **Méthode :** GET  
 **Query :** `nomKit` (optionnel) – pour le préfixe de l’id suggéré
 
-**Rôle :** Propose un prochain identifiant de kit (ex. `KIT-ACC-2025-002`).
+**Rôle :** Propose un prochain identifiant de kit (ex. `KIT-ACCOUCHE-2026-002`).
 
 **Réponse :**  
 ```json
 {
-  "suggestion": "KIT-ACC-2025-002"
+  "suggestion": "KIT-ACCOUCHE-2026-002"
 }
 ```
 
 ---
 
-### 14. `GET /kits/materielManquant`
+### 16. `GET /kits/materielManquant`
 
 **Méthode :** GET  
 **Query :** `nbKits` (optionnel, défaut: 4)
 
-**Rôle :** Retourne le matériel manquant pour atteindre N kits de chaque type (statut 1 ou 2).
+**Rôle :** Retourne le matériel manquant pour atteindre N kits de chaque type.
 
 **Réponse :** tableau d’objets  
 ```json
@@ -329,22 +367,34 @@
 
 ---
 
-### 15. `PUT /kits/stockKit/groupe`
+### 17. `PUT /kits/stockKit/groupe`
 
 **Méthode :** PUT  
-**Body JSON :** `{ completKitId, materielKitId, quantiteReelle?, dateArticle?, numeroLot?, datePeremption? }`
+**Body JSON :**
+```json
+{
+  "completKitId": 1,
+  "materielKitId": 5,
+  "quantiteReelle": 3,
+  "dateArticle": "2026-02-20",
+  "numeroLot": "LOT789"
+}
+```
 
-**Rôle :** Met à jour un groupe (completKitId, materielKitId) : ajuste la quantité (add/remove rows), date, lot. Mise à jour automatique de completKit.datePeremption = MIN des items.
+**Champs requis :** `completKitId`, `materielKitId`  
+**Champs optionnels :** `quantiteReelle`, `dateArticle`, `numeroLot`
+
+**Rôle :** Met à jour un groupe (completKitId, materielKitId) : ajuste la quantité (add/remove lignes stockKit), date, lot. Mise à jour automatique de completKit.datePeremption = MIN(dateArticle) des items.
 
 ---
 
-### 16. `GET /kits/ficheInventaire/:idKit`
+### 18. `GET /kits/ficheInventaire/:idKit`
 
 **Méthode :** GET  
 **Paramètres :** `idKit` dans l’URL  
 **Query :** `agent` (optionnel) – objet JSON encodé en URL `{ matricule, nom, prenom, grade, mail }`
 
-**Rôle :** Retourne une page HTML d’impression de la fiche inventaire du kit (produits, quantités, dates, QR code, observations). La page se lance en impression automatiquement à l’ouverture.
+**Rôle :** Retourne une page HTML d’impression de la fiche inventaire du kit (produits, quantités, dates, QR code, observations).
 
 ---
 
@@ -352,29 +402,24 @@
 
 ### `/kitDetail`
 
-**URL :** `/kitDetail?idKit=KIT-ACC-2025-001` ou `/kitDetail?id=KIT-ACC-2025-001`
+**URL :** `/kitDetail?idKit=KIT-ACCOUCHE-2026-001` ou `/kitDetail?id=1`
 
 **Rôle :** Page de détail d’un kit avec :
 
 1. **Imprimer la fiche inventaire** : ouvre la fiche dans une nouvelle fenêtre puis imprime.
 2. **Valider les modifications** : enregistre les changements de quantité, date, n° lot dans le tableau.
-3. **Remplacer** : ouvre une modale pour remplacer un matériel (ancien/nouveau id stock, péremption, date, lot) et enregistre l’historique.
-4. Edition inline des colonnes Quantité réelle, Date, N° lot.
+3. **Remplacer** : modale pour remplacer un matériel (ancien/nouveau id, péremption, date, lot).
+4. Édition inline des colonnes Quantité réelle, Date, N° lot.
 
 ---
 
-## Ajout de matériel via la route existante
+## Ajout de matériel pharmacie
 
-**Route :** `POST /createDB` (inchangée)
+**Route :** `POST /createDB`
 
-Cette route accepte désormais les deux types de matériel selon `idMateriel` :
+Tous les matériels sont enregistrés dans la table **stock** (pool commun). Aucune distinction par kit à l’ajout.
 
-| Type | Détection | Table | Champs requis supplémentaires |
-|------|-----------|-------|-------------------------------|
-| **Classique** | `idMateriel` = chaîne (ex. `"gantL"`, `"controleGluco"`) | `stock` | `idStock`, `idMateriel`, etc. (inchangé) |
-| **Kit** | `idMateriel` = nombre entier (ex. `5`, `"12"`) | `stockKit` | `completKitId`, `idMateriel` (materielKitId) |
-
-**Exemple matériel classique (inchangé) :**
+**Exemple :**
 ```json
 {
   "idStock": "STOCK-001",
@@ -386,16 +431,7 @@ Cette route accepte désormais les deux types de matériel selon `idMateriel` :
 }
 ```
 
-**Exemple matériel kit :**
-```json
-{
-  "idMateriel": 5,
-  "completKitId": 1,
-  "quantiteReelle": 2,
-  "dateArticle": "2025-02-20",
-  "numLot": "LOT456"
-}
-```
+*Note : les lignes stockKit sont créées lors de la réalisation du kit (`POST /kits/realiser`), à partir de la matrice materielKit.*
 
 ---
 
@@ -403,23 +439,22 @@ Cette route accepte désormais les deux types de matériel selon `idMateriel` :
 
 **Route :** `GET /generatePDF/commande` ou `GET /getRecap/commande`
 
-**Rôle :** Retourne les données pour l’onglet création de commande : matériel classique (real vs expected) + matériel manquant pour les kits (objectif 4 kits de chaque type).
-
-**Réponse :**  
-```json
-{
-  "materielsClassiques": [...],
-  "materielManquantKits": [...]
-}
-```
-
-L’onglet création de commande doit afficher les deux sections et intégrer le matériel manquant des kits dans la liste des articles à commander.
+**Rôle :** Retourne les données pour l’onglet création de commande : matériel classique + matériel manquant pour les kits (objectif N kits par type).
 
 ---
 
 ## Règles applicatives
 
-- **1 item = 1 ligne** : stockKit stocke 1 ligne par unité physique. Quantités via COUNT(*).
-- **Date péremption kit** : `completKit.datePeremption` = MIN des `stockKit.datePeremption` des items. Mise à jour automatique lors de la création/modification.
-- **Objectif 4 kits** : matériel suffisant en statut 1 et 2 pour constituer 4 kits de chaque type.
+- **Matrice materielKit** : 1 ligne par article. Les booléens (`kitAccouchement`, etc.) indiquent dans quels kits l’article est présent. Les quantités (`quantiteAccouchement`, etc.) donnent le nombre par kit.
+- **1 item = 1 ligne** : stockKit stocke 1 ligne par unité physique. Quantités = COUNT(*).
+- **ID stockKit** : format `K1`, `K2`, … (VARCHAR).
+- **Date péremption kit** : `completKit.datePeremption` = MIN des `stockKit.dateArticle` des items. Mise à jour automatique lors des modifications.
 - **Historique / observations** : stockés dans `completKit.historique`, max 500 caractères.
+
+---
+
+## Migration
+
+```bash
+node scripts/run-migration.js migrations/schema_kits_v2.sql
+```

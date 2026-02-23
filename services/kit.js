@@ -8,6 +8,14 @@ const config = require('../config');
 
 const HISTORIQUE_MAX = 500;
 
+/** Mapping nomKit -> colonne boolean et quantite dans materielKit */
+const NOM_KIT_COLUMNS = {
+  'KIT ACCOUCHEMENT': { bool: 'kitAccouchement', quantite: 'quantiteAccouchement' },
+  'KIT MEMBRE SECTIONNE': { bool: 'kitMembreSectionne', quantite: 'quantiteMembreSectionne' },
+  'KIT AES / AEV': { bool: 'kitAESAEV', quantite: 'quantiteAESAEV' }
+};
+const NOMS_KITS_FIXES = ['KIT ACCOUCHEMENT', 'KIT MEMBRE SECTIONNE', 'KIT AES / AEV'];
+
 /**
  * Tronque l'historique à 500 caractères en supprimant les entrées les plus anciennes
  * @param {string} historique - Chaîne actuelle
@@ -33,56 +41,50 @@ function appendHistorique(historique, nouvelleEntree) {
 }
 
 /**
- * Liste le catalogue materielKit (tous les types de kits et leurs articles)
+ * Liste le catalogue materielKit (matrice : 1 ligne par article, booléens par kit)
+ * Query: nomKit ou kitPour (optionnel) = 'KIT ACCOUCHEMENT' | 'KIT MEMBRE SECTIONNE' | 'KIT AES / AEV'
  */
 async function getMaterielKitList(params = {}) {
-  const { nomKit } = params;
+  const kitPour = params.kitPour || params.nomKit;
   let sql = `SELECT * FROM materielKit`;
-  const p = [];
-  if (nomKit) {
-    sql += ` WHERE nomKit = ?`;
-    p.push(nomKit);
+  if (kitPour && NOM_KIT_COLUMNS[kitPour]) {
+    sql += ` WHERE ${NOM_KIT_COLUMNS[kitPour].bool} = 1`;
   }
-  sql += ` ORDER BY nomKit, nomCommun`;
-  const rows = await db.query(sql, p.length ? p : null);
+  sql += ` ORDER BY nomCommun`;
+  const rows = await db.query(sql);
   return helper.emptyOrRows(rows);
 }
 
 /**
- * Articles d'un type de kit (materielKit filtré par nomKit)
+ * Articles d'un type de kit (filtré par le booléen correspondant)
  */
 async function getMaterielKitByNomKit(nomKit) {
+  const col = NOM_KIT_COLUMNS[nomKit];
+  if (!col) return [];
   const rows = await db.query(
-    `SELECT * FROM materielKit WHERE nomKit = ? ORDER BY nomCommun`,
-    [nomKit]
+    `SELECT *, ${col.quantite} AS quantite FROM materielKit WHERE ${col.bool} = 1 ORDER BY nomCommun`,
+    []
   );
   return helper.emptyOrRows(rows);
 }
 
 /**
- * Liste des noms de kits distincts
+ * Liste des noms de kits (fixe : KIT ACCOUCHEMENT, KIT MEMBRE SECTIONNE, KIT AES / AEV)
  */
 async function getNomsKits() {
-  const rows = await db.query(
-    `SELECT DISTINCT nomKit FROM materielKit ORDER BY nomKit`
-  );
-  return helper.emptyOrRows(rows);
+  return NOMS_KITS_FIXES.map(nomKit => ({ nomKit }));
 }
 
 /**
- * Liste des kits physiques (completKit) avec filtres optionnels
+ * Liste des kits physiques (completKit) avec filtre optionnel nomKit
  */
 async function getCompletKitList(params = {}) {
-  const { nomKit, statut } = params;
-  let sql = `SELECT ck.*, CASE ck.statut WHEN 1 THEN 'Reserve pharmacie' WHEN 2 THEN 'Mis en kit' WHEN 3 THEN 'Archive' END AS statutLabel FROM completKit ck WHERE 1=1`;
+  const { nomKit } = params;
+  let sql = `SELECT ck.* FROM completKit ck WHERE 1=1`;
   const p = [];
   if (nomKit) {
     sql += ` AND ck.nomKit = ?`;
     p.push(nomKit);
-  }
-  if (statut != null && statut !== undefined && statut !== '') {
-    sql += ` AND ck.statut = ?`;
-    p.push(statut);
   }
   sql += ` ORDER BY ck.nomKit, ck.datePeremption`;
   const rows = await db.query(sql, p.length ? p : null);
@@ -90,18 +92,20 @@ async function getCompletKitList(params = {}) {
 }
 
 /**
- * Détail complet d'un kit physique (completKit + stockKit via v_stockKit)
+ * Détail complet d'un kit physique (completKit + v_stockKit agrégé par materielKitId)
  */
 async function getCompletKitDetail(idKit) {
-  const rows = await db.query(
-    `SELECT * FROM v_completKit WHERE idKit = ?`,
-    [idKit]
-  );
+  const rows = await db.query(`SELECT * FROM completKit WHERE idKit = ?`, [idKit]);
   const kit = helper.emptyOrRows(rows)[0];
   if (!kit) return null;
 
   const stockRows = await db.query(
-    `SELECT * FROM v_stockKit WHERE idKit = ? ORDER BY nomCommun`,
+    `SELECT MIN(stockId) AS id, completKitId, materielKitId, idKit, nomKit, nomCommande, nomCommun, idMateriel, quantiteTheorique,
+      COUNT(*) AS quantiteReelle, MIN(dateArticle) AS dateArticle, MAX(numeroLot) AS numeroLot,
+      statut, statutLabel, datePeremption, creator
+     FROM v_stockKit WHERE idKit = ?
+     GROUP BY completKitId, materielKitId, idKit, nomKit, nomCommande, nomCommun, idMateriel, quantiteTheorique, statut, statutLabel, datePeremption, creator
+     ORDER BY nomCommun`,
     [idKit]
   );
   kit.items = helper.emptyOrRows(stockRows);
@@ -112,20 +116,17 @@ async function getCompletKitDetail(idKit) {
  * Détail par id numérique (completKit.id)
  */
 async function getCompletKitById(id) {
-  const rows = await db.query(`SELECT * FROM v_completKit WHERE id = ?`, [id]);
+  const rows = await db.query(`SELECT * FROM completKit WHERE id = ?`, [id]);
   const kit = helper.emptyOrRows(rows)[0];
   if (!kit) return null;
 
   const stockRows = await db.query(
-    `SELECT sk.completKitId, sk.materielKitId, mk.nomCommande, mk.nomCommun, mk.quantite AS quantiteTheorique,
-            COUNT(*) AS quantiteReelle,
-            MIN(sk.dateArticle) AS dateArticle, MIN(sk.numeroLot) AS numeroLot, MIN(sk.datePeremption) AS datePeremption,
-            MIN(sk.id) AS id
-     FROM stockKit sk
-     JOIN materielKit mk ON mk.id = sk.materielKitId
-     WHERE sk.completKitId = ?
-     GROUP BY sk.completKitId, sk.materielKitId, mk.nomCommande, mk.nomCommun, mk.quantite
-     ORDER BY mk.nomCommun`,
+    `SELECT MIN(stockId) AS id, completKitId, materielKitId, idKit, nomKit, nomCommande, nomCommun, idMateriel, quantiteTheorique,
+      COUNT(*) AS quantiteReelle, MIN(dateArticle) AS dateArticle, MAX(numeroLot) AS numeroLot,
+      statut, statutLabel, datePeremption, creator
+     FROM v_stockKit WHERE completKitId = ?
+     GROUP BY completKitId, materielKitId, idKit, nomKit, nomCommande, nomCommun, idMateriel, quantiteTheorique, statut, statutLabel, datePeremption, creator
+     ORDER BY nomCommun`,
     [id]
   );
   kit.items = helper.emptyOrRows(stockRows);
@@ -136,74 +137,81 @@ async function getCompletKitById(id) {
  * Néo-création : crée un nouveau kit physique vide (sans stockKit)
  */
 async function createCompletKit(body) {
-  const { idKit, nomKit, createurId, createurNom } = body;
+  const { idKit, nomKit, createurId } = body;
   const result = await db.query(
-    `INSERT INTO completKit (idKit, nomKit, createurId, createurNom, statut) VALUES (?, ?, ?, ?, 1)`,
-    [idKit, nomKit, createurId, createurNom || '']
+    `INSERT INTO completKit (idKit, nomKit, createurId) VALUES (?, ?, ?)`,
+    [idKit, nomKit, createurId || '']
   );
   return { message: 'Kit créé.', id: result.insertId };
 }
 
 /**
- * Réaliser un kit : constituer le stockKit à partir du modèle materielKit
- * Crée les lignes stockKit pour chaque article du modèle (quantité à compléter ensuite)
+ * Génère le prochain id stockKit (K1, K2, ...)
+ */
+async function getNextStockKitId() {
+  const rows = await db.query(
+    `SELECT COALESCE(MAX(CAST(SUBSTRING(id, 2) AS UNSIGNED)), 0) + 1 AS nextNum FROM stockKit WHERE id REGEXP '^K[0-9]+$'`
+  );
+  const num = rows && rows[0] ? rows[0].nextNum : 1;
+  return `K${num}`;
+}
+
+/**
+ * Réaliser un kit : constituer stockKit à partir de materielKit (booléens true/false)
  */
 async function realiserKit(body) {
-  const { idKit, createurId, createurNom } = body;
+  const { idKit, createurId } = body;
 
   const kit = await db.query(`SELECT id, nomKit FROM completKit WHERE idKit = ?`, [idKit]);
-  if (!kit || kit.length === 0) {
-    throw new Error('Kit non trouvé');
-  }
+  if (!kit || kit.length === 0) throw new Error('Kit non trouvé');
   const completKitId = kit[0].id;
   const nomKit = kit[0].nomKit;
 
+  const col = NOM_KIT_COLUMNS[nomKit];
+  if (!col) throw new Error('Type de kit inconnu : ' + nomKit);
+
   const modeles = await db.query(
-    `SELECT id, quantite FROM materielKit WHERE nomKit = ?`,
-    [nomKit]
+    `SELECT id, ${col.quantite} AS quantite FROM materielKit WHERE ${col.bool} = 1 AND ${col.quantite} > 0`,
+    []
   );
-  if (!modeles || modeles.length === 0) {
-    throw new Error('Aucun article dans le modèle de kit');
-  }
+  if (!modeles || modeles.length === 0) throw new Error('Aucun article dans le modèle de kit');
 
   await db.query(`DELETE FROM stockKit WHERE completKitId = ?`, [completKitId]);
+
   for (const m of modeles) {
     const qte = Math.max(0, m.quantite || 1);
     for (let i = 0; i < qte; i++) {
+      const skId = await getNextStockKitId();
       await db.query(
-        `INSERT INTO stockKit (completKitId, materielKitId) VALUES (?, ?)`,
-        [completKitId, m.id]
+        `INSERT INTO stockKit (id, completKitId, materielKitId, statut, creator) VALUES (?, ?, ?, 2, ?)`,
+        [skId, completKitId, m.id, createurId || '000000']
       );
     }
   }
 
-  await db.query(
-    `UPDATE completKit SET createurId = ?, createurNom = ?, statut = 2, updatedAt = NOW() WHERE id = ?`,
-    [createurId, createurNom || '', completKitId]
-  );
+  await db.query(`UPDATE completKit SET createurId = ?, updatedAt = NOW() WHERE id = ?`, [createurId || '', completKitId]);
   await updateCompletKitDatePeremption(completKitId);
-
   return { message: 'Kit réalisé.' };
 }
 
 /**
- * Modifier un kit (statut, datePeremption, etc.)
+ * Modifier un kit (datePeremption, createurId, historique)
  */
 async function updateCompletKit(id, body) {
-  const { statut, datePeremption, createurNom } = body;
+  const { datePeremption, createurId, historique } = body;
   const updates = [];
   const params = [];
-  if (statut != null) {
-    updates.push('statut = ?');
-    params.push(statut);
-  }
   if (datePeremption !== undefined) {
     updates.push('datePeremption = ?');
     params.push(datePeremption || null);
   }
-  if (createurNom !== undefined) {
-    updates.push('createurNom = ?');
-    params.push(createurNom);
+  if (createurId !== undefined) {
+    updates.push('createurId = ?');
+    params.push(createurId);
+  }
+  if (historique !== undefined) {
+    updates.push('historique = ?');
+    params.push(historique);
   }
   if (updates.length === 0) return { message: 'Rien à modifier.' };
   params.push(id);
@@ -215,12 +223,11 @@ async function updateCompletKit(id, body) {
 }
 
 /**
- * Remplacer un matériel dans un kit
- * body: { completKitId, stockKitId, dateArticle?, numeroLot?, quantiteReelle? }
- * + info pour l'historique: ancien id_stock / nouveau
+ * Remplacer un matériel dans un kit (mise à jour de la ligne stockKit)
+ * body: { completKitId, stockKitId (id stockKit), dateArticle?, numeroLot?, ancienIdStock?, nouveauIdStock?, datePeremptionNouveau?, nomMateriel? }
  */
 async function remplacerMaterielKit(body) {
-  const { completKitId, stockKitId, dateArticle, numeroLot, datePeremption, ancienIdStock, nouveauIdStock, datePeremptionNouveau, nomMateriel } = body;
+  const { completKitId, stockKitId, dateArticle, numeroLot, ancienIdStock, nouveauIdStock, datePeremptionNouveau, nomMateriel } = body;
 
   const kitRows = await db.query(`SELECT historique FROM completKit WHERE id = ?`, [completKitId]);
   if (!kitRows || !kitRows[0]) throw new Error('Kit non trouvé');
@@ -229,43 +236,34 @@ async function remplacerMaterielKit(body) {
   const params = [];
   if (dateArticle !== undefined) {
     updates.push('dateArticle = ?');
-    params.push(dateArticle ? new Date(dateArticle).toISOString().slice(0, 19).replace('T', ' ') : null);
+    params.push(dateArticle ? new Date(dateArticle).toISOString().slice(0, 10) : null);
   }
   if (numeroLot !== undefined) {
     updates.push('numeroLot = ?');
-    params.push(numeroLot || '');
-  }
-  if (datePeremption !== undefined) {
-    updates.push('datePeremption = ?');
-    params.push(datePeremption ? new Date(datePeremption).toISOString().slice(0, 10) : null);
+    params.push(numeroLot || null);
   }
   if (updates.length > 0) {
     params.push(stockKitId);
     await db.query(`UPDATE stockKit SET ${updates.join(', ')}, updatedAt = NOW() WHERE id = ?`, params);
   }
 
-  const entreeHist = `remplacement du ${nomMateriel || 'matériel'} ${ancienIdStock || '?'} par ${nouveauIdStock || '?'}${datePeremptionNouveau ? ` (péremption le ${datePeremptionNouveau})` : ''}`;
+  const entreeHist = `remplacement du ${nomMateriel || 'matériel'} ${ancienIdStock || stockKitId || '?'} par ${nouveauIdStock || '?'}${datePeremptionNouveau ? ` (péremption le ${datePeremptionNouveau})` : ''}`;
   const nouvelHistorique = appendHistorique(kitRows[0].historique || '', entreeHist);
+  await db.query(`UPDATE completKit SET historique = ?, updatedAt = NOW() WHERE id = ?`, [nouvelHistorique, completKitId]);
 
-  await db.query(
-    `UPDATE completKit SET historique = ?, updatedAt = NOW() WHERE id = ?`,
-    [nouvelHistorique, completKitId]
-  );
   await updateCompletKitDatePeremption(completKitId);
-
   return { message: 'Matériel remplacé.' };
 }
 
 /**
- * Mettre à jour une ligne stockKit (1 row = 1 item : date, lot, péremption)
+ * Mettre à jour une ligne stockKit (dateArticle, numeroLot)
  */
 async function updateStockKit(stockKitId, body) {
-  const { dateArticle, numeroLot, datePeremption } = body;
+  const { dateArticle, numeroLot } = body;
   const updates = [];
   const params = [];
-  if (dateArticle !== undefined) { updates.push('dateArticle = ?'); params.push(dateArticle ? new Date(dateArticle).toISOString().slice(0, 19).replace('T', ' ') : null); }
-  if (numeroLot !== undefined) { updates.push('numeroLot = ?'); params.push(numeroLot || ''); }
-  if (datePeremption !== undefined) { updates.push('datePeremption = ?'); params.push(datePeremption ? new Date(datePeremption).toISOString().slice(0, 10) : null); }
+  if (dateArticle !== undefined) { updates.push('dateArticle = ?'); params.push(dateArticle ? new Date(dateArticle).toISOString().slice(0, 10) : null); }
+  if (numeroLot !== undefined) { updates.push('numeroLot = ?'); params.push(numeroLot || null); }
   if (updates.length === 0) return { message: 'Rien à modifier.' };
   params.push(stockKitId);
   const rows = await db.query(`SELECT completKitId FROM stockKit WHERE id = ?`, [stockKitId]);
@@ -275,31 +273,35 @@ async function updateStockKit(stockKitId, body) {
 }
 
 /**
- * Ajuster la quantité d'un matériel dans un kit (add/remove rows)
+ * Ajuster la quantité d'un matériel dans un kit (add/remove lignes stockKit)
  */
 async function ajusterQuantiteStockKit(completKitId, materielKitId, quantiteSouhaitee) {
+  const ck = await db.query(`SELECT createurId FROM completKit WHERE id = ?`, [completKitId]);
+  const creator = (ck && ck[0] && ck[0].createurId) ? ck[0].createurId : '000000';
+
   const countRows = await db.query(
     `SELECT COUNT(*) AS nb FROM stockKit WHERE completKitId = ? AND materielKitId = ?`,
     [completKitId, materielKitId]
   );
   const current = countRows && countRows[0] ? countRows[0].nb : 0;
   const qte = Math.max(0, quantiteSouhaitee || 0);
+
   if (qte > current) {
     for (let i = 0; i < qte - current; i++) {
+      const skId = await getNextStockKitId();
       await db.query(
-        `INSERT INTO stockKit (completKitId, materielKitId) VALUES (?, ?)`,
-        [completKitId, materielKitId]
+        `INSERT INTO stockKit (id, completKitId, materielKitId, statut, creator) VALUES (?, ?, ?, 2, ?)`,
+        [skId, completKitId, materielKitId, creator]
       );
     }
   } else if (qte < current) {
-    const toDelete = current - qte;
-    const limit = parseInt(toDelete, 10);
+    const toDel = current - qte;
     const rows = await db.query(
-      `SELECT id FROM stockKit WHERE completKitId = ? AND materielKitId = ? ORDER BY COALESCE(datePeremption, '9999-12-31') ASC, id ASC LIMIT ${limit}`,
-      [completKitId, materielKitId]
+      `SELECT id FROM stockKit WHERE completKitId = ? AND materielKitId = ? ORDER BY COALESCE(dateArticle, '9999-12-31') ASC LIMIT ?`,
+      [completKitId, materielKitId, toDel]
     );
-    for (const r of Array.isArray(rows) ? rows : []) {
-      if (r && r.id) await db.query(`DELETE FROM stockKit WHERE id = ?`, [r.id]);
+    for (const r of rows || []) {
+      if (r?.id) await db.query(`DELETE FROM stockKit WHERE id = ?`, [r.id]);
     }
   }
   await updateCompletKitDatePeremption(completKitId);
@@ -310,16 +312,16 @@ async function ajusterQuantiteStockKit(completKitId, materielKitId, quantiteSouh
  * Mise à jour d'un groupe (completKitId, materielKitId) : quantité + date/lot
  */
 async function updateStockKitGroupe(completKitId, materielKitId, body) {
-  const { quantiteReelle, dateArticle, numeroLot, datePeremption } = body;
+  const { quantiteReelle, dateArticle, numeroLot } = body;
+
   if (quantiteReelle !== undefined) {
     await ajusterQuantiteStockKit(completKitId, materielKitId, quantiteReelle);
   }
-  if (dateArticle !== undefined || numeroLot !== undefined || datePeremption !== undefined) {
+  if (dateArticle !== undefined || numeroLot !== undefined) {
     const updates = [];
     const params = [];
-    if (dateArticle !== undefined) { updates.push('dateArticle = ?'); params.push(dateArticle ? new Date(dateArticle).toISOString().slice(0, 19).replace('T', ' ') : null); }
-    if (numeroLot !== undefined) { updates.push('numeroLot = ?'); params.push(numeroLot || ''); }
-    if (datePeremption !== undefined) { updates.push('datePeremption = ?'); params.push(datePeremption ? new Date(datePeremption).toISOString().slice(0, 10) : null); }
+    if (dateArticle !== undefined) { updates.push('dateArticle = ?'); params.push(dateArticle ? new Date(dateArticle).toISOString().slice(0, 10) : null); }
+    if (numeroLot !== undefined) { updates.push('numeroLot = ?'); params.push(numeroLot || null); }
     if (updates.length > 0) {
       params.push(completKitId, materielKitId);
       await db.query(`UPDATE stockKit SET ${updates.join(', ')}, updatedAt = NOW() WHERE completKitId = ? AND materielKitId = ?`, params);
@@ -376,20 +378,19 @@ async function getInfoKit(idKit) {
   return {
     idKit: kit.idKit,
     nomKit: kit.nomKit,
-    statut: kit.statutLabel,
     datePeremption: kit.datePeremption,
-    createurNom: kit.createurNom
+    createurId: kit.createurId
   };
 }
 
 /**
- * Met à jour completKit.datePeremption = MIN des datePeremption des items du kit
+ * Met à jour completKit.datePeremption = MIN des dateArticle des items du kit
  */
 async function updateCompletKitDatePeremption(completKitId) {
   const rows = await db.query(
-    `SELECT MIN(sk.datePeremption) AS minPeremption
+    `SELECT MIN(sk.dateArticle) AS minPeremption
      FROM stockKit sk
-     WHERE sk.completKitId = ? AND sk.datePeremption IS NOT NULL`,
+     WHERE sk.completKitId = ? AND sk.dateArticle IS NOT NULL`,
     [completKitId]
   );
   const minDate = rows && rows[0] && rows[0].minPeremption ? rows[0].minPeremption : null;
@@ -401,56 +402,55 @@ async function updateCompletKitDatePeremption(completKitId) {
 }
 
 /**
- * Ajouter du matériel au stock d'un kit (stockKit) - 1 ligne par item physique
+ * Ajouter du matériel au kit (insertion lignes stockKit)
  */
 async function ajouterMaterielStockKit(body) {
-  const { completKitId, materielKitId, quantiteReelle, dateArticle, numeroLot, datePeremption } = body;
+  const { completKitId, materielKitId, quantiteReelle } = body;
   if (!completKitId || !materielKitId) {
-    throw new Error('completKitId et materielKitId requis pour l\'ajout de matériel kit');
+    throw new Error('completKitId et materielKitId requis');
   }
+  const ck = await db.query(`SELECT createurId FROM completKit WHERE id = ?`, [completKitId]);
+  const creator = (ck && ck[0]) ? ck[0].createurId : '000000';
+
   const qte = Math.max(1, quantiteReelle || 1);
-  let dateArticleSql = null;
-  let datePeremptionSql = null;
-  if (dateArticle) {
-    const d = new Date(dateArticle);
-    dateArticleSql = d.toISOString().slice(0, 19).replace('T', ' ');
-  }
-  if (datePeremption) {
-    const d = new Date(datePeremption);
-    datePeremptionSql = d.toISOString().slice(0, 19).replace('T', ' ');
-  }
+  let inserted = 0;
   for (let i = 0; i < qte; i++) {
+    const skId = await getNextStockKitId();
     await db.query(
-      `INSERT INTO stockKit (completKitId, materielKitId, dateArticle, numeroLot, datePeremption) VALUES (?, ?, ?, ?, ?)`,
-      [completKitId, materielKitId, dateArticleSql, numeroLot || null, datePeremptionSql]
+      `INSERT INTO stockKit (id, completKitId, materielKitId, statut, creator) VALUES (?, ?, ?, 2, ?)`,
+      [skId, completKitId, materielKitId, creator]
     );
+    inserted++;
   }
   await updateCompletKitDatePeremption(completKitId);
-  return { inserted: qte };
+  return { inserted };
 }
 
 /**
- * Matériel manquant pour atteindre N kits de chaque type (statut 1 ou 2)
+ * Matériel manquant pour atteindre N kits de chaque type (stockKit)
  */
 async function getMaterielManquantKits(nbKitsCible = 4) {
-  const nomsKits = await db.query(`SELECT DISTINCT nomKit FROM materielKit ORDER BY nomKit`);
   const result = [];
-  for (const { nomKit } of nomsKits || []) {
+  for (const nomKit of NOMS_KITS_FIXES) {
+    const col = NOM_KIT_COLUMNS[nomKit];
+    if (!col) continue;
+
     const modeles = await db.query(
-      `SELECT id, nomCommande, nomCommun, quantite FROM materielKit WHERE nomKit = ?`,
-      [nomKit]
+      `SELECT id, nomCommande, nomCommun, ${col.quantite} AS quantite FROM materielKit WHERE ${col.bool} = 1 AND ${col.quantite} > 0`,
+      []
     );
     const nbKitsExistants = await db.query(
-      `SELECT COUNT(DISTINCT ck.id) AS nb FROM completKit ck WHERE ck.nomKit = ? AND ck.statut IN (1, 2)`,
+      `SELECT COUNT(DISTINCT ck.id) AS nb FROM completKit ck WHERE ck.nomKit = ?`,
       [nomKit]
     );
     const nbExist = nbKitsExistants && nbKitsExistants[0] ? nbKitsExistants[0].nb : 0;
+
     for (const m of modeles || []) {
       const totalRequis = nbKitsCible * m.quantite;
       const enStock = await db.query(
         `SELECT COUNT(*) AS nb FROM stockKit sk
          JOIN completKit ck ON ck.id = sk.completKitId
-         WHERE sk.materielKitId = ? AND ck.nomKit = ? AND ck.statut IN (1, 2)`,
+         WHERE sk.materielKitId = ? AND ck.nomKit = ?`,
         [m.id, nomKit]
       );
       const nbEnStock = enStock && enStock[0] ? enStock[0].nb : 0;

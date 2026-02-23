@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const kit = require('../services/kit');
+const stock = require('../services/stock');
 
 /* GET catalogue materielKit (optionnel: ?nomKit=xxx) */
 router.get('/materielKit', async (req, res, next) => {
@@ -9,6 +10,28 @@ router.get('/materielKit', async (req, res, next) => {
     res.json(data);
   } catch (err) {
     console.error('Erreur getMaterielKitList', err.message);
+    next(err);
+  }
+});
+
+/* GET stock disponible (pool commun, pour piocher dans les kits) */
+router.get('/stockDisponible', async (req, res, next) => {
+  try {
+    const data = await stock.getStockDisponible(req.query);
+    res.json(data);
+  } catch (err) {
+    console.error('Erreur getStockDisponible', err.message);
+    next(err);
+  }
+});
+
+/* GET stock disponible agrégé par matériel */
+router.get('/stockDisponibleParMateriel', async (req, res, next) => {
+  try {
+    const data = await stock.getStockDisponibleParMateriel();
+    res.json(data);
+  } catch (err) {
+    console.error('Erreur getStockDisponibleParMateriel', err.message);
     next(err);
   }
 });
@@ -113,10 +136,10 @@ router.post('/remplacerMateriel', async (req, res, next) => {
   }
 });
 
-/* PUT mise à jour d'une ligne stockKit */
+/* PUT mise à jour d'une ligne stockKit (id = K1, K2, ...) */
 router.put('/stockKit/:id', async (req, res, next) => {
   try {
-    res.json(await kit.updateStockKit(parseInt(req.params.id, 10), req.body));
+    res.json(await kit.updateStockKit(req.params.id, req.body));
   } catch (err) {
     console.error('Erreur updateStockKit', err.message);
     next(err);

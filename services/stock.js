@@ -2,12 +2,6 @@ const db = require('./db');
 const helper = require('../helper');
 const config = require('../config');
 const fs = require('fs');
-let kit;
-try {
-  kit = require('./kit');
-} catch (e) {
-  kit = null;
-}
 
 async function getPeremption(page = 1){
   const offset = helper.getOffset(page, config.listPerPage);
@@ -178,7 +172,7 @@ async function getPeremptionAndCount() {
       const values = [];
       const params = [];
 
-      for (const materiel of materielsClassiques) {
+      for (const materiel of materielsList) {
         let mysqlFormattedPeremptionDate;
         if (materiel.datePeremption) {
           const peremptionDate = new Date(materiel.datePeremption);
@@ -210,33 +204,10 @@ async function getPeremptionAndCount() {
       }
     }
 
-    // 2. Matériels kit → table stockKit
-    for (const m of materielsKit) {
-      if (!kit) throw new Error('Module kit non disponible (tables materielKit/stockKit/completKit absentes?)');
-      try {
-        await kit.ajouterMaterielStockKit({
-          completKitId: m.completKitId,
-          materielKitId: Number(m.idMateriel),
-          quantiteReelle: m.quantiteReelle ?? m.quantite ?? 1,
-          dateArticle: m.dateArticle || m.datePeremption,
-          numeroLot: m.numLot || null,
-          datePeremption: m.datePeremption || null
-        });
-        insertedStockKit++;
-      } catch (err) {
-        throw new Error(`Erreur ajout matériel kit (materielKitId=${m.idMateriel}) : ${err.message}`);
-      }
-    }
-    if (insertedStockKit > 0) {
-      messages.push(insertedStockKit === 1 ? '1 matériel ajouté au stock kit.' : `${insertedStockKit} matériels ajoutés au stock kit.`);
-    }
-
     const message = messages.length > 0 ? messages.join(' ') : 'Aucun enregistrement effectué.';
     return {
       message,
-      inserted: insertedStock + insertedStockKit,
-      insertedStock,
-      insertedStockKit
+      inserted: insertedStock
     };
   }
 
@@ -607,6 +578,42 @@ async function getPeremptionAndCount() {
       }
 
   
+  /**
+   * Stock disponible (pool commun) : items non affectés aux kits.
+   * Utilise v_stockDisponible si la migration est appliquée.
+   */
+  async function getStockDisponible(params = {}) {
+    const { idMateriel } = params;
+    let sql = `SELECT s.idStock, s.idMateriel, m.nomMateriel, s.numLot, s.datePeremption, s.dateCreation, s.idStatut
+      FROM stock s
+      JOIN materiels m ON m.idMateriel = s.idMateriel
+      WHERE (s.completKitId IS NULL) AND s.idStatut IN (1, 2)`;
+    const p = [];
+    if (idMateriel) {
+      sql += ` AND s.idMateriel = ?`;
+      p.push(idMateriel);
+    }
+    sql += ` ORDER BY s.idMateriel, COALESCE(s.datePeremption, '9999-12-31'), s.idStock`;
+    const rows = await db.query(sql, p.length ? p : null);
+    return helper.emptyOrRows(rows);
+  }
+
+  /**
+   * Stock disponible agrégé par matériel (quantités, pour voir ce qu'on peut piocher).
+   */
+  async function getStockDisponibleParMateriel() {
+    const rows = await db.query(
+      `SELECT s.idMateriel, m.nomMateriel, COUNT(*) AS quantiteDisponible,
+        MIN(s.datePeremption) AS datePeremptionMin
+       FROM stock s
+       JOIN materiels m ON m.idMateriel = s.idMateriel
+       WHERE s.completKitId IS NULL AND s.idStatut IN (1, 2)
+       GROUP BY s.idMateriel, m.nomMateriel
+       ORDER BY m.nomMateriel`
+    );
+    return helper.emptyOrRows(rows);
+  }
+
   module.exports = {
     getPeremption,
     getPeremptionids,
@@ -631,5 +638,7 @@ async function getPeremptionAndCount() {
     getPeremptionAndCount,
     materielRIChecked,
     performedECG,
-    getNextAvailableIds
+    getNextAvailableIds,
+    getStockDisponible,
+    getStockDisponibleParMateriel
   }
