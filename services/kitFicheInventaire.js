@@ -13,17 +13,21 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
     ? `${agent.grade ? agent.grade + ' ' : ''}${agent.prenom || ''} ${agent.nom || ''}`.trim()
     : '';
 
-  const itemRows = (itemsKit || [])
-    .map(
-      (item) => `
+  const items = itemsKit || [];
+  const itemRows =
+    items.length > 0
+      ? items
+          .map(
+            (item) => `
       <tr>
         <td class="td-produit">${escapeHtml(item.produit || '')}</td>
         <td class="td-center">${item.qte ?? ''}</td>
         <td class="td-center">${item.date || ''}</td>
         <td class="td-center">${item.numero || ''}</td>
       </tr>`
-    )
-    .join('');
+          )
+          .join('')
+      : `<tr><td colspan="4" class="td-produit td-empty">Aucun matériel associé pour le moment.</td></tr>`;
 
   const observContent = observations ? escapeHtml(observations) : '';
 
@@ -93,6 +97,7 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
     }
     .td-produit { text-align: left !important; }
     .td-center { text-align: center !important; }
+    .td-empty { color: #888 !important; font-style: italic !important; padding: 16px !important; }
     .signature-block {
       display: flex !important;
       gap: 0 !important;

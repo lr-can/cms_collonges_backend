@@ -74,9 +74,15 @@ router.get('/completKit', async (req, res, next) => {
 router.get('/completKit/:idKit', async (req, res, next) => {
   try {
     const p = req.params.idKit;
-    const data = /^\d+$/.test(p)
-      ? await kit.getCompletKitById(parseInt(p, 10))
-      : await kit.getCompletKitDetail(p);
+    const useComplet = req.query.contenuComplet === '1' || req.query.contenuComplet === 'true';
+    let data;
+    if (useComplet) {
+      data = await kit.getContenuKitComplet(p);
+    } else {
+      data = /^\d+$/.test(p)
+        ? await kit.getCompletKitById(parseInt(p, 10))
+        : await kit.getCompletKitDetail(p);
+    }
     if (!data) return res.status(404).json({ message: 'Kit non trouvé' });
     res.json(data);
   } catch (err) {
@@ -137,6 +143,20 @@ router.post('/remplacerMateriel', async (req, res, next) => {
   }
 });
 
+/* POST ajouter un matériel au kit */
+router.post('/stockKit/ajouter', async (req, res, next) => {
+  try {
+    const { completKitId, materielKitId, quantiteReelle } = req.body;
+    if (!completKitId || !materielKitId) {
+      return res.status(400).json({ message: 'completKitId et materielKitId requis' });
+    }
+    res.json(await kit.ajouterMaterielStockKit(req.body));
+  } catch (err) {
+    console.error('Erreur ajouterMaterielStockKit', err.message);
+    next(err);
+  }
+});
+
 /* PUT mise à jour d'une ligne stockKit (id = K1, K2, ...) */
 router.put('/stockKit/:id', async (req, res, next) => {
   try {
@@ -182,6 +202,20 @@ router.post('/observation/:completKitId', async (req, res, next) => {
     res.json(await kit.ajouterObservation(parseInt(req.params.completKitId, 10), observation));
   } catch (err) {
     console.error('Erreur ajouterObservation', err.message);
+    next(err);
+  }
+});
+
+/* GET prochains ids stockKit disponibles (K1, K2, ...) */
+router.get('/nextAvailableStockKitIds/:count', async (req, res, next) => {
+  try {
+    const count = parseInt(req.params.count, 10);
+    if (isNaN(count) || count <= 0) {
+      return res.status(400).json({ message: 'Le paramètre count doit être un nombre entier positif.' });
+    }
+    res.json(await kit.getNextAvailableStockKitIds(count));
+  } catch (err) {
+    console.error('Erreur getNextAvailableStockKitIds', err.message);
     next(err);
   }
 });

@@ -324,7 +324,25 @@
 
 ---
 
-### 15. `GET /kits/nextIdKit`
+### 15. `GET /kits/nextAvailableStockKitIds/:count`
+
+**Méthode :** GET  
+**Paramètres :** `count` dans l’URL – nombre d’ids souhaités (1 à 1000)
+
+**Rôle :** Retourne les N prochains ids stockKit disponibles (format K1, K2, K3...).
+
+**Réponse :**  
+```json
+{
+  "maxId": "K42",
+  "nextIds": ["K43", "K44", "K45"],
+  "count": 3
+}
+```
+
+---
+
+### 16. `GET /kits/nextIdKit`
 
 **Méthode :** GET  
 **Query :** `nomKit` (optionnel) – pour le préfixe de l’id suggéré
@@ -340,7 +358,7 @@
 
 ---
 
-### 16. `GET /kits/materielManquant`
+### 17. `GET /kits/materielManquant`
 
 **Méthode :** GET  
 **Query :** `nbKits` (optionnel, défaut: 4)
@@ -367,7 +385,15 @@
 
 ---
 
-### 17. `PUT /kits/stockKit/groupe`
+### 18. `POST /kits/stockKit/ajouter`
+
+**Méthode :** POST  
+**Body JSON :** `{ "completKitId": 1, "materielKitId": 5, "quantiteReelle": 2 }`  
+**Rôle :** Ajoute du matériel au kit (crée les lignes stockKit).
+
+---
+
+### 19. `PUT /kits/stockKit/groupe`
 
 **Méthode :** PUT  
 **Body JSON :**
@@ -388,7 +414,7 @@
 
 ---
 
-### 18. `GET /kits/ficheInventaire/:idKit`
+### 20. `GET /kits/ficheInventaire/:idKit`
 
 **Méthode :** GET  
 **Paramètres :** `idKit` dans l’URL  
@@ -406,10 +432,12 @@
 
 **Rôle :** Page de détail d’un kit avec :
 
-1. **Imprimer la fiche inventaire** : ouvre la fiche dans une nouvelle fenêtre puis imprime.
-2. **Valider les modifications** : enregistre les changements de quantité, date, n° lot dans le tableau.
-3. **Remplacer** : modale pour remplacer un matériel (ancien/nouveau id, péremption, date, lot).
-4. Édition inline des colonnes Quantité réelle, Date, N° lot.
+1. **Imprimer la fiche inventaire** : ouvre la fiche dans une nouvelle fenêtre puis imprime (gère le cas sans matériel).
+2. **Ajouter un matériel** : bouton qui ouvre une modale listant les matériels attendus pour ce type de kit ; l’utilisateur choisit un matériel et la quantité à affecter.
+3. **Valider les modifications** : enregistre les changements de quantité, date, n° lot dans le tableau.
+4. **Remplacer** : modale pour remplacer un matériel (ancien/nouveau id, péremption, date, lot).
+5. **Affecter** : pour les lignes sans matériel affecté (qté réelle 0), bouton pour affecter directement la quantité théorique.
+6. Contenu du kit : affichage de tous les matériels attendus (modèle) avec les quantités réelles ; les lignes manquantes sont mises en évidence.
 
 ---
 

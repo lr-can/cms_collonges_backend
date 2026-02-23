@@ -157,6 +157,26 @@ async function getNextStockKitId() {
 }
 
 /**
+ * Retourne les N prochains ids stockKit disponibles (K1, K2, ...)
+ */
+async function getNextAvailableStockKitIds(count) {
+  const cnt = Math.max(1, Math.min(parseInt(count, 10) || 1, 1000));
+  const rows = await db.query(
+    `SELECT COALESCE(MAX(CAST(SUBSTRING(id, 2) AS UNSIGNED)), 0) AS maxNum FROM stockKit WHERE id REGEXP '^K[0-9]+$'`
+  );
+  const maxNum = rows && rows[0] ? rows[0].maxNum : 0;
+  const nextIds = [];
+  for (let i = 1; i <= cnt; i++) {
+    nextIds.push(`K${maxNum + i}`);
+  }
+  return {
+    maxId: maxNum > 0 ? `K${maxNum}` : null,
+    nextIds,
+    count: nextIds.length
+  };
+}
+
+/**
  * Réaliser un kit : constituer stockKit à partir de materielKit (booléens true/false)
  */
 async function realiserKit(body) {
@@ -347,10 +367,47 @@ async function ajouterObservation(completKitId, observation) {
 }
 
 /**
- * Données pour la fiche inventaire imprimable (format generateKitPDF)
+ * Contenu complet du kit : modèle (materielKit) + réel (stockKit). Inclut les articles attendus même sans matériel affecté.
+ * Accepte idKit (string) ou id (numérique)
+ */
+async function getContenuKitComplet(idKitOrId) {
+  let kit;
+  if (/^\d+$/.test(String(idKitOrId))) {
+    kit = await getCompletKitById(parseInt(idKitOrId, 10));
+  } else {
+    kit = await getCompletKitDetail(idKitOrId);
+  }
+  if (!kit) return null;
+
+  const modelItems = await getMaterielKitByNomKit(kit.nomKit);
+  const itemsInKit = kit.items || [];
+  const byMaterielKitId = {};
+  for (const it of itemsInKit) {
+    byMaterielKitId[it.materielKitId] = it;
+  }
+
+  const merged = modelItems.map((m) => {
+    const inKit = byMaterielKitId[m.id];
+    return {
+      materielKitId: m.id,
+      nomCommande: m.nomCommande,
+      nomCommun: m.nomCommun,
+      quantiteTheorique: m.quantite ?? 0,
+      quantiteReelle: inKit ? (inKit.quantiteReelle ?? 0) : 0,
+      dateArticle: inKit?.dateArticle,
+      numeroLot: inKit?.numeroLot,
+      id: inKit?.id
+    };
+  });
+
+  return { ...kit, items: merged };
+}
+
+/**
+ * Données pour la fiche inventaire imprimable (inclut tous les articles attendus, même sans matériel)
  */
 async function getDonneesFicheInventaire(idKit) {
-  const kit = await getCompletKitDetail(idKit);
+  const kit = await getContenuKitComplet(idKit);
   if (!kit) return null;
 
   const itemsKit = (kit.items || []).map(item => ({
@@ -503,6 +560,7 @@ module.exports = {
   getNomsKits,
   getCompletKitList,
   getCompletKitDetail,
+  getContenuKitComplet,
   getCompletKitById,
   createCompletKit,
   realiserKit,
@@ -513,6 +571,7 @@ module.exports = {
   getDonneesFicheInventaire,
   getInfoKit,
   getNextIdKitSuggestion,
+  getNextAvailableStockKitIds,
   getMaterielManquantKits,
   appendHistorique
 };
