@@ -2,6 +2,7 @@
  * Génère le HTML de la fiche inventaire imprimable pour un kit
  * S'inspire de generateKitPDF côté client
  */
+const bwipjs = require('bwip-js');
 const kit = require('./kit');
 const allAgents = require('./allAgents');
 
@@ -12,15 +13,28 @@ function buildGradeImageUrl(grade) {
   return `${GRADE_BASE_URL}${encodeURIComponent(grade)}.png?raw=true`;
 }
 
-function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, observations, datePeremption }) {
+async function generateBarcodeBase64(text) {
+  if (!text || String(text).trim() === '') return '';
+  try {
+    const png = await bwipjs.toBuffer({
+      bcid: 'code128',
+      text: String(text).trim(),
+      scale: 2,
+      height: 10,
+      includetext: false
+    });
+    return `data:image/png;base64,${png.toString('base64')}`;
+  } catch (err) {
+    console.warn('Erreur génération code-barres:', err.message);
+    return '';
+  }
+}
+
+function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, observations, datePeremption, barcodeDataUri }) {
   const today = dateEdition || new Date().toLocaleDateString('fr-FR');
   const baseHost = process.env.QR_BASE_URL || 'https://api.cms-collonges.fr';
   const qrUrl = `${baseHost}/kitDetail.html?idKit=${encodeURIComponent(idKit)}&modify=false`;
   const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(qrUrl)}`;
-  const barcodeData = (idKit || '').toString();
-  const barcodeApiUrl = barcodeData
-    ? `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(barcodeData)}&code=Code128&multiplebarcodes=false&translate-escaped=false&unit=Fit&dpi=96&imagetype=Gif`
-    : '';
 
   const agentName = agent
     ? `${(agent.nomAgent || agent.nom || '').trim()} ${(agent.prenomAgent || agent.prenom || '').trim()}`.trim() || (agent.grade || '')
@@ -166,6 +180,9 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
 <body>
   <div class="page">
     <div class="header">
+      <div class="header-barcode" style="flex-shrink:0;margin-right:12px;text-align:center;">
+        ${barcodeDataUri ? `<img src="${barcodeDataUri}" alt="Code-barres ${escapeHtml(idKit)}" style="height:45px;min-width:120px;display:block;margin:0 auto;" /><span style="font-size:10px;display:block;margin-top:3px;">${escapeHtml(idKit || '')}</span>` : ''}
+      </div>
       <div class="header-qr">
         <img src="${qrApiUrl}" alt="QR Code Kit ${escapeHtml(idKit)}" />
       </div>
@@ -218,12 +235,18 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
   </div>
   <script>
     window.addEventListener('load', function () {
-      var img = document.querySelector('.header-qr img');
+      var imgs = document.querySelectorAll('.header img');
+      function allLoaded() {
+        for (var i = 0; i < imgs.length; i++) if (!imgs[i].complete) return false;
+        return true;
+      }
       function triggerPrint() { setTimeout(function () { window.print(); }, 300); }
-      if (img.complete) { triggerPrint(); }
+      if (allLoaded()) { triggerPrint(); }
       else {
-        img.addEventListener('load', triggerPrint);
-        img.addEventListener('error', triggerPrint);
+        imgs.forEach(function(img) {
+          img.addEventListener('load', function() { if (allLoaded()) triggerPrint(); });
+          img.addEventListener('error', function() { if (allLoaded()) triggerPrint(); });
+        });
       }
     });
   </script>
@@ -264,6 +287,8 @@ async function getFicheInventaireHTML(idKit, agent = {}) {
     String(today.getMonth() + 1).padStart(2, '0') + '/' +
     today.getFullYear();
 
+  const barcodeDataUri = await generateBarcodeBase64(data.idKit || idKit);
+
   return generateKitFicheHTML({
     agent: resolvedAgent,
     nomKit: data.nomKit || '',
@@ -271,7 +296,8 @@ async function getFicheInventaireHTML(idKit, agent = {}) {
     idKit: data.idKit || idKit,
     dateEdition,
     observations: data.observations || '',
-    datePeremption
+    datePeremption,
+    barcodeDataUri
   });
 }
 
