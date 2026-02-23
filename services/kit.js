@@ -6,7 +6,8 @@ const db = require('./db');
 const helper = require('../helper');
 const config = require('../config');
 
-const HISTORIQUE_MAX = 500;
+const HISTORIQUE_MAX = 5000;
+const HISTORIQUE_TRUNCATE_AT = 4000;
 
 /** Mapping nomKit -> colonne boolean et quantite dans materielKit */
 const NOM_KIT_COLUMNS = {
@@ -29,25 +30,26 @@ async function getOrCreatePoolCompletKitId() {
 }
 
 /**
- * Tronque l'historique à 500 caractères en supprimant les entrées les plus anciennes
+ * Tronque l'historique quand > 4000 caractères en supprimant les entrées les plus anciennes
  * @param {string} historique - Chaîne actuelle
- * @param {string} nouvelleEntree - Nouvelle entrée à ajouter (ex: "remplacement du X par Y (péremption le :)")
+ * @param {string} nouvelleEntree - Nouvelle entrée à ajouter (ex: "matériel X remplacé par Y le 23/02/2026")
  */
 function appendHistorique(historique, nouvelleEntree) {
   const separateur = ' | ';
   let resultat = (historique || '') + (historique ? separateur : '') + nouvelleEntree;
-  if (resultat.length > HISTORIQUE_MAX) {
-    const parties = resultat.split(separateur);
+  if (resultat.length > HISTORIQUE_TRUNCATE_AT) {
+    const parties = resultat.split(separateur).filter(Boolean);
     let acc = '';
     let i = parties.length - 1;
     while (i >= 0) {
       const test = parties.slice(i).join(separateur);
       if (test.length <= HISTORIQUE_MAX) {
         acc = test;
-      } else break;
+        break;
+      }
       i--;
     }
-    resultat = acc || parties[parties.length - 1];
+    resultat = acc || parties[parties.length - 1] || '';
   }
   return resultat;
 }
@@ -150,9 +152,11 @@ async function getCompletKitById(id) {
  */
 async function createCompletKit(body) {
   const { idKit, nomKit, createurId } = body;
+  const dateCreation = new Date().toLocaleDateString('fr-FR');
+  const historiqueInit = `Création le ${dateCreation}`;
   const result = await db.query(
-    `INSERT INTO completKit (idKit, nomKit, createurId) VALUES (?, ?, ?)`,
-    [idKit, nomKit, createurId || '']
+    `INSERT INTO completKit (idKit, nomKit, createurId, historique) VALUES (?, ?, ?, ?)`,
+    [idKit, nomKit, createurId || '', historiqueInit]
   );
   return { message: 'Kit créé.', id: result.insertId };
 }
@@ -279,7 +283,8 @@ async function remplacerMaterielKit(body) {
     await db.query(`UPDATE stockKit SET ${updates.join(', ')}, updatedAt = NOW() WHERE id = ?`, params);
   }
 
-  const entreeHist = `remplacement du ${nomMateriel || 'matériel'} ${ancienIdStock || stockKitId || '?'} par ${nouveauIdStock || '?'}${datePeremptionNouveau ? ` (péremption le ${datePeremptionNouveau})` : ''}`;
+  const dateRemplacement = new Date().toLocaleDateString('fr-FR');
+  const entreeHist = `matériel ${nomMateriel || 'matériel'} ${ancienIdStock || stockKitId || '?'} remplacé par ${nouveauIdStock || ancienIdStock || '?'} le ${dateRemplacement}${datePeremptionNouveau ? ` (péremption le ${datePeremptionNouveau})` : ''}`;
   const nouvelHistorique = appendHistorique(kitRows[0].historique || '', entreeHist);
   await db.query(`UPDATE completKit SET historique = ?, updatedAt = NOW() WHERE id = ?`, [nouvelHistorique, completKitId]);
 
@@ -417,25 +422,79 @@ async function getContenuKitComplet(idKitOrId) {
 }
 
 /**
- * Données pour la fiche inventaire imprimable (inclut tous les articles attendus, même sans matériel)
+ * Données pour la fiche inventaire imprimable.
+ * Une ligne par article physique (dates et lots différents autorisés).
  */
 async function getDonneesFicheInventaire(idKit) {
-  const kit = await getContenuKitComplet(idKit);
+  let kit;
+  let completKitId;
+  if (/^\d+$/.test(String(idKit))) {
+    const rows = await db.query(`SELECT * FROM completKit WHERE id = ?`, [parseInt(idKit, 10)]);
+    kit = helper.emptyOrRows(rows)[0];
+    completKitId = kit?.id;
+  } else {
+    const rows = await db.query(`SELECT * FROM completKit WHERE idKit = ?`, [idKit]);
+    kit = helper.emptyOrRows(rows)[0];
+    completKitId = kit?.id;
+  }
   if (!kit) return null;
 
-  const itemsKit = (kit.items || []).map(item => ({
-    produit: item.nomCommande || item.nomCommun,
-    qte: item.quantiteReelle ?? item.quantiteTheorique ?? 0,
-    date: item.dateArticle ? new Date(item.dateArticle).toLocaleDateString('fr-FR') : '',
-    numero: item.numeroLot || ''
-  }));
+  const nomKit = kit.nomKit;
+  const col = NOM_KIT_COLUMNS[nomKit];
+  if (!col) return null;
+
+  const stockRows = await db.query(
+    `SELECT sk.id, sk.dateArticle, sk.numeroLot, mk.nomCommande, mk.nomCommun, sk.materielKitId
+     FROM stockKit sk
+     JOIN materielKit mk ON mk.id = sk.materielKitId
+     WHERE sk.completKitId = ?
+     ORDER BY mk.nomCommun, sk.id`,
+    [completKitId]
+  );
+  const lignesReelles = helper.emptyOrRows(stockRows);
+
+  const modelRows = await db.query(
+    `SELECT id, nomCommande, nomCommun, ${col.quantite} AS quantite FROM materielKit WHERE ${col.bool} = 1 ORDER BY nomCommun`,
+    []
+  );
+  const modeles = helper.emptyOrRows(modelRows);
+
+  const byMaterielKitId = {};
+  for (const l of lignesReelles) {
+    if (!byMaterielKitId[l.materielKitId]) byMaterielKitId[l.materielKitId] = [];
+    byMaterielKitId[l.materielKitId].push(l);
+  }
+
+  const itemsKit = [];
+  for (const m of modeles) {
+    const lignes = byMaterielKitId[m.id] || [];
+    const nomProd = m.nomCommande || m.nomCommun;
+    for (const ligne of lignes) {
+      itemsKit.push({
+        produit: nomProd,
+        qte: 1,
+        date: ligne.dateArticle ? new Date(ligne.dateArticle).toLocaleDateString('fr-FR') : '',
+        numero: ligne.numeroLot || ''
+      });
+    }
+    const manquant = Math.max(0, (m.quantite || 0) - lignes.length);
+    for (let i = 0; i < manquant; i++) {
+      itemsKit.push({
+        produit: nomProd,
+        qte: 0,
+        date: '',
+        numero: ''
+      });
+    }
+  }
 
   return {
     idKit: kit.idKit,
     nomKit: kit.nomKit,
     itemsKit,
     observations: kit.historique || '',
-    datePeremption: kit.datePeremption ? new Date(kit.datePeremption).toLocaleDateString('fr-FR') : null
+    datePeremption: kit.datePeremption ? new Date(kit.datePeremption).toLocaleDateString('fr-FR') : null,
+    createurId: kit.createurId || null
   };
 }
 

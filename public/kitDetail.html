@@ -215,7 +215,7 @@
                                     {{ s.idStock }} — {{ s.nomMateriel }} (lot: {{ s.numLot || '-' }}, péremption: {{ formatDate(s.datePeremption) || '-' }})
                                 </option>
                             </select>
-                            <p v-if="stockDisponibleRemplacement.length === 0 && modalRemplacement" class="hint">{{ modalRemplacement.idMateriel ? 'Aucun stock disponible pour ce matériel.' : 'Ce type n\'est pas lié au catalogue (idMateriel manquant).' }}</p>
+                            <p v-if="stockDisponibleRemplacement.length === 0 && modalRemplacement" class="hint">{{ modalRemplacement.materielKitId ? 'Aucun stock disponible pour ce matériel (stock commun + pool).' : 'Ce type n\'est pas lié au catalogue (materielKitId manquant).' }}</p>
                         </div>
                         <div class="form-group">
                             <label>Date article</label>

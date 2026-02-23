@@ -3,16 +3,29 @@
  * S'inspire de generateKitPDF côté client
  */
 const kit = require('./kit');
+const allAgents = require('./allAgents');
+
+const GRADE_BASE_URL = process.env.GRADE_IMAGES_URL || 'https://github.com/lr-can/CMS_Collonges/blob/main/src/assets/grades/';
+
+function buildGradeImageUrl(grade) {
+  if (!grade) return '';
+  return `${GRADE_BASE_URL}${encodeURIComponent(grade)}.png?raw=true`;
+}
 
 function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, observations, datePeremption }) {
   const today = dateEdition || new Date().toLocaleDateString('fr-FR');
   const baseHost = process.env.QR_BASE_URL || 'https://api.cms-collonges.fr';
   const qrUrl = `${baseHost}/kitDetail.html?idKit=${encodeURIComponent(idKit)}&modify=false`;
   const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(qrUrl)}`;
-
-  const agentFullName = agent
-    ? `${agent.grade ? agent.grade + ' ' : ''}${agent.prenom || ''} ${agent.nom || ''}`.trim()
+  const barcodeData = (idKit || '').toString();
+  const barcodeApiUrl = barcodeData
+    ? `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(barcodeData)}&code=Code128&multiplebarcodes=false&translate-escaped=false&unit=Fit&dpi=96&imagetype=Gif`
     : '';
+
+  const agentName = agent
+    ? `${(agent.nomAgent || agent.nom || '').trim()} ${(agent.prenomAgent || agent.prenom || '').trim()}`.trim() || (agent.grade || '')
+    : '';
+  const gradeUrl = buildGradeImageUrl(agent?.grade || agent?.gradeAgent);
 
   const items = itemsKit || [];
   const itemRows =
@@ -64,6 +77,8 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
       padding: 10px 20px !important;
       letter-spacing: 1px !important;
       border-radius: 2px !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
     .peremption-block { margin-top: 8px !important; text-align: right !important; }
     .peremption-label { color: #cc0000 !important; font-size: 13pt !important; font-weight: bold !important; }
@@ -80,13 +95,20 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
       border-collapse: collapse !important;
       margin-top: 10px !important;
     }
-    .items-table thead tr { background-color: #008080 !important; color: #fff !important; }
+    .items-table thead tr {
+      background-color: #008080 !important;
+      color: #fff !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
     .items-table thead th {
       padding: 7px 10px !important;
       text-align: center !important;
       font-size: 10pt !important;
       font-weight: bold !important;
       border: 1px solid #006666 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
     .items-table thead th:first-child { text-align: left !important; }
     .items-table tbody tr:nth-child(even) { background-color: #f5f5f5 !important; }
@@ -134,6 +156,10 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
     @media print {
       body { padding: 10px !important; }
       .no-print { display: none !important; }
+      .kit-title-banner, .items-table thead tr, .items-table thead th {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
     }
   </style>
 </head>
@@ -165,7 +191,10 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
     <div class="signature-block">
       <div class="signature-half">
         <strong>Préparé par :</strong>
-        <span class="sig-value">${escapeHtml(agentFullName)}</span>
+        <span class="sig-value">
+          ${escapeHtml(agentName || '-')}
+          ${gradeUrl ? ` <img src="${gradeUrl}" alt="grade" style="height:20px;width:20px;border-radius:50%;vertical-align:middle;margin-left:4px;" />` : ''}
+        </span>
         <br/>
         <strong style="margin-top:8px">Le :</strong>
         <span class="sig-value">${today}</span>
@@ -216,16 +245,31 @@ async function getFicheInventaireHTML(idKit, agent = {}) {
   const data = await kit.getDonneesFicheInventaire(idKit);
   if (!data) return null;
 
+  let resolvedAgent = agent;
+  const createurId = data.createurId;
+  if ((!agent || !agent.matricule) && createurId) {
+    try {
+      const creator = await allAgents.getAgentByMatricule(createurId);
+      if (creator) resolvedAgent = creator;
+    } catch (_) {}
+  }
+
   const datePeremption =
     data.datePeremption != null && data.datePeremption !== ''
       ? data.datePeremption
       : null;
 
+  const today = new Date();
+  const dateEdition = String(today.getDate()).padStart(2, '0') + '/' +
+    String(today.getMonth() + 1).padStart(2, '0') + '/' +
+    today.getFullYear();
+
   return generateKitFicheHTML({
-    agent,
+    agent: resolvedAgent,
     nomKit: data.nomKit || '',
     itemsKit: data.itemsKit || [],
     idKit: data.idKit || idKit,
+    dateEdition,
     observations: data.observations || '',
     datePeremption
   });

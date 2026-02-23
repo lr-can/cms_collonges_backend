@@ -166,12 +166,12 @@
             : '',
           numeroLot: item.numeroLot || ''
         };
-        if (item.idMateriel) {
+        if (item.materielKitId) {
           try {
             const r = await fetch(
               this.getApiBase() +
-                '/kits/stockDisponible?idMateriel=' +
-                encodeURIComponent(item.idMateriel)
+                '/kits/stockDisponible?materielKitId=' +
+                encodeURIComponent(item.materielKitId)
             );
             if (r.ok) {
               this.stockDisponibleRemplacement = await r.json();
