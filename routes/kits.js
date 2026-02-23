@@ -15,13 +15,31 @@ router.get('/materielKit', async (req, res, next) => {
   }
 });
 
-/* GET stock disponible (pool commun, pour piocher dans les kits) */
+/* GET stock disponible (pool commun). ?idMateriel= ou ?materielKitId= */
 router.get('/stockDisponible', async (req, res, next) => {
   try {
-    const data = await stock.getStockDisponible(req.query);
+    let query = { ...req.query };
+    if (req.query.materielKitId && !req.query.idMateriel) {
+      const idMat = await stock.resolveMaterielKitIdToMateriel(req.query.materielKitId);
+      query = { idMateriel: idMat };
+    }
+    const data = await stock.getStockDisponible(query);
     res.json(data);
   } catch (err) {
     console.error('Erreur getStockDisponible', err.message);
+    next(err);
+  }
+});
+
+/* POST affecter du stock existant à un kit (UPDATE stock.completKitId) */
+router.post('/affecterStock', async (req, res, next) => {
+  try {
+    const { completKitId, idStocks } = req.body;
+    if (!completKitId) return res.status(400).json({ message: 'completKitId requis' });
+    const items = (Array.isArray(idStocks) ? idStocks : [idStocks]).map((id) => ({ idStock: id }));
+    res.json(await stock.affecterStockAuKit({ completKitId, items }));
+  } catch (err) {
+    console.error('Erreur affecterStockAuKit', err.message);
     next(err);
   }
 });

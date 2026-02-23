@@ -63,6 +63,22 @@
         .qte-theorique { font-size: 12px; color: #666; }
         .td-center { text-align: center; }
         .td-muted { font-size: 12px; color: #666; }
+        .modal-affectation { max-width: 520px; }
+        .modal-desc { color: #555; margin-bottom: 12px; font-size: 14px; }
+        .btn-back { background: none; border: none; color: #3498db; cursor: pointer; font-size: 13px; margin-bottom: 12px; padding: 0; }
+        .btn-back:hover { text-decoration: underline; }
+        .empty-msg { color: #888; font-style: italic; padding: 16px; text-align: center; background: #f9f9f9; border-radius: 6px; }
+        .stock-liste { display: grid; gap: 10px; max-height: 320px; overflow-y: auto; margin-bottom: 12px; }
+        .stock-card {
+            display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;
+            padding: 14px 16px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer;
+            transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        .stock-card:hover { border-color: #27ae60; background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); box-shadow: 0 2px 8px rgba(39,174,96,0.15); }
+        .stock-id { font-weight: 700; font-size: 15px; color: #2c3e50; }
+        .stock-meta { font-size: 13px; color: #64748b; }
+        .readonly-badge { color: #64748b; font-size: 14px; margin-bottom: 16px; padding: 10px; background: #f1f5f9; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -77,6 +93,7 @@
                 <div class="header-actions">
                     <button class="btn btn-primary" @click="ouvrirImprimer">Imprimer la fiche inventaire</button>
                 </div>
+                <p v-if="!modify" class="readonly-badge">Mode consultation (QR code) — modification désactivée</p>
 
                 <div class="card">
                     <h2>Informations générales</h2>
@@ -95,7 +112,7 @@
                     <p style="margin-bottom:12px;color:#666;font-size:14px">
                         Types de matériel définis dans le catalogue (materielKit). Affectez en sélectionnant dans la liste.
                     </p>
-                    <div style="margin-bottom:12px">
+                    <div v-if="modify" style="margin-bottom:12px">
                         <button class="btn btn-success" @click="ouvrirModalAjout">+ Affecter un matériel</button>
                     </div>
                     <table>
@@ -114,29 +131,44 @@
                                 <td class="td-center">{{ item.quantiteTheorique }}</td>
                                 <td class="td-center">{{ item.quantiteReelle ?? 0 }}</td>
                                 <td class="td-muted">{{ formatDate(item.dateArticle) || '-' }} {{ item.numeroLot ? '| ' + item.numeroLot : '' }}</td>
-                                <td class="actions-cell">
+                                <td v-if="modify" class="actions-cell">
                                     <button v-if="item.id" class="btn btn-secondary" style="padding:6px 12px;font-size:12px" @click="demarrerRemplacement(item)">Remplacer</button>
                                     <button v-else class="btn btn-success" style="padding:6px 12px;font-size:12px" @click="affecterMateriel(item)">Affecter</button>
                                 </td>
+                                <td v-else class="actions-cell">—</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Modal affecter matériel : liste depuis la base (materielKit) -->
+                <!-- Modal affecter matériel : type puis liste stock existant -->
                 <div v-if="modalAjout" class="modal-overlay" @click.self="modalAjout = false">
-                    <div class="modal" style="max-width:550px">
-                        <h3>Affecter un matériel au kit</h3>
-                        <p style="margin-bottom:12px;color:#666">Sélectionnez le type de matériel dans la liste (issue du catalogue) :</p>
-                        <div class="materiels-disponibles">
-                            <div v-for="m in materielsDisponibles" :key="m.id" class="materiel-item" @click="selectEtAffecter(m)">
-                                <strong>{{ m.nomCommun || m.nomCommande }}</strong>
-                                <span class="qte-theorique">Qté à affecter : {{ m.quantite ?? 1 }}</span>
+                    <div class="modal modal-affectation">
+                        <h3>{{ typeAffectationSelectionne ? 'Choisir un matériel à affecter' : 'Affecter un matériel au kit' }}</h3>
+                        <button v-if="typeAffectationSelectionne" class="btn-back" @click="retourTypesAffectation">← Retour aux types</button>
+                        <template v-if="!typeAffectationSelectionne">
+                            <p class="modal-desc">Sélectionnez le type de matériel :</p>
+                            <div class="materiels-disponibles">
+                                <div v-for="m in materielsDisponibles" :key="m.id" class="materiel-item" @click="selectionnerTypeAffectation(m)">
+                                    <strong>{{ m.nomCommun || m.nomCommande }}</strong>
+                                    <span class="qte-theorique">Qté attendue : {{ m.quantite ?? 1 }}</span>
+                                </div>
                             </div>
-                        </div>
-                        <p v-if="materielsDisponibles.length === 0" style="color:#888;font-style:italic">Aucun type de matériel défini pour ce kit.</p>
-                        <div class="modal-actions" style="margin-top:16px">
-                            <button class="btn btn-secondary" @click="modalAjout = false">Fermer</button>
+                            <p v-if="materielsDisponibles.length === 0" class="empty-msg">Aucun type de matériel défini pour ce kit.</p>
+                        </template>
+                        <template v-else>
+                            <p class="modal-desc">{{ typeAffectationSelectionne.nomCommun || typeAffectationSelectionne.nomCommande }}</p>
+                            <div v-if="stockDisponibleAffectation.length > 0" class="stock-liste">
+                                <div v-for="s in stockDisponibleAffectation" :key="s.idStock" class="stock-card" @click="affecterStockExistant(s)">
+                                    <span class="stock-id">{{ s.idStock }}</span>
+                                    <span class="stock-meta">Péremption : {{ formatDate(s.datePeremption) || '-' }}</span>
+                                    <span class="stock-meta">Lot : {{ s.numLot || '-' }}</span>
+                                </div>
+                            </div>
+                            <p v-else class="empty-msg">Aucun matériel disponible pour ce type. Réceptionnez d'abord du matériel dans le pool.</p>
+                        </template>
+                        <div class="modal-actions">
+                            <button class="btn btn-secondary" @click="modalAjout = false; typeAffectationSelectionne = null">Fermer</button>
                         </div>
                     </div>
                 </div>

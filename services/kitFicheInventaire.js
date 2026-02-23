@@ -6,7 +6,8 @@ const kit = require('./kit');
 
 function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, observations, datePeremption }) {
   const today = dateEdition || new Date().toLocaleDateString('fr-FR');
-  const qrUrl = `https://api.cms-collonges.fr/infoKit/${idKit}`;
+  const baseHost = process.env.QR_BASE_URL || 'https://api.cms-collonges.fr';
+  const qrUrl = `${baseHost}/kitDetail.html?idKit=${encodeURIComponent(idKit)}&modify=false`;
   const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(qrUrl)}`;
 
   const agentFullName = agent

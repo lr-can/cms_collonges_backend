@@ -17,7 +17,10 @@
         error: null,
         modalRemplacement: null,
         modalAjout: false,
+        modify: true,
         materielsDisponibles: [],
+        typeAffectationSelectionne: null,
+        stockDisponibleAffectation: [],
         stockDisponibleRemplacement: [],
         remplacementForm: {
           ancienIdStock: '',
@@ -44,6 +47,7 @@
         this.error = null;
         const params = new URLSearchParams(window.location.search);
         this.idKit = params.get('idKit') || params.get('id') || '';
+        this.modify = params.get('modify') !== 'false';
         if (!this.idKit) {
           this.error = "Paramètre idKit manquant dans l'URL.";
           this.loading = false;
@@ -70,6 +74,8 @@
       },
       async ouvrirModalAjout() {
         this.modalAjout = true;
+        this.typeAffectationSelectionne = null;
+        this.stockDisponibleAffectation = [];
         try {
           const r = await fetch(
             this.getApiBase() +
@@ -82,17 +88,33 @@
           this.materielsDisponibles = [];
         }
       },
-      async selectEtAffecter(m) {
-        if (!m || !this.kit?.id) return;
-        const qte = m.quantite ?? 1;
+      async selectionnerTypeAffectation(m) {
+        this.typeAffectationSelectionne = m;
+        this.stockDisponibleAffectation = [];
         try {
-          const r = await fetch(this.getApiBase() + '/kits/stockKit/ajouter', {
+          const r = await fetch(
+            this.getApiBase() +
+              '/kits/stockDisponible?materielKitId=' +
+              encodeURIComponent(m.id)
+          );
+          if (r.ok) this.stockDisponibleAffectation = await r.json();
+        } catch (e) {
+          this.stockDisponibleAffectation = [];
+        }
+      },
+      retourTypesAffectation() {
+        this.typeAffectationSelectionne = null;
+        this.stockDisponibleAffectation = [];
+      },
+      async affecterStockExistant(s) {
+        if (!s?.idStock || !this.kit?.id) return;
+        try {
+          const r = await fetch(this.getApiBase() + '/kits/affecterStock', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               completKitId: this.kit.id,
-              materielKitId: m.id,
-              quantiteReelle: qte
+              idStocks: [s.idStock]
             })
           });
           if (!r.ok) {
@@ -100,13 +122,23 @@
             throw new Error(err.message || 'Erreur');
           }
           this.modalAjout = false;
+          this.typeAffectationSelectionne = null;
+          this.stockDisponibleAffectation = [];
           await this.loadKit();
         } catch (e) {
           alert('Erreur : ' + e.message);
         }
       },
       async affecterMateriel(item) {
-        await this.selectEtAffecter({
+        this.modalAjout = true;
+        this.materielsDisponibles = [{
+          id: item.materielKitId,
+          nomCommun: item.nomCommun,
+          nomCommande: item.nomCommande,
+          quantite: item.quantiteTheorique ?? 1
+        }];
+        this.typeAffectationSelectionne = null;
+        await this.selectionnerTypeAffectation({
           id: item.materielKitId,
           nomCommun: item.nomCommun,
           nomCommande: item.nomCommande,

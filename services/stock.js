@@ -232,6 +232,59 @@ async function getPeremptionAndCount() {
     return { message: messages.join(' ') || 'Aucun enregistrement effectué.', inserted: insertedStock };
   }
 
+  /**
+   * Réception matériel kit (completKitId null) : résout materielKit.id → materiels.idMateriel, INSERT dans stock.
+   * Utilise idStock du payload (ex. K61) pour éviter l'auto-incrément.
+   */
+  async function createFromMaterielKitReception(items) {
+    const values = [];
+    const params = [];
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+    for (const m of items) {
+      const idMat = await resolveMaterielKitIdToMateriel(m.idMateriel);
+      if (!idMat) continue;
+
+      const idStock = m.idStock != null && m.idStock !== '' ? m.idStock : null;
+      if (!idStock) continue;
+
+      const peremption = m.datePeremption ? new Date(m.datePeremption).toISOString().slice(0, 10) : null;
+      values.push('(?, ?, ?, ?, ?, ?, ?)');
+      params.push(idStock, idMat, m.idStatut || 1, m.idAgent || '', now, m.numLot || null, peremption);
+    }
+
+    if (values.length === 0) return { message: 'Aucun idStock valide ou idMateriel non résolvable.', inserted: 0 };
+
+    try {
+      const q = `INSERT INTO stock (idStock, idMateriel, idStatut, idAgent, dateCreation, numLot, datePeremption) VALUES ${values.join(', ')}`;
+      const result = await db.query(q, params);
+      const n = result.affectedRows || 0;
+      return { message: n === 1 ? '1 matériel ajouté au pool.' : `${n} matériels ajoutés au pool.`, inserted: n };
+    } catch (err) {
+      if (err.code === 'ER_DUP_ENTRY' || err.errno === 1062) {
+        throw new Error('Un ou plusieurs idStock existent déjà. Utilisez des identifiants uniques.');
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Affecter du stock existant à un kit (UPDATE stock SET completKitId).
+   */
+  async function affecterStockAuKit({ completKitId, items }) {
+    const idStocks = (items || []).map((m) => m.idStock).filter((s) => s != null && s !== '');
+    if (idStocks.length === 0) return { message: 'Aucun idStock fourni.', affected: 0 };
+
+    const placeholders = idStocks.map(() => '?').join(', ');
+    const sql = `UPDATE stock SET completKitId = ? WHERE idStock IN (${placeholders}) AND (completKitId IS NULL OR completKitId = 0)`;
+    const result = await db.query(sql, [completKitId, ...idStocks]);
+    const n = result.affectedRows || 0;
+    if (n === 0) {
+      return { message: 'Aucun matériel disponible avec ces identifiants (déjà affectés ou inexistants).', affected: 0 };
+    }
+    return { message: n === 1 ? '1 matériel affecté au kit.' : `${n} matériels affectés au kit.`, affected: n };
+  }
+
   async function todayCreated(page = 1, idMateriel){
     const offset = helper.getOffset(page, config.listPerPage);
     let todayDate = new Date();
@@ -661,5 +714,8 @@ async function getPeremptionAndCount() {
     performedECG,
     getNextAvailableIds,
     getStockDisponible,
-    getStockDisponibleParMateriel
+    getStockDisponibleParMateriel,
+    createFromMaterielKitReception,
+    affecterStockAuKit,
+    resolveMaterielKitIdToMateriel
   }
