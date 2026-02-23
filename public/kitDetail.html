@@ -79,6 +79,31 @@
         .stock-id { font-weight: 700; font-size: 15px; color: #2c3e50; }
         .stock-meta { font-size: 13px; color: #64748b; }
         .readonly-badge { color: #64748b; font-size: 14px; margin-bottom: 16px; padding: 10px; background: #f1f5f9; border-radius: 6px; }
+
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            .container { max-width: 100%; }
+            h1 { font-size: 1.3rem; }
+            .header-actions { flex-direction: column; }
+            .header-actions .btn { width: 100%; }
+            .card { padding: 14px; }
+            table { display: block; }
+            thead { display: none; }
+            tbody tr { display: block; margin-bottom: 12px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fff; }
+            tbody td { display: flex; justify-content: space-between; padding: 6px 0; border: none; }
+            tbody td::before { content: attr(data-label); font-weight: 600; color: #64748b; margin-right: 8px; }
+            .actions-cell { justify-content: flex-end !important; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; }
+            .modal { width: 95%; max-width: 95%; padding: 16px; }
+            .modal-affectation { max-width: 95%; }
+            .stock-card { grid-template-columns: 1fr; gap: 6px; padding: 12px; }
+            .stock-id { font-size: 14px; }
+            .info-label { min-width: 110px; }
+            .materiel-item { flex-direction: column; align-items: flex-start; gap: 4px; }
+        }
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            .btn { padding: 8px 14px; font-size: 13px; }
+        }
     </style>
 </head>
 <body>
@@ -131,11 +156,11 @@
                                 <td class="td-center">{{ item.quantiteTheorique }}</td>
                                 <td class="td-center">{{ item.quantiteReelle ?? 0 }}</td>
                                 <td class="td-muted">{{ formatDate(item.dateArticle) || '-' }} {{ item.numeroLot ? '| ' + item.numeroLot : '' }}</td>
-                                <td v-if="modify" class="actions-cell">
+                                <td v-if="modify" class="actions-cell" data-label="Actions">
                                     <button v-if="item.id" class="btn btn-secondary" style="padding:6px 12px;font-size:12px" @click="demarrerRemplacement(item)">Remplacer</button>
                                     <button v-else class="btn btn-success" style="padding:6px 12px;font-size:12px" @click="affecterMateriel(item)">Affecter</button>
                                 </td>
-                                <td v-else class="actions-cell">—</td>
+                                <td v-else class="actions-cell" data-label="Actions">—</td>
                             </tr>
                         </tbody>
                     </table>
@@ -159,8 +184,8 @@
                         <template v-else>
                             <p class="modal-desc">{{ typeAffectationSelectionne.nomCommun || typeAffectationSelectionne.nomCommande }}</p>
                             <div v-if="stockDisponibleAffectation.length > 0" class="stock-liste">
-                                <div v-for="s in stockDisponibleAffectation" :key="s.idStock" class="stock-card" @click="affecterStockExistant(s)">
-                                    <span class="stock-id">{{ s.idStock }}</span>
+                                <div v-for="s in stockDisponibleAffectation" :key="s.idStock || s.id" class="stock-card" @click="affecterStockExistant(s)">
+                                    <span class="stock-id">{{ s.idStock || s.id }}</span>
                                     <span class="stock-meta">Péremption : {{ formatDate(s.datePeremption) || '-' }}</span>
                                     <span class="stock-meta">Lot : {{ s.numLot || '-' }}</span>
                                 </div>

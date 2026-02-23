@@ -15,6 +15,18 @@ const NOM_KIT_COLUMNS = {
   'KIT AES / AEV': { bool: 'kitAESAEV', quantite: 'quantiteAESAEV' }
 };
 const NOMS_KITS_FIXES = ['KIT ACCOUCHEMENT', 'KIT MEMBRE SECTIONNE', 'KIT AES / AEV'];
+const POOL_IDKIT = '_POOL_';
+
+/**
+ * Obtient ou crée le completKit "Pool" (matériel kit en attente d'affectation)
+ */
+async function getOrCreatePoolCompletKitId() {
+  let rows = await db.query(`SELECT id FROM completKit WHERE idKit = ?`, [POOL_IDKIT]);
+  if (rows && rows[0]) return rows[0].id;
+  await db.query(`INSERT INTO completKit (idKit, nomKit, createurId) VALUES (?, 'Pool', '000000')`, [POOL_IDKIT]);
+  rows = await db.query(`SELECT id FROM completKit WHERE idKit = ?`, [POOL_IDKIT]);
+  return rows && rows[0] ? rows[0].id : null;
+}
 
 /**
  * Tronque l'historique à 500 caractères en supprimant les entrées les plus anciennes
@@ -80,8 +92,8 @@ async function getNomsKits() {
  */
 async function getCompletKitList(params = {}) {
   const { nomKit } = params;
-  let sql = `SELECT ck.* FROM completKit ck WHERE 1=1`;
-  const p = [];
+  let sql = `SELECT ck.* FROM completKit ck WHERE ck.idKit != ?`;
+  const p = [POOL_IDKIT];
   if (nomKit) {
     sql += ` AND ck.nomKit = ?`;
     p.push(nomKit);
@@ -460,13 +472,16 @@ async function updateCompletKitDatePeremption(completKitId) {
 }
 
 /**
- * Insérer des lignes stockKit avec ids fournis (ex. K61, K62) — quand idStock commence par K
+ * Insérer des lignes stockKit avec ids fournis (ex. K61, K62). completKitId null → Pool (matériel en attente d'affectation)
  */
 async function insererStockKitAvecIds({ completKitId, items }) {
-  if (!completKitId || !items || items.length === 0) {
-    throw new Error('completKitId et items (avec idStock) requis');
+  if (!items || items.length === 0) throw new Error('items (avec idStock) requis');
+
+  let targetCompletKitId = completKitId;
+  if (targetCompletKitId == null) {
+    targetCompletKitId = await getOrCreatePoolCompletKitId();
   }
-  const ck = await db.query(`SELECT createurId FROM completKit WHERE id = ?`, [completKitId]);
+  const ck = await db.query(`SELECT createurId FROM completKit WHERE id = ?`, [targetCompletKitId]);
   const creator = (ck && ck[0]) ? ck[0].createurId : '000000';
 
   let inserted = 0;
@@ -482,12 +497,57 @@ async function insererStockKitAvecIds({ completKitId, items }) {
 
     await db.query(
       `INSERT INTO stockKit (id, completKitId, materielKitId, statut, creator, dateArticle, numeroLot) VALUES (?, ?, ?, 2, ?, ?, ?)`,
-      [skId, completKitId, materielKitId, creator, dateArticle, numeroLot]
+      [skId, targetCompletKitId, materielKitId, creator, dateArticle, numeroLot]
     );
     inserted++;
   }
-  if (inserted > 0) await updateCompletKitDatePeremption(completKitId);
-  return { inserted, message: inserted === 1 ? '1 matériel ajouté au kit.' : `${inserted} matériels ajoutés au kit.` };
+  if (inserted > 0 && targetCompletKitId) await updateCompletKitDatePeremption(targetCompletKitId);
+  const inPool = completKitId == null;
+  return {
+    inserted,
+    message: inserted === 1
+      ? (inPool ? '1 matériel ajouté au pool.' : '1 matériel ajouté au kit.')
+      : (inPool ? `${inserted} matériels ajoutés au pool.` : `${inserted} matériels ajoutés au kit.`)
+  };
+}
+
+/**
+ * Stock kit en pool (en attente d'affectation), par materielKitId
+ */
+async function getStockKitPoolDisponible(materielKitId) {
+  const poolId = await getOrCreatePoolCompletKitId();
+  if (!poolId) return [];
+  const rows = await db.query(
+    `SELECT sk.id AS idStock, sk.numeroLot AS numLot, sk.dateArticle AS datePeremption, mk.nomCommun AS nomMateriel
+     FROM stockKit sk
+     JOIN materielKit mk ON mk.id = sk.materielKitId
+     WHERE sk.completKitId = ? AND sk.materielKitId = ?
+     ORDER BY sk.dateArticle, sk.id`,
+    [poolId, materielKitId]
+  );
+  return helper.emptyOrRows(rows);
+}
+
+/**
+ * Affecter du matériel du pool vers un kit (UPDATE stockKit SET completKitId)
+ */
+async function affecterStockKitPoolAuKit(completKitId, idStocks) {
+  const poolId = await getOrCreatePoolCompletKitId();
+  if (!poolId) throw new Error('Pool non initialisé');
+  const ids = (Array.isArray(idStocks) ? idStocks : [idStocks]).filter((s) => s != null && s !== '');
+  if (ids.length === 0) return { affected: 0, message: 'Aucun idStock fourni.' };
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const result = await db.query(
+    `UPDATE stockKit SET completKitId = ? WHERE id IN (${placeholders}) AND completKitId = ?`,
+    [completKitId, ...ids, poolId]
+  );
+  const n = result.affectedRows || 0;
+  if (n > 0) await updateCompletKitDatePeremption(completKitId);
+  return {
+    affected: n,
+    message: n === 1 ? '1 matériel affecté au kit.' : `${n} matériels affectés au kit.`
+  };
 }
 
 /**
@@ -529,8 +589,8 @@ async function getMaterielManquantKits(nbKitsCible = 4) {
       []
     );
     const nbKitsExistants = await db.query(
-      `SELECT COUNT(DISTINCT ck.id) AS nb FROM completKit ck WHERE ck.nomKit = ?`,
-      [nomKit]
+      `SELECT COUNT(DISTINCT ck.id) AS nb FROM completKit ck WHERE ck.nomKit = ? AND ck.idKit != ?`,
+      [nomKit, POOL_IDKIT]
     );
     const nbExist = nbKitsExistants && nbKitsExistants[0] ? nbKitsExistants[0].nb : 0;
 
@@ -539,8 +599,8 @@ async function getMaterielManquantKits(nbKitsCible = 4) {
       const enStock = await db.query(
         `SELECT COUNT(*) AS nb FROM stockKit sk
          JOIN completKit ck ON ck.id = sk.completKitId
-         WHERE sk.materielKitId = ? AND ck.nomKit = ?`,
-        [m.id, nomKit]
+         WHERE sk.materielKitId = ? AND ck.nomKit = ? AND ck.idKit != ?`,
+        [m.id, nomKit, POOL_IDKIT]
       );
       const nbEnStock = enStock && enStock[0] ? enStock[0].nb : 0;
       const manquant = Math.max(0, totalRequis - nbEnStock);
@@ -606,5 +666,7 @@ module.exports = {
   getNextIdKitSuggestion,
   getNextAvailableStockKitIds,
   getMaterielManquantKits,
-  appendHistorique
+  appendHistorique,
+  getStockKitPoolDisponible,
+  affecterStockKitPoolAuKit
 };

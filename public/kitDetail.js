@@ -107,14 +107,16 @@
         this.stockDisponibleAffectation = [];
       },
       async affecterStockExistant(s) {
-        if (!s?.idStock || !this.kit?.id) return;
+        if ((!s?.idStock && !s?.id) || !this.kit?.id) return;
+        const idStock = s.idStock ?? s.id;
         try {
           const r = await fetch(this.getApiBase() + '/kits/affecterStock', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               completKitId: this.kit.id,
-              idStocks: [s.idStock]
+              idStocks: [idStock],
+              source: s.source || (String(idStock).toUpperCase().startsWith('K') ? 'stockKitPool' : 'stock')
             })
           });
           if (!r.ok) {

@@ -65,6 +65,6 @@ Retourne `{ nextIds: [1, 2, 3, ...], count }`.
 ]
 ```
 
-- `idStock` commençant par `K` → stockKit (completKitId requis)
+- `idStock` commençant par `K` → stockKit. completKitId null = Pool (en attente d'affectation)
 - `idMateriel` : entier = materielKit.id (ex. 24)
 - `completKitId` : obligatoire (body ou query) pour le flux kit

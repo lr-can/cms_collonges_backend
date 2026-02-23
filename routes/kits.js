@@ -15,31 +15,47 @@ router.get('/materielKit', async (req, res, next) => {
   }
 });
 
-/* GET stock disponible (pool commun). ?idMateriel= ou ?materielKitId= */
+/* GET stock disponible (stock commun + stockKit pool). ?materielKitId= requis pour affectation kit */
 router.get('/stockDisponible', async (req, res, next) => {
   try {
-    let query = { ...req.query };
-    if (req.query.materielKitId && !req.query.idMateriel) {
-      const idMat = await stock.resolveMaterielKitIdToMateriel(req.query.materielKitId);
-      query = { idMateriel: idMat };
+    const materielKitId = req.query.materielKitId ? parseInt(req.query.materielKitId, 10) : null;
+    if (!materielKitId || isNaN(materielKitId)) {
+      let query = { ...req.query };
+      if (req.query.materielKitId && !req.query.idMateriel) {
+        const idMat = await stock.resolveMaterielKitIdToMateriel(req.query.materielKitId);
+        query = { idMateriel: idMat };
+      }
+      return res.json(await stock.getStockDisponible(query));
     }
-    const data = await stock.getStockDisponible(query);
-    res.json(data);
+    const idMat = await stock.resolveMaterielKitIdToMateriel(materielKitId);
+    const fromStock = await stock.getStockDisponible({ idMateriel: idMat });
+    const fromPool = await kit.getStockKitPoolDisponible(materielKitId);
+    const merged = [
+      ...fromStock.map((s) => ({ ...s, source: 'stock' })),
+      ...fromPool.map((s) => ({ ...s, source: 'stockKitPool' }))
+    ];
+    res.json(merged);
   } catch (err) {
     console.error('Erreur getStockDisponible', err.message);
     next(err);
   }
 });
 
-/* POST affecter du stock existant à un kit (UPDATE stock.completKitId) */
+/* POST affecter du stock à un kit (stock commun OU stockKit pool) */
 router.post('/affecterStock', async (req, res, next) => {
   try {
-    const { completKitId, idStocks } = req.body;
+    const { completKitId, idStocks, source } = req.body;
     if (!completKitId) return res.status(400).json({ message: 'completKitId requis' });
-    const items = (Array.isArray(idStocks) ? idStocks : [idStocks]).map((id) => ({ idStock: id }));
+    const ids = (Array.isArray(idStocks) ? idStocks : [idStocks]).filter((s) => s != null && s !== '');
+    if (ids.length === 0) return res.status(400).json({ message: 'idStocks requis' });
+
+    if (source === 'stockKitPool') {
+      return res.json(await kit.affecterStockKitPoolAuKit(completKitId, ids));
+    }
+    const items = ids.map((id) => ({ idStock: id }));
     res.json(await stock.affecterStockAuKit({ completKitId, items }));
   } catch (err) {
-    console.error('Erreur affecterStockAuKit', err.message);
+    console.error('Erreur affecterStock', err.message);
     next(err);
   }
 });
