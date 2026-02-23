@@ -55,25 +55,16 @@ Retourne `{ nextIds: [1, 2, 3, ...], count }`.
 
 ### Matériel kit (stockKit)
 
-**Body avec completKitId :**
-```json
-{
-  "completKitId": 1,
-  "materiels": [
-    { "idMateriel": 24, "quantiteReelle": 1 },
-    { "idMateriel": 24, "quantiteReelle": 2 }
-  ]
-}
-```
+**Règle :** Si `idStock` commence par `K` (ex. K61, K62) → insertion dans **stockKit** (kit). Sinon → stock classique.
 
-**Ou array + query :** `POST /createDB?completKitId=1`
+**Format avec idStock K :** `POST /createDB?completKitId=1` (obligatoire)
 ```json
 [
-  { "idMateriel": 24, "idStock": "K21", "numLot": "test" },
-  { "idMateriel": 24, "idStock": "K22", "numLot": "test" }
+  { "idStock": "K61", "idMateriel": 24, "numLot": "test", "datePeremption": "2026-02-23", "idAgent": "V26371" },
+  { "idStock": "K62", "idMateriel": 24, "numLot": "test", "datePeremption": "2026-02-23", "idAgent": "V26371" }
 ]
 ```
 
+- `idStock` commençant par `K` → stockKit (completKitId requis)
 - `idMateriel` : entier = materielKit.id (ex. 24)
-- `completKitId` : obligatoire pour le flux kit (body ou query)
-- `quantiteReelle` : optionnel, défaut 1 par ligne
+- `completKitId` : obligatoire (body ou query) pour le flux kit

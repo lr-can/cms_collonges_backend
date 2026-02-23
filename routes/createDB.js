@@ -9,6 +9,12 @@ function isMaterielKitId(val) {
   return /^\d+$/.test(String(val).trim());
 }
 
+/** idStock commence par K → stockKit (kit), sinon → stock classique */
+function isIdStockKit(val) {
+  if (val == null || val === '') return false;
+  return /^K\d+$/i.test(String(val).trim());
+}
+
 /* POST createDB : matériel classique (stock) OU matériel kit (stockKit) */
 router5.post('/', async function (req, res, next) {
   try {
@@ -21,6 +27,16 @@ router5.post('/', async function (req, res, next) {
 
     const materielsKit = materielsList.filter((m) => m && isMaterielKitId(m.idMateriel));
     if (materielsKit.length > 0) {
+      const hasIdStockK = materielsKit.some((m) => isIdStockKit(m.idStock));
+      if (hasIdStockK) {
+        if (!completKitId) {
+          return res.status(400).json({
+            message: 'idStock commence par K (kit). Fournissez completKitId (body ou ?completKitId=)',
+            inserted: 0
+          });
+        }
+        return res.json(await kit.insererStockKitAvecIds({ completKitId, items: materielsKit }));
+      }
       if (completKitId != null) {
         return res.json(await stock.affecterStockAuKit({ completKitId, items: materielsKit }));
       }

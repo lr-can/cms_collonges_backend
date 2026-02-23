@@ -460,6 +460,37 @@ async function updateCompletKitDatePeremption(completKitId) {
 }
 
 /**
+ * Insérer des lignes stockKit avec ids fournis (ex. K61, K62) — quand idStock commence par K
+ */
+async function insererStockKitAvecIds({ completKitId, items }) {
+  if (!completKitId || !items || items.length === 0) {
+    throw new Error('completKitId et items (avec idStock) requis');
+  }
+  const ck = await db.query(`SELECT createurId FROM completKit WHERE id = ?`, [completKitId]);
+  const creator = (ck && ck[0]) ? ck[0].createurId : '000000';
+
+  let inserted = 0;
+  for (const m of items) {
+    const skId = m.idStock != null && String(m.idStock).trim() !== '' ? String(m.idStock).trim() : null;
+    if (!skId || !/^K\d+$/i.test(skId)) continue;
+
+    const materielKitId = parseInt(String(m.idMateriel).trim(), 10);
+    if (isNaN(materielKitId)) continue;
+
+    const dateArticle = m.datePeremption ? new Date(m.datePeremption).toISOString().slice(0, 10) : null;
+    const numeroLot = m.numLot || null;
+
+    await db.query(
+      `INSERT INTO stockKit (id, completKitId, materielKitId, statut, creator, dateArticle, numeroLot) VALUES (?, ?, ?, 2, ?, ?, ?)`,
+      [skId, completKitId, materielKitId, creator, dateArticle, numeroLot]
+    );
+    inserted++;
+  }
+  if (inserted > 0) await updateCompletKitDatePeremption(completKitId);
+  return { inserted, message: inserted === 1 ? '1 matériel ajouté au kit.' : `${inserted} matériels ajoutés au kit.` };
+}
+
+/**
  * Ajouter du matériel au kit (insertion lignes stockKit)
  */
 async function ajouterMaterielStockKit(body) {
@@ -553,6 +584,7 @@ async function getNextIdKitSuggestion(nomKit) {
 }
 
 module.exports = {
+  insererStockKitAvecIds,
   ajouterMaterielStockKit,
   ajusterQuantiteStockKit,
   updateStockKitGroupe,
