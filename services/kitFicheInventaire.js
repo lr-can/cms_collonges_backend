@@ -76,12 +76,16 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
     .page { max-width: 750px !important; margin: 0 auto !important; }
     .header {
       display: flex !important;
-      align-items: center !important;
+      align-items: flex-start !important;
       margin-bottom: 12px !important;
     }
     .header-qr { flex-shrink: 0 !important; margin-right: 16px !important; }
     .header-qr img { width: 90px !important; height: 90px !important; display: block !important; }
-    .header-title-block { flex: 1 !important; }
+    .header-right { flex: 1 !important; display: flex !important; flex-direction: column !important; gap: 8px !important; }
+    .header-barcode { text-align: center !important; }
+    .header-barcode img { height: 50px !important; min-width: 140px !important; display: block !important; margin: 0 auto !important; }
+    .header-barcode .barcode-text { font-size: 14pt !important; font-weight: 600 !important; color: #000 !important; margin-top: 4px !important; }
+    .header-title-block { }
     .kit-title-banner {
       background-color: #008080 !important;
       color: #fff !important;
@@ -180,17 +184,19 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
 <body>
   <div class="page">
     <div class="header">
-      <div class="header-barcode" style="flex-shrink:0;margin-right:12px;text-align:center;">
-        ${barcodeDataUri ? `<img src="${barcodeDataUri}" alt="Code-barres ${escapeHtml(idKit)}" style="height:45px;min-width:120px;display:block;margin:0 auto;" /><span style="font-size:10px;display:block;margin-top:3px;">${escapeHtml(idKit || '')}</span>` : ''}
-      </div>
       <div class="header-qr">
         <img src="${qrApiUrl}" alt="QR Code Kit ${escapeHtml(idKit)}" />
       </div>
-      <div class="header-title-block">
+      <div class="header-right">
+        <div class="header-barcode">
+          ${barcodeDataUri ? `<img src="${barcodeDataUri}" alt="Code-barres ${escapeHtml(idKit)}" /><span class="barcode-text">${escapeHtml(idKit || '')}</span>` : ''}
+        </div>
+        <div class="header-title-block">
         <div class="kit-title-banner">${escapeHtml(nomKit || '')}</div>
         <div class="peremption-block">
           <span class="peremption-label">Date de péremption :&nbsp;</span>
           <span class="peremption-value">${(datePeremption != null && datePeremption !== '') ? escapeHtml(String(datePeremption)) : '&nbsp;'}</span>
+        </div>
         </div>
       </div>
     </div>
@@ -225,10 +231,10 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
       <span class="sig-value">${observContent}</span>
     </div>
     <div class="footer">
-      <div>PUI - SDMIS</div>
-      <div>92 rue du Dauphiné 69800 SAINT PRIEST</div>
+      <div>Bureau Pharmacie - CT COLLONGES - SDMIS</div>
+      <div>37 Rue Pierre Pays 69660 COLLONGES-AU-MONT-D'OR</div>
       <div class="footer-meta">
-        <span>ETAT_Kit_Ordre_Preparation V. 7.8.0.2.5 du 08/03/2024 &nbsp; 1/1</span>
+        <span>CMS Collonges - Bureau informatique CT Collonges</span>
         <span>Date d'édition : ${today}</span>
       </div>
     </div>
