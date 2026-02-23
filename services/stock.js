@@ -138,77 +138,84 @@ async function getPeremptionAndCount() {
     return /^\d+$/.test(v);
   }
 
+  /**
+   * Résout idMateriel : si la valeur ressemble à un nom (espaces, long), cherche dans materiels par nomMateriel ou materielKit.nomCommande
+   */
+  async function resolveIdMaterielForStock(value, nomMateriel) {
+    if (!value || typeof value !== 'string') return value;
+    const v = value.trim();
+    if (v.length < 3) return v;
+    const rows = await db.query(
+      `SELECT idMateriel FROM materiels WHERE idMateriel = ? OR nomMateriel = ? OR TRIM(LOWER(nomMateriel)) = TRIM(LOWER(?)) LIMIT 1`,
+      [v, v, nomMateriel || v]
+    );
+    if (rows && rows[0]) return rows[0].idMateriel;
+    const mkRows = await db.query(
+      `SELECT idMateriel FROM materielKit WHERE nomCommande = ? OR TRIM(LOWER(nomCommande)) = TRIM(LOWER(?)) LIMIT 1`,
+      [v, v]
+    );
+    if (mkRows && mkRows[0] && mkRows[0].idMateriel) return mkRows[0].idMateriel;
+    const mByNom = await db.query(
+      `SELECT idMateriel FROM materiels WHERE TRIM(LOWER(nomMateriel)) = TRIM(LOWER(?)) LIMIT 1`,
+      [v]
+    );
+    return (mByNom && mByNom[0]) ? mByNom[0].idMateriel : v;
+  }
+
   async function create(materiels){
-    // Accepter soit un tableau, soit un seul objet (pour rétrocompatibilité)
     const materielsList = Array.isArray(materiels) ? materiels : [materiels];
-    
-    if (materielsList.length === 0) {
-      return {message: 'Aucun matériel à créer.'};
-    }
+    if (materielsList.length === 0) return { message: 'Aucun matériel à créer.' };
 
-    // Séparation : matériels classiques (stock) vs matériels kit (stockKit)
-    const materielsClassiques = [];
-    const materielsKit = [];
-
-    for (const m of materielsList) {
-      if (isMaterielKit(m.idMateriel)) {
-        if (!m.completKitId) {
-          throw new Error(`Pour le matériel kit (idMateriel=${m.idMateriel}), completKitId est requis.`);
-        }
-        materielsKit.push(m);
-      } else {
-        materielsClassiques.push(m);
-      }
-    }
+    const materielsClassiques = materielsList.filter(m => !isMaterielKit(m.idMateriel));
+    if (materielsClassiques.length === 0) return { message: 'Aucun matériel classique à créer.', inserted: 0 };
 
     let insertedStock = 0;
-    let insertedStockKit = 0;
     const messages = [];
+    let nextId = null;
 
-    // 1. Matériels classiques → table stock
-    if (materielsClassiques.length > 0) {
-      let currentDate = new Date();
-      let mysqlFormattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
-      const values = [];
-      const params = [];
+    const idResult = await db.query('SELECT COALESCE(MAX(CAST(idStock AS UNSIGNED)), 0) + 1 AS nextId FROM stock WHERE idStock REGEXP \'^[0-9]+$\'');
+    nextId = idResult && idResult[0] ? idResult[0].nextId : 1;
 
-      for (const materiel of materielsList) {
-        let mysqlFormattedPeremptionDate;
-        if (materiel.datePeremption) {
-          const peremptionDate = new Date(materiel.datePeremption);
-          mysqlFormattedPeremptionDate = peremptionDate.toISOString().slice(0, 19).replace('T', ' ');
-        } else {
-          mysqlFormattedPeremptionDate = null;
-        }
+    const currentDate = new Date();
+    const mysqlFormattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
+    const values = [];
+    const params = [];
 
-        values.push('(?, ?, ?, ?, ?, ?, ?)');
-        params.push(
-          materiel.idStock,
-          materiel.idMateriel || '',
-          materiel.idStatut || 1,
-          materiel.idAgent || '',
-          mysqlFormattedDate,
-          materiel.numLot || '',
-          mysqlFormattedPeremptionDate
-        );
+    for (const materiel of materielsClassiques) {
+      let idMat = materiel.idMateriel || materiel.nomMateriel || '';
+      if (idMat && (idMat.length > 20 || idMat.includes(' '))) {
+        idMat = await resolveIdMaterielForStock(idMat, materiel.nomMateriel) || idMat;
+      }
+      if (!idMat) continue;
+
+      let mysqlFormattedPeremption = null;
+      if (materiel.datePeremption) {
+        const d = new Date(materiel.datePeremption);
+        mysqlFormattedPeremption = d.toISOString().slice(0, 10);
       }
 
-      const query = `INSERT INTO stock
-        (idStock, idMateriel, idStatut, idAgent, dateCreation, numLot, datePeremption) 
-        VALUES ${values.join(', ')}`;
+      const idStock = materiel.idStock != null ? materiel.idStock : nextId++;
+      values.push('(?, ?, ?, ?, ?, ?, ?)');
+      params.push(idStock, idMat, materiel.idStatut || 1, materiel.idAgent || '', mysqlFormattedDate, materiel.numLot || null, mysqlFormattedPeremption);
+    }
 
+    if (values.length === 0) return { message: 'Aucun idMateriel valide trouvé.', inserted: 0 };
+
+    const query = `INSERT INTO stock (idStock, idMateriel, idStatut, idAgent, dateCreation, numLot, datePeremption) VALUES ${values.join(', ')}`;
+    try {
       const result = await db.query(query, params);
       insertedStock = result.affectedRows || 0;
       if (insertedStock > 0) {
         messages.push(insertedStock === 1 ? '1 matériel ajouté au stock.' : `${insertedStock} matériels ajoutés au stock.`);
       }
+    } catch (err) {
+      if (err.code === 'ER_NO_REFERENCED_ROW_2' || err.errno === 1452) {
+        throw new Error(`idMateriel invalide : le matériel "${materielsClassiques[0]?.idMateriel || materielsClassiques[0]?.nomMateriel}" n'existe pas dans la table materiels. Vérifiez que l'article est référencé dans materiels (idMateriel ou nomMateriel).`);
+      }
+      throw err;
     }
 
-    const message = messages.length > 0 ? messages.join(' ') : 'Aucun enregistrement effectué.';
-    return {
-      message,
-      inserted: insertedStock
-    };
+    return { message: messages.join(' ') || 'Aucun enregistrement effectué.', inserted: insertedStock };
   }
 
   async function todayCreated(page = 1, idMateriel){

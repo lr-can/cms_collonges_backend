@@ -59,6 +59,8 @@
         }
         .materiel-item:hover { background: #e8f5e9; border-color: #27ae60; }
         .qte-theorique { font-size: 12px; color: #666; }
+        .td-center { text-align: center; }
+        .td-muted { font-size: 12px; color: #666; }
     </style>
 </head>
 <body>
@@ -72,9 +74,7 @@
             <template v-else-if="kit">
                 <div class="header-actions">
                     <button class="btn btn-primary" @click="ouvrirImprimer">Imprimer la fiche inventaire</button>
-                    <button class="btn btn-success" @click="validerModifications" :disabled="!hasModifications">Valider les modifications</button>
                 </div>
-                <p v-if="hasModifications" style="margin-bottom:15px;color:#27ae60">Modifications non enregistrées. Cliquez sur « Valider les modifications » pour les enregistrer.</p>
 
                 <div class="card">
                     <h2>Informations générales</h2>
@@ -90,33 +90,28 @@
 
                 <div class="card">
                     <h2>Contenu du kit</h2>
+                    <p style="margin-bottom:12px;color:#666;font-size:14px">
+                        Types de matériel définis dans le catalogue (materielKit). Affectez en sélectionnant dans la liste.
+                    </p>
                     <div style="margin-bottom:12px">
-                        <button class="btn btn-success" @click="ouvrirModalAjout">+ Ajouter un matériel</button>
+                        <button class="btn btn-success" @click="ouvrirModalAjout">+ Affecter un matériel</button>
                     </div>
                     <table>
                         <thead>
                             <tr>
-                                <th>Produit</th>
-                                <th>Qté théorique</th>
-                                <th>Qté réelle</th>
-                                <th>Date</th>
-                                <th>N° lot</th>
+                                <th>Type de matériel</th>
+                                <th>Qté attendue</th>
+                                <th>Qté affectée</th>
+                                <th>Date / Lot</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in itemsEdites" :key="keyItem(item)" :class="{ modified: isModified(item), 'row-missing': (item.quantiteReelle ?? 0) === 0 && item.quantiteTheorique > 0 }">
+                            <tr v-for="item in itemsEdites" :key="keyItem(item)" :class="{ 'row-missing': (item.quantiteReelle ?? 0) === 0 && item.quantiteTheorique > 0 }">
                                 <td>{{ item.nomCommun || item.nomCommande }}</td>
-                                <td>{{ item.quantiteTheorique }}</td>
-                                <td>
-                                    <input type="number" v-model.number="item._quantiteReelle" style="width:60px" @input="marquerModifie(item)" min="0">
-                                </td>
-                                <td>
-                                    <input type="date" v-model="item._dateArticle" style="width:130px" @input="marquerModifie(item)">
-                                </td>
-                                <td>
-                                    <input type="text" v-model="item._numeroLot" style="width:100px" placeholder="N° lot" @input="marquerModifie(item)">
-                                </td>
+                                <td class="td-center">{{ item.quantiteTheorique }}</td>
+                                <td class="td-center">{{ item.quantiteReelle ?? 0 }}</td>
+                                <td class="td-muted">{{ formatDate(item.dateArticle) || '-' }} {{ item.numeroLot ? '| ' + item.numeroLot : '' }}</td>
                                 <td class="actions-cell">
                                     <button v-if="item.id" class="btn btn-secondary" style="padding:6px 12px;font-size:12px" @click="demarrerRemplacement(item)">Remplacer</button>
                                     <button v-else class="btn btn-success" style="padding:6px 12px;font-size:12px" @click="affecterMateriel(item)">Affecter</button>
@@ -126,24 +121,20 @@
                     </table>
                 </div>
 
-                <!-- Modal ajout matériel -->
+                <!-- Modal affecter matériel : liste depuis la base (materielKit) -->
                 <div v-if="modalAjout" class="modal-overlay" @click.self="modalAjout = false">
                     <div class="modal" style="max-width:550px">
-                        <h3>Ajouter un matériel au kit</h3>
-                        <p style="margin-bottom:12px;color:#666">Sélectionnez le matériel à affecter :</p>
+                        <h3>Affecter un matériel au kit</h3>
+                        <p style="margin-bottom:12px;color:#666">Sélectionnez le type de matériel dans la liste (issue du catalogue) :</p>
                         <div class="materiels-disponibles">
-                            <div v-for="m in materielsDisponibles" :key="m.id" class="materiel-item" @click="selectMaterielPourAjout(m)">
+                            <div v-for="m in materielsDisponibles" :key="m.id" class="materiel-item" @click="selectEtAffecter(m)">
                                 <strong>{{ m.nomCommun || m.nomCommande }}</strong>
-                                <span class="qte-theorique">Qté attendue : {{ m.quantite }}</span>
+                                <span class="qte-theorique">Qté à affecter : {{ m.quantite ?? 1 }}</span>
                             </div>
                         </div>
-                        <div v-if="materielSelectionne" class="form-group" style="margin-top:16px">
-                            <label>Quantité à ajouter</label>
-                            <input type="number" v-model.number="ajoutForm.quantite" min="1" style="width:80px">
-                        </div>
-                        <div class="modal-actions">
-                            <button class="btn btn-secondary" @click="modalAjout = false; materielSelectionne = null">Annuler</button>
-                            <button class="btn btn-success" @click="executerAjout" :disabled="!materielSelectionne || !ajoutForm.quantite">Ajouter</button>
+                        <p v-if="materielsDisponibles.length === 0" style="color:#888;font-style:italic">Aucun type de matériel défini pour ce kit.</p>
+                        <div class="modal-actions" style="margin-top:16px">
+                            <button class="btn btn-secondary" @click="modalAjout = false">Fermer</button>
                         </div>
                     </div>
                 </div>
@@ -200,8 +191,6 @@
                     modalRemplacement: null,
                     modalAjout: false,
                     materielsDisponibles: [],
-                    materielSelectionne: null,
-                    ajoutForm: { quantite: 1 },
                     remplacementForm: {
                         ancienIdStock: '',
                         nouveauIdStock: '',
@@ -214,11 +203,7 @@
                     modifiedIds: new Set()
                 };
             },
-            computed: {
-                hasModifications() {
-                    return this.modifiedIds.size > 0;
-                }
-            },
+            computed: {},
             methods: {
                 formatDate(d) {
                     if (!d) return '';
@@ -247,21 +232,13 @@
                     } finally {
                         this.loading = false;
                     }
-                    this.itemsEdites = (this.kit?.items || []).map(i => ({
-                        ...i,
-                        _quantiteReelle: i.quantiteReelle ?? i.quantiteTheorique,
-                        _dateArticle: i.dateArticle ? new Date(i.dateArticle).toISOString().slice(0, 10) : '',
-                        _numeroLot: i.numeroLot || ''
-                    }));
-                    this.modifiedIds.clear();
+                    this.itemsEdites = this.kit?.items || [];
                 },
                 keyItem(item) {
                     return item.materielKitId + (item.id || '');
                 },
                 async ouvrirModalAjout() {
                     this.modalAjout = true;
-                    this.materielSelectionne = null;
-                    this.ajoutForm.quantite = 1;
                     try {
                         const r = await fetch(this.getApiBase() + '/kits/materielKit/' + encodeURIComponent(this.kit.nomKit));
                         if (r.ok) this.materielsDisponibles = await r.json();
@@ -270,20 +247,17 @@
                         this.materielsDisponibles = [];
                     }
                 },
-                selectMaterielPourAjout(m) {
-                    this.materielSelectionne = m;
-                    this.ajoutForm.quantite = m.quantite || 1;
-                },
-                async executerAjout() {
-                    if (!this.materielSelectionne || !this.kit?.id) return;
+                async selectEtAffecter(m) {
+                    if (!m || !this.kit?.id) return;
+                    const qte = m.quantite ?? 1;
                     try {
                         const r = await fetch(this.getApiBase() + '/kits/stockKit/ajouter', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 completKitId: this.kit.id,
-                                materielKitId: this.materielSelectionne.id,
-                                quantiteReelle: this.ajoutForm.quantite || 1
+                                materielKitId: m.id,
+                                quantiteReelle: qte
                             })
                         });
                         if (!r.ok) {
@@ -291,24 +265,18 @@
                             throw new Error(err.message || 'Erreur');
                         }
                         this.modalAjout = false;
-                        this.materielSelectionne = null;
                         await this.loadKit();
                     } catch (e) {
                         alert('Erreur : ' + e.message);
                     }
                 },
                 async affecterMateriel(item) {
-                    this.materielSelectionne = { id: item.materielKitId, nomCommun: item.nomCommun, nomCommande: item.nomCommande, quantite: item.quantiteTheorique };
-                    this.ajoutForm.quantite = item.quantiteTheorique || 1;
-                    await this.executerAjout();
-                },
-                isModified(item) {
-                    const key = `${item.completKitId || this.kit?.id}-${item.materielKitId}`;
-                    return this.modifiedIds.has(key);
-                },
-                marquerModifie(item) {
-                    const key = `${item.completKitId || this.kit?.id}-${item.materielKitId}`;
-                    this.modifiedIds.add(key);
+                    await this.selectEtAffecter({
+                        id: item.materielKitId,
+                        nomCommun: item.nomCommun,
+                        nomCommande: item.nomCommande,
+                        quantite: item.quantiteTheorique ?? 1
+                    });
                 },
                 ouvrirImprimer() {
                     const url = this.getApiBase() + '/kits/ficheInventaire/' + encodeURIComponent(this.kit.idKit || this.idKit);
@@ -357,33 +325,6 @@
                     } catch (e) {
                         alert('Erreur : ' + e.message);
                     }
-                },
-                async validerModifications() {
-                    const completKitId = this.kit?.id;
-                    if (!completKitId) return;
-                    for (const key of this.modifiedIds) {
-                        const u = this.itemsEdites.find(x => `${x.completKitId || completKitId}-${x.materielKitId}` === key);
-                        if (!u) continue;
-                        try {
-                            const r = await fetch(this.getApiBase() + '/kits/stockKit/groupe', {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    completKitId,
-                                    materielKitId: u.materielKitId,
-                                    quantiteReelle: u._quantiteReelle,
-                                    dateArticle: u._dateArticle || null,
-                                    numeroLot: u._numeroLot || ''
-                                })
-                            });
-                            if (!r.ok) throw new Error(await r.text());
-                        } catch (e) {
-                            alert('Erreur lors de la mise à jour : ' + e.message);
-                            return;
-                        }
-                    }
-                    this.modifiedIds.clear();
-                    await this.loadKit();
                 }
             },
             mounted() {
