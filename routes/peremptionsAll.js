@@ -13,4 +13,15 @@ router.get('/', async function (req, res, next) {
   }
 });
 
+/* GET exemple de réponse avec données réelles + dates péremption fictives (pour documentation / tests) */
+router.get('/example', async function (req, res, next) {
+  try {
+    const data = await peremptionsAll.getExamplePeremptions();
+    res.json(data);
+  } catch (err) {
+    console.error('Erreur peremptions_all/example:', err.message);
+    next(err);
+  }
+});
+
 module.exports = router;
