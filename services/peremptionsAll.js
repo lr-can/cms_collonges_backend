@@ -32,12 +32,13 @@ function bucketBySemaine(rows, dateField, formatRow) {
   return buckets;
 }
 
+/** Matériel : statut 1 = réserve pharmacie, statut 2 = mise à disposition */
 async function getPeremptionsMateriel() {
   const rows = await db.query(
     `SELECT m.nomMateriel, s.numLot, s.datePeremption,
             COUNT(*) AS nombre,
-            SUM(CASE WHEN s.idStatut = 1 THEN 1 ELSE 0 END) AS reserve,
-            SUM(CASE WHEN s.idStatut = 2 THEN 1 ELSE 0 END) AS vsav
+            SUM(CASE WHEN s.idStatut = 1 THEN 1 ELSE 0 END) AS reservePharmacie,
+            SUM(CASE WHEN s.idStatut = 2 THEN 1 ELSE 0 END) AS miseADisposition
      FROM stock s
      INNER JOIN materiels m ON m.idMateriel = s.idMateriel
      WHERE s.idStatut != 3
@@ -53,22 +54,22 @@ async function getPeremptionsMateriel() {
     numLot: row.numLot,
     datePeremption: row.datePeremption ? new Date(row.datePeremption).toISOString().slice(0, 10) : null,
     nombre: row.nombre,
-    reserve: row.reserve || 0,
-    vsav: row.vsav || 0
+    reservePharmacie: row.reservePharmacie || 0,
+    miseADisposition: row.miseADisposition || 0
   }));
 }
 
+/** ASUP : statut 1 = disponible dans les VSAV, statut 3 = bientôt périmé dans les VSAV (statut 2 ignoré) */
 async function getPeremptionsAsup() {
   try {
     const rows = await db.query(
       `SELECT med.nomMedicament, a.numLot, a.datePeremption,
               COUNT(*) AS nombre,
-              SUM(CASE WHEN a.affectationVSAV = 1 THEN 1 ELSE 0 END) AS vsav1,
-              SUM(CASE WHEN a.affectationVSAV = 2 THEN 1 ELSE 0 END) AS vsav2,
-              SUM(CASE WHEN a.affectationVSAV IS NULL OR a.affectationVSAV = 0 THEN 1 ELSE 0 END) AS reserve
+              SUM(CASE WHEN a.idStatutAsup = 1 THEN 1 ELSE 0 END) AS disponibleVsav,
+              SUM(CASE WHEN a.idStatutAsup = 3 THEN 1 ELSE 0 END) AS bientotPerimeVsav
        FROM asupStock a
        INNER JOIN medicaments med ON med.idMedicament = a.idMedicament
-       WHERE a.idStatutAsup NOT IN (2, 4)
+       WHERE a.idStatutAsup IN (1, 3)
          AND a.datePeremption IS NOT NULL
          AND a.datePeremption >= CURDATE()
          AND a.datePeremption <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
@@ -81,9 +82,8 @@ async function getPeremptionsAsup() {
       numLot: row.numLot,
       datePeremption: row.datePeremption ? new Date(row.datePeremption).toISOString().slice(0, 10) : null,
       nombre: row.nombre,
-      vsav1: row.vsav1 || 0,
-      vsav2: row.vsav2 || 0,
-      reserve: row.reserve || 0
+      disponibleVsav: row.disponibleVsav || 0,
+      bientotPerimeVsav: row.bientotPerimeVsav || 0
     }));
   } catch (err) {
     console.warn('getPeremptionsAsup:', err.message);
@@ -91,34 +91,61 @@ async function getPeremptionsAsup() {
   }
 }
 
+/**
+ * Utilise v_kitsPerimantBientot. Si idKit = _POOL_ → afficher "réserve pharmacie", sinon idKit.
+ * Retourne les kits regroupés par idKit, avec la liste du matériel qui périme.
+ */
 async function getPeremptionsKits() {
   try {
     const rows = await db.query(
-      `SELECT mk.nomCommun, sk.numeroLot, sk.dateArticle, ck.idKit, ck.nomKit,
+      `SELECT mk.nomCommun, sk.numeroLot, sk.dateArticle, v.idKit, v.nomKit,
               COUNT(*) AS nombre
-       FROM stockKit sk
-       INNER JOIN completKit ck ON ck.id = sk.completKitId
+       FROM v_kitsPerimantBientot v
+       INNER JOIN stockKit sk ON sk.completKitId = v.id
        INNER JOIN materielKit mk ON mk.id = sk.materielKitId
        WHERE sk.statut != 3
          AND sk.dateArticle IS NOT NULL
          AND sk.dateArticle >= CURDATE()
          AND sk.dateArticle <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-         AND ck.idKit != '_POOL_'
-       GROUP BY mk.nomCommun, sk.numeroLot, sk.dateArticle, ck.idKit, ck.nomKit
-       ORDER BY sk.dateArticle, mk.nomCommun`
+       GROUP BY mk.nomCommun, sk.numeroLot, sk.dateArticle, v.idKit, v.nomKit
+       ORDER BY v.idKit, sk.dateArticle, mk.nomCommun`
     );
     const data = helper.emptyOrRows(rows);
-    return bucketBySemaine(data, 'dateArticle', (row) => ({
-      nomProduit: row.nomCommun,
-      numeroLot: row.numeroLot,
-      datePeremption: row.dateArticle ? new Date(row.dateArticle).toISOString().slice(0, 10) : null,
-      idKit: row.idKit,
-      nomKit: row.nomKit,
-      nombre: row.nombre
-    }));
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const byKit = {};
+    for (const row of data) {
+      const d = row.dateArticle;
+      if (!d) continue;
+      const datePeremption = new Date(d);
+      datePeremption.setHours(0, 0, 0, 0);
+      const diffMs = datePeremption - now;
+      const diffJours = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+      if (diffJours < 1 || diffJours > 30) continue;
+
+      let semaine;
+      if (diffJours >= 22 && diffJours <= 30) semaine = 'semaine4';
+      else if (diffJours >= 15 && diffJours <= 21) semaine = 'semaine3';
+      else if (diffJours >= 8 && diffJours <= 14) semaine = 'semaine2';
+      else semaine = 'semaine1';
+
+      const idKit = row.idKit;
+      if (!byKit[idKit]) {
+        byKit[idKit] = { idKit, nomKit: row.nomKit, materiels: [] };
+      }
+      byKit[idKit].materiels.push({
+        nomProduit: row.nomCommun,
+        numeroLot: row.numeroLot,
+        datePeremption: row.dateArticle ? new Date(row.dateArticle).toISOString().slice(0, 10) : null,
+        nombre: row.nombre,
+        semaine
+      });
+    }
+    return Object.values(byKit);
   } catch (err) {
     console.warn('getPeremptionsKits:', err.message);
-    return { semaine1: [], semaine2: [], semaine3: [], semaine4: [] };
+    return [];
   }
 }
 
@@ -162,15 +189,14 @@ async function getExamplePeremptions() {
   });
 
   let materiel = emptyBuckets();
-  let kit = emptyBuckets();
+  let kit = [];
   let medicamentsAsup = emptyBuckets();
 
   try {
     const stockRows = await db.query(
-      `SELECT m.nomMateriel, s.numLot,
-              COUNT(*) AS nombre,
-              SUM(CASE WHEN s.idStatut = 1 THEN 1 ELSE 0 END) AS reserve,
-              SUM(CASE WHEN s.idStatut = 2 THEN 1 ELSE 0 END) AS vsav
+      `SELECT m.nomMateriel, s.numLot, COUNT(*) AS nombre,
+              SUM(CASE WHEN s.idStatut = 1 THEN 1 ELSE 0 END) AS reservePharmacie,
+              SUM(CASE WHEN s.idStatut = 2 THEN 1 ELSE 0 END) AS miseADisposition
        FROM stock s
        INNER JOIN materiels m ON m.idMateriel = s.idMateriel
        WHERE s.idStatut != 3
@@ -186,8 +212,8 @@ async function getExamplePeremptions() {
           numLot: row.numLot || '-',
           datePeremption: dateForSemaine(sem),
           nombre: parseInt(row.nombre, 10) || 0,
-          reserve: parseInt(row.reserve, 10) || 0,
-          vsav: parseInt(row.vsav, 10) || 0
+          reservePharmacie: parseInt(row.reservePharmacie, 10) || 0,
+          miseADisposition: parseInt(row.miseADisposition, 10) || 0
         });
       }
     });
@@ -201,38 +227,44 @@ async function getExamplePeremptions() {
        FROM stockKit sk
        INNER JOIN completKit ck ON ck.id = sk.completKitId
        INNER JOIN materielKit mk ON mk.id = sk.materielKitId
-       WHERE sk.statut != 3 AND ck.idKit != '_POOL_'
+       WHERE sk.statut != 3
+         AND sk.dateArticle IS NOT NULL
+         AND sk.dateArticle >= CURDATE()
+         AND sk.dateArticle <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
        GROUP BY mk.nomCommun, sk.numeroLot, ck.idKit, ck.nomKit
-       LIMIT 8`
+       LIMIT 12`
     );
     const kitData = helper.emptyOrRows(kitRows);
+    const byKit = {};
     [1, 2, 3, 4].forEach((sem, i) => {
       const row = kitData[i];
       if (row) {
-        kit[`semaine${sem}`].push({
+        const idKit = row.idKit;
+        if (!byKit[idKit]) {
+          byKit[idKit] = { idKit, nomKit: row.nomKit, materiels: [] };
+        }
+        byKit[idKit].materiels.push({
           nomProduit: row.nomCommun,
           numeroLot: row.numeroLot || '-',
           datePeremption: dateForSemaine(sem),
-          idKit: row.idKit,
-          nomKit: row.nomKit,
-          nombre: parseInt(row.nombre, 10) || 0
+          nombre: parseInt(row.nombre, 10) || 0,
+          semaine: 'semaine' + sem
         });
       }
     });
+    kit.push(...Object.values(byKit));
   } catch (err) {
     console.warn('getExamplePeremptions kit:', err.message);
   }
 
   try {
     const asupRows = await db.query(
-      `SELECT med.nomMedicament, a.numLot,
-              COUNT(*) AS nombre,
-              SUM(CASE WHEN a.affectationVSAV = 1 THEN 1 ELSE 0 END) AS vsav1,
-              SUM(CASE WHEN a.affectationVSAV = 2 THEN 1 ELSE 0 END) AS vsav2,
-              SUM(CASE WHEN a.affectationVSAV IS NULL OR a.affectationVSAV = 0 THEN 1 ELSE 0 END) AS reserve
+      `SELECT med.nomMedicament, a.numLot, COUNT(*) AS nombre,
+              SUM(CASE WHEN a.idStatutAsup = 1 THEN 1 ELSE 0 END) AS disponibleVsav,
+              SUM(CASE WHEN a.idStatutAsup = 3 THEN 1 ELSE 0 END) AS bientotPerimeVsav
        FROM asupStock a
        INNER JOIN medicaments med ON med.idMedicament = a.idMedicament
-       WHERE a.idStatutAsup NOT IN (2, 4)
+       WHERE a.idStatutAsup IN (1, 3)
        GROUP BY med.nomMedicament, a.numLot
        LIMIT 8`
     );
@@ -245,9 +277,8 @@ async function getExamplePeremptions() {
           numLot: row.numLot || '-',
           datePeremption: dateForSemaine(sem),
           nombre: parseInt(row.nombre, 10) || 0,
-          vsav1: parseInt(row.vsav1, 10) || 0,
-          vsav2: parseInt(row.vsav2, 10) || 0,
-          reserve: parseInt(row.reserve, 10) || 0
+          disponibleVsav: parseInt(row.disponibleVsav, 10) || 0,
+          bientotPerimeVsav: parseInt(row.bientotPerimeVsav, 10) || 0
         });
       }
     });
