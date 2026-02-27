@@ -165,11 +165,28 @@ async function createCompletKit(body) {
  * Génère le prochain id stockKit (K1, K2, ...)
  */
 async function getNextStockKitId() {
+  // Récupérer tous les numéros existants de type K<n>
   const rows = await db.query(
-    `SELECT COALESCE(MAX(CAST(SUBSTRING(id, 2) AS UNSIGNED)), 0) + 1 AS nextNum FROM stockKit WHERE id REGEXP '^K[0-9]+$'`
+    `SELECT CAST(SUBSTRING(id, 2) AS UNSIGNED) AS num
+     FROM stockKit
+     WHERE id REGEXP '^K[0-9]+$'
+     ORDER BY num ASC`
   );
-  const num = rows && rows[0] ? rows[0].nextNum : 1;
-  return `K${num}`;
+
+  const used = new Set();
+  for (const r of rows) {
+    if (r && typeof r.num === 'number' && !Number.isNaN(r.num)) {
+      used.add(r.num);
+    }
+  }
+
+  // Trouver le plus petit entier positif libre (1, 2, 3, ...)
+  let candidate = 1;
+  while (used.has(candidate)) {
+    candidate += 1;
+  }
+
+  return `K${candidate}`;
 }
 
 /**
@@ -177,16 +194,39 @@ async function getNextStockKitId() {
  */
 async function getNextAvailableStockKitIds(count) {
   const cnt = Math.max(1, Math.min(parseInt(count, 10) || 1, 1000));
+  // Récupérer tous les numéros existants de type K<n>
   const rows = await db.query(
-    `SELECT COALESCE(MAX(CAST(SUBSTRING(id, 2) AS UNSIGNED)), 0) AS maxNum FROM stockKit WHERE id REGEXP '^K[0-9]+$'`
+    `SELECT CAST(SUBSTRING(id, 2) AS UNSIGNED) AS num
+     FROM stockKit
+     WHERE id REGEXP '^K[0-9]+$'
+     ORDER BY num ASC`
   );
-  const maxNum = rows && rows[0] ? rows[0].maxNum : 0;
-  const nextIds = [];
-  for (let i = 1; i <= cnt; i++) {
-    nextIds.push(`K${maxNum + i}`);
+
+  const used = new Set();
+  for (const r of rows) {
+    if (r && typeof r.num === 'number' && !Number.isNaN(r.num)) {
+      used.add(r.num);
+    }
   }
+
+  const nextIds = [];
+  let candidate = 1;
+  while (nextIds.length < cnt) {
+    if (!used.has(candidate)) {
+      nextIds.push(`K${candidate}`);
+      // On ajoute aussi dans used pour éviter de proposer deux fois le même id
+      used.add(candidate);
+    }
+    candidate += 1;
+  }
+
+  // maxId devient juste le plus grand id numérique existant (s'il y en a)
+  const maxExisting = rows && rows.length > 0
+    ? Math.max(...rows.map(r => (typeof r.num === 'number' ? r.num : 0)))
+    : 0;
+
   return {
-    maxId: maxNum > 0 ? `K${maxNum}` : null,
+    maxId: maxExisting > 0 ? `K${maxExisting}` : null,
     nextIds,
     count: nextIds.length
   };
