@@ -15,10 +15,12 @@ router.get('/materielKit', async (req, res, next) => {
   }
 });
 
-/* GET stock disponible (stock commun + stockKit pool). ?materielKitId= requis pour affectation kit */
+/* GET stock disponible (stock commun + stockKit pool). ?materielKitId= requis pour affectation kit
+   Option: &source=poolOnly → ne retourner que le pool (pour les remplacements) */
 router.get('/stockDisponible', async (req, res, next) => {
   try {
     const materielKitId = req.query.materielKitId ? parseInt(req.query.materielKitId, 10) : null;
+    const source = req.query.source || null;
     if (!materielKitId || isNaN(materielKitId)) {
       let query = { ...req.query };
       if (req.query.materielKitId && !req.query.idMateriel) {
@@ -28,6 +30,10 @@ router.get('/stockDisponible', async (req, res, next) => {
       return res.json(await stock.getStockDisponible(query));
     }
     const idMat = await stock.resolveMaterielKitIdToMateriel(materielKitId);
+    if (source === 'poolOnly') {
+      const fromPool = await kit.getStockKitPoolDisponible(materielKitId);
+      return res.json(fromPool.map((s) => ({ ...s, source: 'stockKitPool' })));
+    }
     const fromStock = await stock.getStockDisponible({ idMateriel: idMat });
     const fromPool = await kit.getStockKitPoolDisponible(materielKitId);
     const merged = [

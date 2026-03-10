@@ -183,17 +183,16 @@
           ancienIdStock: item.id || '',
           nouveauIdStock: '',
           datePeremptionNouveau: '',
-          dateArticle: item.dateArticle
-            ? new Date(item.dateArticle).toISOString().slice(0, 10)
-            : '',
-          numeroLot: item.numeroLot || ''
+          dateArticle: '',
+          numeroLot: ''
         };
         if (item.materielKitId) {
           try {
             const r = await fetch(
               this.getApiBase() +
                 '/kits/stockDisponible?materielKitId=' +
-                encodeURIComponent(item.materielKitId)
+              encodeURIComponent(item.materielKitId) +
+              '&source=poolOnly'
             );
             if (r.ok) {
               this.stockDisponibleRemplacement = await r.json();
@@ -206,18 +205,34 @@
         const completKitId = this.kit.id;
         if (!completKitId || !item.id) return;
 
+        if (!this.remplacementForm.nouveauIdStock) {
+          alert('Veuillez sélectionner un nouveau matériel dans la liste.');
+          return;
+        }
+
+        const selected = this.stockDisponibleRemplacement.find(
+          (s) => String(s.idStock) === String(this.remplacementForm.nouveauIdStock)
+        );
+        if (selected) {
+          // Si aucune date/lot saisis manuellement, on reprend ceux du nouveau matériel
+          if (!this.remplacementForm.dateArticle) {
+            this.remplacementForm.dateArticle = selected.datePeremption
+              ? new Date(selected.datePeremption).toISOString().slice(0, 10)
+              : '';
+          }
+          if (!this.remplacementForm.numeroLot) {
+            this.remplacementForm.numeroLot = selected.numLot || '';
+          }
+        }
+
         const body = {
           completKitId,
           stockKitId: item.id,
           dateArticle: this.remplacementForm.dateArticle || null,
           numeroLot: this.remplacementForm.numeroLot || '',
-          datePeremption: this.remplacementForm.datePeremptionNouveau || null,
           ancienIdStock:
             this.remplacementForm.ancienIdStock || item.id || undefined,
           nouveauIdStock: this.remplacementForm.nouveauIdStock || undefined,
-          datePeremptionNouveau: this.remplacementForm.datePeremptionNouveau
-            ? this.formatDate(this.remplacementForm.datePeremptionNouveau)
-            : undefined,
           nomMateriel: item.nomCommun || item.nomCommande,
           createurId: this.matricule || undefined
         };

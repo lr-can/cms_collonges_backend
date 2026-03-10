@@ -299,8 +299,10 @@ async function updateCompletKit(id, body) {
 }
 
 /**
- * Remplacer un matériel dans un kit (mise à jour de la ligne stockKit)
- * body: { completKitId, stockKitId (id stockKit), dateArticle?, numeroLot?, ancienIdStock?, nouveauIdStock?, datePeremptionNouveau?, nomMateriel? }
+ * Remplacer un matériel dans un kit.
+ * - L'ancien matériel (stockKitId) passe en statut 3 dans le kit.
+ * - Le nouveau matériel est pris dans le pool (__POOL__) puis rattaché au kit avec la date/lot du nouveau.
+ * body: { completKitId, stockKitId, dateArticle?, numeroLot?, ancienIdStock?, nouveauIdStock, nomMateriel?, createurId? }
  */
 async function remplacerMaterielKit(body) {
   const {
@@ -310,31 +312,75 @@ async function remplacerMaterielKit(body) {
     numeroLot,
     ancienIdStock,
     nouveauIdStock,
-    datePeremptionNouveau,
     nomMateriel,
     createurId
   } = body;
 
+  if (!completKitId || !stockKitId || !nouveauIdStock) {
+    throw new Error('completKitId, stockKitId et nouveauIdStock sont requis pour un remplacement.');
+  }
+
+  const poolId = await getOrCreatePoolCompletKitId();
+  if (!poolId) throw new Error('Pool non initialisé');
+
+  // Vérifier que l'ancien matériel appartient bien au kit
+  const oldRows = await db.query(
+    `SELECT id, completKitId, materielKitId FROM stockKit WHERE id = ? AND completKitId = ?`,
+    [stockKitId, completKitId]
+  );
+  const oldItem = oldRows && oldRows[0];
+  if (!oldItem) {
+    throw new Error('Le matériel à remplacer n\'est pas associé à ce kit.');
+  }
+
+  // Vérifier que le nouveau matériel est bien dans le pool et du même type
+  const newRows = await db.query(
+    `SELECT id, materielKitId, dateArticle, numeroLot FROM stockKit WHERE id = ? AND completKitId = ?`,
+    [nouveauIdStock, poolId]
+  );
+  const newItem = newRows && newRows[0];
+  if (!newItem) {
+    throw new Error('Le nouveau matériel sélectionné n\'est pas disponible dans le pool.');
+  }
+  if (newItem.materielKitId !== oldItem.materielKitId) {
+    throw new Error('Le nouveau matériel n\'est pas du même type que celui à remplacer.');
+  }
+
+  // Calcul de la date/lot à appliquer au nouveau matériel
+  let newDateArticle;
+  if (dateArticle !== undefined) {
+    newDateArticle = dateArticle ? new Date(dateArticle).toISOString().slice(0, 10) : null;
+  } else if (newItem.dateArticle) {
+    newDateArticle =
+      newItem.dateArticle instanceof Date
+        ? newItem.dateArticle.toISOString().slice(0, 10)
+        : String(newItem.dateArticle).slice(0, 10);
+  } else {
+    newDateArticle = null;
+  }
+  const newNumeroLot =
+    numeroLot !== undefined ? (numeroLot || null) : (newItem.numeroLot || null);
+
   const kitRows = await db.query(`SELECT historique FROM completKit WHERE id = ?`, [completKitId]);
   if (!kitRows || !kitRows[0]) throw new Error('Kit non trouvé');
 
-  const updates = [];
-  const params = [];
-  if (dateArticle !== undefined) {
-    updates.push('dateArticle = ?');
-    params.push(dateArticle ? new Date(dateArticle).toISOString().slice(0, 10) : null);
-  }
-  if (numeroLot !== undefined) {
-    updates.push('numeroLot = ?');
-    params.push(numeroLot || null);
-  }
-  if (updates.length > 0) {
-    params.push(stockKitId);
-    await db.query(`UPDATE stockKit SET ${updates.join(', ')}, updatedAt = NOW() WHERE id = ?`, params);
-  }
+  // 1) Ancien matériel → statut 3 dans le kit
+  await db.query(
+    `UPDATE stockKit SET statut = 3, updatedAt = NOW() WHERE id = ? AND completKitId = ?`,
+    [stockKitId, completKitId]
+  );
 
+  // 2) Nouveau matériel du pool → rattaché au kit avec la bonne date/lot
+  await db.query(
+    `UPDATE stockKit
+     SET completKitId = ?, statut = 2, dateArticle = ?, numeroLot = ?, updatedAt = NOW()
+     WHERE id = ? AND completKitId = ?`,
+    [completKitId, newDateArticle, newNumeroLot, nouveauIdStock, poolId]
+  );
+
+  // 3) Historique du kit (seulement une fois le remplacement validé ci-dessus)
   const dateRemplacement = new Date().toLocaleDateString('fr-FR');
-  const entreeHist = `matériel ${nomMateriel || 'matériel'} ${ancienIdStock || stockKitId || '?'} remplacé par ${nouveauIdStock || ancienIdStock || '?'} le ${dateRemplacement}${datePeremptionNouveau ? ` (péremption le ${datePeremptionNouveau})` : ''}`;
+  const entreeHist = `matériel ${nomMateriel || 'matériel'} ${ancienIdStock || stockKitId || '?'} remplacé par ${nouveauIdStock || ancienIdStock || '?'} le ${dateRemplacement}${newDateArticle ? ` (péremption le ${newDateArticle})` : ''}`;
   const nouvelHistorique = appendHistorique(kitRows[0].historique || '', entreeHist);
   const updateFields = ['historique = ?'];
   const paramsKit = [nouvelHistorique];
