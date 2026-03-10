@@ -13,6 +13,7 @@
       return {
         idKit: '',
         kit: null,
+        matricule: '',
         loading: true,
         error: null,
         modalRemplacement: null,
@@ -32,7 +33,24 @@
         itemsEdites: []
       };
     },
-    computed: {},
+    computed: {
+      itemsAffiches() {
+        const items = this.itemsEdites || [];
+        return items.filter((it) => {
+          const qTheo = it.quantiteTheorique ?? 0;
+          const qReelle = it.quantiteReelle ?? 0;
+          if (qReelle > 0) return true;
+          return qTheo === 0;
+        });
+      },
+      observationsManquants() {
+        const items = this.itemsEdites || [];
+        const lignes = items
+          .filter((it) => (it.quantiteTheorique ?? 0) > 0 && (it.quantiteReelle ?? 0) === 0)
+          .map((it) => `${it.nomCommun || it.nomCommande || 'Matériel'} : qté à 0`);
+        return lignes.join('\n');
+      }
+    },
     methods: {
       formatDate(d) {
         if (!d) return '';
@@ -47,6 +65,10 @@
         this.error = null;
         const params = new URLSearchParams(window.location.search);
         this.idKit = params.get('idKit') || params.get('id') || '';
+        const matriculeParam = params.get('matricule') || params.get('agentMatricule');
+        if (matriculeParam) {
+          this.matricule = matriculeParam;
+        }
         this.modify = params.get('modify') !== 'false';
         if (!this.idKit) {
           this.error = "Paramètre idKit manquant dans l'URL.";
@@ -196,7 +218,8 @@
           datePeremptionNouveau: this.remplacementForm.datePeremptionNouveau
             ? this.formatDate(this.remplacementForm.datePeremptionNouveau)
             : undefined,
-          nomMateriel: item.nomCommun || item.nomCommande
+          nomMateriel: item.nomCommun || item.nomCommande,
+          createurId: this.matricule || undefined
         };
 
         try {

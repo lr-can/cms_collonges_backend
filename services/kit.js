@@ -303,7 +303,17 @@ async function updateCompletKit(id, body) {
  * body: { completKitId, stockKitId (id stockKit), dateArticle?, numeroLot?, ancienIdStock?, nouveauIdStock?, datePeremptionNouveau?, nomMateriel? }
  */
 async function remplacerMaterielKit(body) {
-  const { completKitId, stockKitId, dateArticle, numeroLot, ancienIdStock, nouveauIdStock, datePeremptionNouveau, nomMateriel } = body;
+  const {
+    completKitId,
+    stockKitId,
+    dateArticle,
+    numeroLot,
+    ancienIdStock,
+    nouveauIdStock,
+    datePeremptionNouveau,
+    nomMateriel,
+    createurId
+  } = body;
 
   const kitRows = await db.query(`SELECT historique FROM completKit WHERE id = ?`, [completKitId]);
   if (!kitRows || !kitRows[0]) throw new Error('Kit non trouvé');
@@ -326,7 +336,15 @@ async function remplacerMaterielKit(body) {
   const dateRemplacement = new Date().toLocaleDateString('fr-FR');
   const entreeHist = `matériel ${nomMateriel || 'matériel'} ${ancienIdStock || stockKitId || '?'} remplacé par ${nouveauIdStock || ancienIdStock || '?'} le ${dateRemplacement}${datePeremptionNouveau ? ` (péremption le ${datePeremptionNouveau})` : ''}`;
   const nouvelHistorique = appendHistorique(kitRows[0].historique || '', entreeHist);
-  await db.query(`UPDATE completKit SET historique = ?, updatedAt = NOW() WHERE id = ?`, [nouvelHistorique, completKitId]);
+  const updateFields = ['historique = ?'];
+  const paramsKit = [nouvelHistorique];
+  if (createurId) {
+    updateFields.push('createurId = ?');
+    paramsKit.push(createurId);
+  }
+  updateFields.push('updatedAt = NOW()');
+  paramsKit.push(completKitId);
+  await db.query(`UPDATE completKit SET ${updateFields.join(', ')} WHERE id = ?`, paramsKit);
 
   await updateCompletKitDatePeremption(completKitId);
   return { message: 'Matériel remplacé.' };
@@ -484,10 +502,10 @@ async function getDonneesFicheInventaire(idKit) {
   if (!col) return null;
 
   const stockRows = await db.query(
-    `SELECT sk.id, sk.dateArticle, sk.numeroLot, mk.nomCommande, mk.nomCommun, sk.materielKitId
+    `SELECT sk.id, sk.dateArticle, sk.numeroLot, mk.nomCommande, mk.nomCommun, sk.materielKitId, sk.statut
      FROM stockKit sk
      JOIN materielKit mk ON mk.id = sk.materielKitId
-     WHERE sk.completKitId = ?
+     WHERE sk.completKitId = ? AND (sk.statut IS NULL OR sk.statut != 3)
      ORDER BY mk.nomCommun, sk.id`,
     [completKitId]
   );
@@ -512,6 +530,7 @@ async function getDonneesFicheInventaire(idKit) {
     for (const ligne of lignes) {
       itemsKit.push({
         produit: nomProd,
+        cms: ligne.id || '',
         qte: 1,
         date: ligne.dateArticle ? new Date(ligne.dateArticle).toLocaleDateString('fr-FR') : '',
         numero: ligne.numeroLot || ''
@@ -521,6 +540,7 @@ async function getDonneesFicheInventaire(idKit) {
     for (let i = 0; i < manquant; i++) {
       itemsKit.push({
         produit: nomProd,
+        cms: '',
         qte: 0,
         date: '',
         numero: ''
@@ -620,7 +640,7 @@ async function getStockKitPoolDisponible(materielKitId) {
     `SELECT sk.id AS idStock, sk.numeroLot AS numLot, sk.dateArticle AS datePeremption, mk.nomCommun AS nomMateriel
      FROM stockKit sk
      JOIN materielKit mk ON mk.id = sk.materielKitId
-     WHERE sk.completKitId = ? AND sk.materielKitId = ?
+     WHERE sk.completKitId = ? AND sk.materielKitId = ? AND (sk.statut IS NULL OR sk.statut != 3)
      ORDER BY sk.dateArticle, sk.id`,
     [poolId, materielKitId]
   );

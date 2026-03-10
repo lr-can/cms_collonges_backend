@@ -49,13 +49,14 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
             (item) => `
       <tr>
         <td class="td-produit">${escapeHtml(item.produit || '')}</td>
+        <td class="td-center">${escapeHtml(item.cms || '')}</td>
         <td class="td-center">${item.qte ?? ''}</td>
         <td class="td-center">${item.date || ''}</td>
         <td class="td-center">${item.numero || ''}</td>
       </tr>`
           )
           .join('')
-      : `<tr><td colspan="4" class="td-produit td-empty">Aucun matériel associé pour le moment.</td></tr>`;
+      : `<tr><td colspan="5" class="td-produit td-empty">Aucun matériel associé pour le moment.</td></tr>`;
 
   const observContent = observations ? escapeHtml(observations) : '';
 
@@ -203,7 +204,8 @@ function generateKitFicheHTML({ agent, nomKit, itemsKit, idKit, dateEdition, obs
     <table class="items-table">
       <thead>
         <tr>
-          <th style="width:55%">Produit</th>
+          <th style="width:40%">Produit</th>
+          <th style="width:15%">N° CMS</th>
           <th style="width:12%">Quantité</th>
           <th style="width:18%">Date</th>
           <th style="width:15%">Numéro</th>

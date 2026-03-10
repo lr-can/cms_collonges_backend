@@ -126,9 +126,19 @@
                     <div class="info-row"><span class="info-label">Nom :</span> {{ kit.nomKit }}</div>
                     <div class="info-row"><span class="info-label">Date péremption :</span> {{ formatDate(kit.datePeremption) || '-' }}</div>
                     <div class="info-row"><span class="info-label">Créateur :</span> {{ kit.createurId || '-' }}</div>
-                    <div v-if="kit.historique" class="info-row" style="margin-top:10px">
+                    <div class="info-row" style="margin-top:10px">
                         <span class="info-label">Historique / Observations :</span>
-                        <div class="historique">{{ kit.historique }}</div>
+                        <div class="historique">
+                            <template v-if="kit.historique">
+                                {{ kit.historique }}
+                                <br>
+                            </template>
+                            <template v-if="observationsManquants">
+                                <strong>Matériels à 0 :</strong>
+                                <br>
+                                <span style="white-space: pre-line;">{{ observationsManquants }}</span>
+                            </template>
+                        </div>
                     </div>
                 </div>
 
@@ -151,7 +161,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in itemsEdites" :key="keyItem(item)" :class="{ 'row-missing': (item.quantiteReelle ?? 0) === 0 && item.quantiteTheorique > 0 }">
+                            <tr v-for="item in itemsAffiches" :key="keyItem(item)" :class="{ 'row-missing': (item.quantiteReelle ?? 0) === 0 && item.quantiteTheorique > 0 }">
                                 <td>{{ item.nomCommun || item.nomCommande }}</td>
                                 <td class="td-center">{{ item.quantiteTheorique }}</td>
                                 <td class="td-center">{{ item.quantiteReelle ?? 0 }}</td>
